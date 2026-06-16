@@ -1,4 +1,4 @@
-export const Face_Variants = {
+export const Faces = {
   Y: 'YELLOW',
   B: 'BLUE',
   R: 'RED',
@@ -7,7 +7,7 @@ export const Face_Variants = {
   W: 'WHITE'
 } as const;
 
-export type Face = keyof typeof Face_Variants;
+export type Face = keyof typeof Faces
 
 export interface Position {
     X: number
@@ -24,7 +24,11 @@ export interface Orientation {
     bottom?: Face
 }
 
-export interface Cube {
-    position: Position
-    orientation: Orientation
+export const Directions = {
+    XCW: 'X-CLOCKWISE',
+    XCCW: 'X-COUNTER-CLOCKWISE',
+    YCW: 'Y-CLOCKWISE',
+    YCCW: 'Y-COUNTER-CLOCKWISE'
 }
+
+export type Direction = keyof typeof Directions
