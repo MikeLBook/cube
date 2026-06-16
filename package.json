@@ -7,9 +7,13 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "esbuild src/app.ts --bundle --outfile=app.js",
+    "watch": "esbuild src/app.ts --bundle --outfile=app.js --watch"
   },
   "dependencies": {
     "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
   }
 }

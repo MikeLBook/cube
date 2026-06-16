@@ -28,15 +28,3 @@ export interface Cube {
     position: Position
     orientation: Orientation
 }
-
-export interface RubiksCube {
-    cubes: Cube[]
-    orientation: {
-        top: Face,
-        left: Face,
-        front: Face,
-        right: Face,
-        back: Face,
-        bottom: Face
-    }
-}
