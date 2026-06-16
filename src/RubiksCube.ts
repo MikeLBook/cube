@@ -58,106 +58,78 @@ export default class RubiksCube {
     return RubiksCube.instance
   }
 
-  rotateXCW() {
-    const newOrientation: Orientation = {
-      top: this.orientation.top,
-      bottom: this.orientation.bottom,
-      left: this.orientation.front,
-      front: this.orientation.right,
-      right: this.orientation.back,
-      back: this.orientation.left,
+  private rotateXCW(old: Orientation): Orientation {
+    return {
+      top: old.top,
+      bottom: old.bottom,
+      left: old.front,
+      front: old.right,
+      right: old.back,
+      back: old.left,
     }
+  }
 
-    this.orientation = newOrientation
+  private rotateXCCW(old: Orientation): Orientation {
+    return {
+      top: old.top,
+      bottom: old.bottom,
+      left: old.back,
+      front: old.left,
+      right: old.front,
+      back: old.right
+    }
+  }
 
+  private rotateYCW(old: Orientation): Orientation {
+    return {
+      top: old.front,
+      back: old.top,
+      bottom: old.back,
+      front: old.bottom,
+      left: old.left,
+      right: old.right
+    }
+  }
+
+  private rotateYCCW(old: Orientation): Orientation {
+    return {
+      top: old.back,
+      front: old.top,
+      bottom: old.front,
+      back: old.bottom,
+      left: old.left,
+      right: old.right
+    }
+  }
+
+  public rotateCubeCW() {
+    this.orientation = this.rotateXCW(this.orientation)
     this.cubes.forEach(cube => {
-      const newOrientation: Orientation = {
-        top: cube.orientation.top,
-        bottom: cube.orientation.bottom,
-        left: cube.orientation.front,
-        front: cube.orientation.right,
-        right: cube.orientation.back,
-        back: cube.orientation.left,
-      }
-      cube.orientation = newOrientation
+      cube.orientation = this.rotateXCW(cube.orientation)
     })
   }
 
-  rotateXCCW() {
-    const newOrientation: Orientation = {
-      top: this.orientation.top,
-      bottom: this.orientation.bottom,
-      left: this.orientation.back,
-      front: this.orientation.left,
-      right: this.orientation.front,
-      back: this.orientation.right
-    }
-
-    this.orientation = newOrientation
+  public rotateCubeCCW() {
+    this.orientation = this.rotateXCCW(this.orientation)
 
     this.cubes.forEach(cube => {
-      const newOrientation: Orientation = {
-        top: cube.orientation.top,
-        bottom: cube.orientation.bottom,
-        left: cube.orientation.back,
-        front: cube.orientation.left,
-        right: cube.orientation.front,
-        back: cube.orientation.right
-      }
-
-      cube.orientation = newOrientation
+      cube.orientation = this.rotateXCCW(cube.orientation)
     })
   }
 
-  rotateYCW() {
-    const newOrientation: Orientation = {
-      top: this.orientation.front,
-      back: this.orientation.top,
-      bottom: this.orientation.back,
-      front: this.orientation.bottom,
-      left: this.orientation.left,
-      right: this.orientation.right
-    }
-
-    this.orientation = newOrientation
+  public rotateCubeYCW() {
+    this.orientation = this.rotateYCW(this.orientation)
 
     this.cubes.forEach(cube => {
-      const newOrientation: Orientation = {
-        top: cube.orientation.front,
-        back: cube.orientation.top,
-        bottom: cube.orientation.back,
-        front: cube.orientation.bottom,
-        left: cube.orientation.left,
-        right: cube.orientation.right
-      }
-
-      cube.orientation = newOrientation
+      cube.orientation = this.rotateYCW(cube.orientation)
     })
   }
 
-  rotateYCCW() {
-    const newOrientation: Orientation = {
-      top: this.orientation.back,
-      front: this.orientation.top,
-      bottom: this.orientation.front,
-      back: this.orientation.bottom,
-      left: this.orientation.left,
-      right: this.orientation.right
-    }
-
-    this.orientation = newOrientation
+  public rotateCubeYCCW() {
+    this.orientation = this.rotateYCCW(this.orientation)
 
     this.cubes.forEach(cube => {
-      const newOrientation: Orientation = {
-        top: cube.orientation.back,
-        front: cube.orientation.top,
-        bottom: cube.orientation.front,
-        back: cube.orientation.bottom,
-        left: cube.orientation.left,
-        right: cube.orientation.right
-      }
-
-      cube.orientation = newOrientation
+      cube.orientation = this.rotateYCCW(cube.orientation)
     })
   }
 
