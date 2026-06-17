@@ -95,11 +95,43 @@ body {
 }
 
 .face {
-  width: 400px;
-  height: 400px;
+  max-width:320px;
+  margin: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.cube {
+  width: 100px;
+  height: 100px;
   border: black;
   border-style: solid;
-  border-width: 8px;
+  border-width: 1px;
   border-radius: 2px;
-  margin: 4px;
+}
+
+.Y {
+  background-color: yellow;
+}
+
+.R {
+  background-color: red;
+}
+
+.B {
+  background-color: blue;
+}
+
+.G {
+  background-color: green;
+}
+
+.O {
+  background-color: orange;
+}
+
+.W {
+  background-color: white;
 }
