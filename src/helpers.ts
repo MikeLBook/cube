@@ -1,5 +1,9 @@
 import { Position } from "./models";
 
+export function JSONEquals(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a) === JSON.stringify(b)
+}
+
 export const positionMap: Record<number, Position> = {
   1: { X: 0, Y: 0, Z: 0 },
   2: { X: 1, Y: 0, Z: 0 },

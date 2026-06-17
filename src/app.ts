@@ -1,5 +1,8 @@
-import { positionMap } from "./helpers";
+import { JSONEquals, positionMap } from "./helpers";
+import { Face, Faces, Orientation } from "./models";
 import RubiksCube from "./RubiksCube";
+
+const FACE_CLASSES = Object.keys(Faces) as Face[]
 
 const rubiksCube = RubiksCube.getInstance()
 
@@ -9,30 +12,24 @@ document.querySelector('#rotateTopCCW')?.addEventListener('click', () => {
 })
 
 function renderCube() {
-    console.log(rubiksCube)
     document.querySelectorAll('.cube').forEach(el => {
         const cubeElement = el as HTMLElement
-        const orientation = cubeElement.dataset.orientation!!
-        const position = parseInt(cubeElement.dataset.position!!)
-        const cube = rubiksCube.cubes.find(c => {
-            return JSON.stringify(c.position) === JSON.stringify(positionMap[position])
-        })!!
-        switch(orientation) {
-            case 'top':
-                cubeElement.classList.add(cube.orientation.top!!)
-                break;
-            case 'left':
-                cubeElement.classList.add(cube.orientation.left!!)
-                break;
-            case 'front':
-                cubeElement.classList.add(cube.orientation.front!!)
-                break;
-            case 'right':
-                cubeElement.classList.add(cube.orientation.right!!)
-                break;
-            case 'bottom':
-                cubeElement.classList.add(cube.orientation.bottom!!)
-                break;
+        const orientationKey = cubeElement.dataset.orientation
+        const positionStr = cubeElement.dataset.position
+        if (!orientationKey || !positionStr) return
+
+        const positionInt = parseInt(positionStr)
+        const position = positionMap[positionInt]
+        if (!position) return
+
+        const cube = rubiksCube.cubes.find(c => JSONEquals(c.position, position))
+        if (!cube) return
+
+        cubeElement.classList.remove(...FACE_CLASSES)
+
+        const faceColor = cube.orientation[orientationKey as keyof Orientation]
+        if (faceColor) {
+            cubeElement.classList.add(faceColor)
         }
     })
 }

@@ -1,4 +1,5 @@
 import Cube from "./Cube"
+import { positionMap } from "./helpers"
 import { Rotation } from "./models"
 
 export default class RubiksCube {
@@ -9,35 +10,35 @@ export default class RubiksCube {
   private constructor() {
     this.cubes = [
       // Top layer
-      new Cube({ X: 0, Y: 0, Z: 0 }, { top: "Y", left: "B", back: "O" }),
-      new Cube({ X: 1, Y: 0, Z: 0 }, { top: "Y", back: "O" }),
-      new Cube({ X: 2, Y: 0, Z: 0 }, { top: "Y", right: "G", back: "O" }),
-      new Cube({ X: 0, Y: 1, Z: 0 }, { top: "Y", left: "B" }),
-      new Cube({ X: 1, Y: 1, Z: 0 }, { top: "Y" }),
-      new Cube({ X: 2, Y: 1, Z: 0 }, { top: "Y", right: "G" }),
-      new Cube({ X: 0, Y: 2, Z: 0 }, { top: "Y", left: "B", front: "R" }),
-      new Cube({ X: 1, Y: 2, Z: 0 }, { top: "Y", front: "R" }),
-      new Cube({ X: 2, Y: 2, Z: 0 }, { top: "Y", right: "G", front: "R" }),
+      new Cube(positionMap[1], { top: "Y", left: "B", back: "O" }),
+      new Cube(positionMap[2], { top: "Y", back: "O" }),
+      new Cube(positionMap[3], { top: "Y", right: "G", back: "O" }),
+      new Cube(positionMap[4], { top: "Y", left: "B" }),
+      new Cube(positionMap[5], { top: "Y" }),
+      new Cube(positionMap[6], { top: "Y", right: "G" }),
+      new Cube(positionMap[7], { top: "Y", left: "B", front: "R" }),
+      new Cube(positionMap[8], { top: "Y", front: "R" }),
+      new Cube(positionMap[9], { top: "Y", right: "G", front: "R" }),
       // Middle layer
-      new Cube({ X: 0, Y: 0, Z: 1 }, { left: "B", back: "O" }),
-      new Cube({ X: 1, Y: 0, Z: 1 }, { back: "O" }),
-      new Cube({ X: 2, Y: 0, Z: 1 }, { right: "G", back: "O" }),
-      new Cube({ X: 0, Y: 1, Z: 1 }, { left: "B" }),
-      new Cube({ X: 1, Y: 1, Z: 1 }, {}),
-      new Cube({ X: 2, Y: 1, Z: 1 }, { right: "G" }),
-      new Cube({ X: 0, Y: 2, Z: 1 }, { left: "B", front: "R" }),
-      new Cube({ X: 1, Y: 2, Z: 1 }, { front: "R" }),
-      new Cube({ X: 2, Y: 2, Z: 1 }, { right: "G", front: "R" }),
+      new Cube(positionMap[10], { left: "B", back: "O" }),
+      new Cube(positionMap[11], { back: "O" }),
+      new Cube(positionMap[12], { right: "G", back: "O" }),
+      new Cube(positionMap[13], { left: "B" }),
+      new Cube(positionMap[14], {}),
+      new Cube(positionMap[15], { right: "G" }),
+      new Cube(positionMap[16], { left: "B", front: "R" }),
+      new Cube(positionMap[17], { front: "R" }),
+      new Cube(positionMap[18], { right: "G", front: "R" }),
       // Bottom layer
-      new Cube({ X: 0, Y: 0, Z: 2 }, { bottom: "W", left: "B", back: "O" }),
-      new Cube({ X: 1, Y: 0, Z: 2 }, { bottom: "W", back: "O" }),
-      new Cube({ X: 2, Y: 0, Z: 2 }, { bottom: "W", right: "G", back: "O" }),
-      new Cube({ X: 0, Y: 1, Z: 2 }, { bottom: "W", left: "B" }),
-      new Cube({ X: 1, Y: 1, Z: 2 }, { bottom: "W" }),
-      new Cube({ X: 2, Y: 1, Z: 2 }, { bottom: "W", right: "G" }),
-      new Cube({ X: 0, Y: 2, Z: 2 }, { bottom: "W", left: "B", front: "R" }),
-      new Cube({ X: 1, Y: 2, Z: 2 }, { bottom: "W", front: "R" }),
-      new Cube({ X: 2, Y: 2, Z: 2 }, { bottom: "W", right: "G", front: "R" }),
+      new Cube(positionMap[19], { bottom: "W", left: "B", back: "O" }),
+      new Cube(positionMap[20], { bottom: "W", back: "O" }),
+      new Cube(positionMap[21], { bottom: "W", right: "G", back: "O" }),
+      new Cube(positionMap[22], { bottom: "W", left: "B" }),
+      new Cube(positionMap[23], { bottom: "W" }),
+      new Cube(positionMap[24], { bottom: "W", right: "G" }),
+      new Cube(positionMap[25], { bottom: "W", left: "B", front: "R" }),
+      new Cube(positionMap[26], { bottom: "W", front: "R" }),
+      new Cube(positionMap[27], { bottom: "W", right: "G", front: "R" }),
     ]
   }
 

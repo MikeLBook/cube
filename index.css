@@ -91,7 +91,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 1
+  gap: 1rem
 }
 
 .face {

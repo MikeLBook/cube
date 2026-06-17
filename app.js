@@ -18,6 +18,9 @@
   };
 
   // src/helpers.ts
+  function JSONEquals(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
   var positionMap;
   var init_helpers = __esm({
     "src/helpers.ts"() {
@@ -50,6 +53,22 @@
         25: { X: 0, Y: 2, Z: 2 },
         26: { X: 1, Y: 2, Z: 2 },
         27: { X: 2, Y: 2, Z: 2 }
+      };
+    }
+  });
+
+  // src/models.ts
+  var Faces;
+  var init_models = __esm({
+    "src/models.ts"() {
+      "use strict";
+      Faces = {
+        Y: "YELLOW",
+        B: "BLUE",
+        R: "RED",
+        G: "GREEN",
+        O: "ORANGE",
+        W: "WHITE"
       };
     }
   });
@@ -271,39 +290,40 @@
     "src/RubiksCube.ts"() {
       "use strict";
       init_Cube();
+      init_helpers();
       RubiksCube = class _RubiksCube {
         constructor() {
           this.cubes = [
             // Top layer
-            new Cube({ X: 0, Y: 0, Z: 0 }, { top: "Y", left: "B", back: "O" }),
-            new Cube({ X: 1, Y: 0, Z: 0 }, { top: "Y", back: "O" }),
-            new Cube({ X: 2, Y: 0, Z: 0 }, { top: "Y", right: "G", back: "O" }),
-            new Cube({ X: 0, Y: 1, Z: 0 }, { top: "Y", left: "B" }),
-            new Cube({ X: 1, Y: 1, Z: 0 }, { top: "Y" }),
-            new Cube({ X: 2, Y: 1, Z: 0 }, { top: "Y", right: "G" }),
-            new Cube({ X: 0, Y: 2, Z: 0 }, { top: "Y", left: "B", front: "R" }),
-            new Cube({ X: 1, Y: 2, Z: 0 }, { top: "Y", front: "R" }),
-            new Cube({ X: 2, Y: 2, Z: 0 }, { top: "Y", right: "G", front: "R" }),
+            new Cube(positionMap[1], { top: "Y", left: "B", back: "O" }),
+            new Cube(positionMap[2], { top: "Y", back: "O" }),
+            new Cube(positionMap[3], { top: "Y", right: "G", back: "O" }),
+            new Cube(positionMap[4], { top: "Y", left: "B" }),
+            new Cube(positionMap[5], { top: "Y" }),
+            new Cube(positionMap[6], { top: "Y", right: "G" }),
+            new Cube(positionMap[7], { top: "Y", left: "B", front: "R" }),
+            new Cube(positionMap[8], { top: "Y", front: "R" }),
+            new Cube(positionMap[9], { top: "Y", right: "G", front: "R" }),
             // Middle layer
-            new Cube({ X: 0, Y: 0, Z: 1 }, { left: "B", back: "O" }),
-            new Cube({ X: 1, Y: 0, Z: 1 }, { back: "O" }),
-            new Cube({ X: 2, Y: 0, Z: 1 }, { right: "G", back: "O" }),
-            new Cube({ X: 0, Y: 1, Z: 1 }, { left: "B" }),
-            new Cube({ X: 1, Y: 1, Z: 1 }, {}),
-            new Cube({ X: 2, Y: 1, Z: 1 }, { right: "G" }),
-            new Cube({ X: 0, Y: 2, Z: 1 }, { left: "B", front: "R" }),
-            new Cube({ X: 1, Y: 2, Z: 1 }, { front: "R" }),
-            new Cube({ X: 2, Y: 2, Z: 1 }, { right: "G", front: "R" }),
+            new Cube(positionMap[10], { left: "B", back: "O" }),
+            new Cube(positionMap[11], { back: "O" }),
+            new Cube(positionMap[12], { right: "G", back: "O" }),
+            new Cube(positionMap[13], { left: "B" }),
+            new Cube(positionMap[14], {}),
+            new Cube(positionMap[15], { right: "G" }),
+            new Cube(positionMap[16], { left: "B", front: "R" }),
+            new Cube(positionMap[17], { front: "R" }),
+            new Cube(positionMap[18], { right: "G", front: "R" }),
             // Bottom layer
-            new Cube({ X: 0, Y: 0, Z: 2 }, { bottom: "W", left: "B", back: "O" }),
-            new Cube({ X: 1, Y: 0, Z: 2 }, { bottom: "W", back: "O" }),
-            new Cube({ X: 2, Y: 0, Z: 2 }, { bottom: "W", right: "G", back: "O" }),
-            new Cube({ X: 0, Y: 1, Z: 2 }, { bottom: "W", left: "B" }),
-            new Cube({ X: 1, Y: 1, Z: 2 }, { bottom: "W" }),
-            new Cube({ X: 2, Y: 1, Z: 2 }, { bottom: "W", right: "G" }),
-            new Cube({ X: 0, Y: 2, Z: 2 }, { bottom: "W", left: "B", front: "R" }),
-            new Cube({ X: 1, Y: 2, Z: 2 }, { bottom: "W", front: "R" }),
-            new Cube({ X: 2, Y: 2, Z: 2 }, { bottom: "W", right: "G", front: "R" })
+            new Cube(positionMap[19], { bottom: "W", left: "B", back: "O" }),
+            new Cube(positionMap[20], { bottom: "W", back: "O" }),
+            new Cube(positionMap[21], { bottom: "W", right: "G", back: "O" }),
+            new Cube(positionMap[22], { bottom: "W", left: "B" }),
+            new Cube(positionMap[23], { bottom: "W" }),
+            new Cube(positionMap[24], { bottom: "W", right: "G" }),
+            new Cube(positionMap[25], { bottom: "W", left: "B", front: "R" }),
+            new Cube(positionMap[26], { bottom: "W", front: "R" }),
+            new Cube(positionMap[27], { bottom: "W", right: "G", front: "R" })
           ];
         }
         static getInstance() {
@@ -420,37 +440,29 @@
   var require_app = __commonJS({
     "src/app.ts"() {
       init_helpers();
+      init_models();
       init_RubiksCube();
+      var FACE_CLASSES = Object.keys(Faces);
       var rubiksCube = RubiksCube.getInstance();
       document.querySelector("#rotateTopCCW")?.addEventListener("click", () => {
         rubiksCube.rotateTopCCW();
         renderCube();
       });
       function renderCube() {
-        console.log(rubiksCube);
         document.querySelectorAll(".cube").forEach((el) => {
           const cubeElement = el;
-          const orientation = cubeElement.dataset.orientation;
-          const position = parseInt(cubeElement.dataset.position);
-          const cube = rubiksCube.cubes.find((c) => {
-            return JSON.stringify(c.position) === JSON.stringify(positionMap[position]);
-          });
-          switch (orientation) {
-            case "top":
-              cubeElement.classList.add(cube.orientation.top);
-              break;
-            case "left":
-              cubeElement.classList.add(cube.orientation.left);
-              break;
-            case "front":
-              cubeElement.classList.add(cube.orientation.front);
-              break;
-            case "right":
-              cubeElement.classList.add(cube.orientation.right);
-              break;
-            case "bottom":
-              cubeElement.classList.add(cube.orientation.bottom);
-              break;
+          const orientationKey = cubeElement.dataset.orientation;
+          const positionStr = cubeElement.dataset.position;
+          if (!orientationKey || !positionStr) return;
+          const positionInt = parseInt(positionStr);
+          const position = positionMap[positionInt];
+          if (!position) return;
+          const cube = rubiksCube.cubes.find((c) => JSONEquals(c.position, position));
+          if (!cube) return;
+          cubeElement.classList.remove(...FACE_CLASSES);
+          const faceColor = cube.orientation[orientationKey];
+          if (faceColor) {
+            cubeElement.classList.add(faceColor);
           }
         });
       }
