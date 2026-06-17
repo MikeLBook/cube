@@ -207,31 +207,31 @@
             positionOffset = 2;
           }
           switch (this.position) {
-            case positionMap[1 + positionOffset]:
+            case positionMap[7 + positionOffset]:
+              this.position = positionMap[1 + positionOffset];
+              break;
+            case positionMap[16 + positionOffset]:
+              this.position = positionMap[4 + positionOffset];
+              break;
+            case positionMap[25 + positionOffset]:
               this.position = positionMap[7 + positionOffset];
               break;
             case positionMap[4 + positionOffset]:
-              this.position = positionMap[16 + positionOffset];
-              break;
-            case positionMap[7 + positionOffset]:
-              this.position = positionMap[25 + positionOffset];
-              break;
-            case positionMap[10 + positionOffset]:
-              this.position = positionMap[4 + positionOffset];
+              this.position = positionMap[10 + positionOffset];
               break;
             case positionMap[13 + positionOffset]:
               break;
-            case positionMap[16 + positionOffset]:
+            case positionMap[22 + positionOffset]:
+              this.position = positionMap[16 + positionOffset];
+              break;
+            case positionMap[1 + positionOffset]:
+              this.position = positionMap[19 + positionOffset];
+              break;
+            case positionMap[10 + positionOffset]:
               this.position = positionMap[22 + positionOffset];
               break;
             case positionMap[19 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[22 + positionOffset]:
-              this.position = positionMap[10 + positionOffset];
-              break;
-            case positionMap[25 + positionOffset]:
-              this.position = positionMap[19 + positionOffset];
+              this.position = positionMap[25 + positionOffset];
               break;
           }
         }
@@ -252,31 +252,31 @@
             positionOffset = 2;
           }
           switch (this.position) {
-            case positionMap[7 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[16 + positionOffset]:
-              this.position = positionMap[4 + positionOffset];
-              break;
-            case positionMap[25 + positionOffset]:
+            case positionMap[1 + positionOffset]:
               this.position = positionMap[7 + positionOffset];
               break;
             case positionMap[4 + positionOffset]:
-              this.position = positionMap[10 + positionOffset];
+              this.position = positionMap[16 + positionOffset];
+              break;
+            case positionMap[7 + positionOffset]:
+              this.position = positionMap[25 + positionOffset];
+              break;
+            case positionMap[10 + positionOffset]:
+              this.position = positionMap[4 + positionOffset];
               break;
             case positionMap[13 + positionOffset]:
               break;
-            case positionMap[22 + positionOffset]:
-              this.position = positionMap[16 + positionOffset];
-              break;
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[19 + positionOffset];
-              break;
-            case positionMap[10 + positionOffset]:
+            case positionMap[16 + positionOffset]:
               this.position = positionMap[22 + positionOffset];
               break;
             case positionMap[19 + positionOffset]:
-              this.position = positionMap[25 + positionOffset];
+              this.position = positionMap[1 + positionOffset];
+              break;
+            case positionMap[22 + positionOffset]:
+              this.position = positionMap[10 + positionOffset];
+              break;
+            case positionMap[25 + positionOffset]:
+              this.position = positionMap[19 + positionOffset];
               break;
           }
         }
@@ -444,8 +444,68 @@
       init_RubiksCube();
       var FACE_CLASSES = Object.keys(Faces);
       var rubiksCube = RubiksCube.getInstance();
+      document.querySelector("#rotateTopCW")?.addEventListener("click", () => {
+        rubiksCube.rotateTopCW();
+        renderCube();
+      });
+      document.querySelector("#rotateMiddleCW")?.addEventListener("click", () => {
+        rubiksCube.rotateMiddleCW();
+        renderCube();
+      });
+      document.querySelector("#rotateBottomCW")?.addEventListener("click", () => {
+        rubiksCube.rotateBottomCW();
+        renderCube();
+      });
       document.querySelector("#rotateTopCCW")?.addEventListener("click", () => {
         rubiksCube.rotateTopCCW();
+        renderCube();
+      });
+      document.querySelector("#rotateMiddleCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateMiddleCCW();
+        renderCube();
+      });
+      document.querySelector("#rotateBottomCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateBottomCCW();
+        renderCube();
+      });
+      document.querySelector("#rotateLeftYCW")?.addEventListener("click", () => {
+        rubiksCube.rotateLeftYCW();
+        renderCube();
+      });
+      document.querySelector("#rotateCenterYCW")?.addEventListener("click", () => {
+        rubiksCube.rotateCenterYCW();
+        renderCube();
+      });
+      document.querySelector("#rotateRightYCW")?.addEventListener("click", () => {
+        rubiksCube.rotateRightYCW();
+        renderCube();
+      });
+      document.querySelector("#rotateLeftYCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateLeftYCCW();
+        renderCube();
+      });
+      document.querySelector("#rotateCenterYCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateCenterYCCW();
+        renderCube();
+      });
+      document.querySelector("#rotateRightYCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateRightYCCW();
+        renderCube();
+      });
+      document.querySelector("#rotateCubeXCW")?.addEventListener("click", () => {
+        rubiksCube.rotateCube("XCW");
+        renderCube();
+      });
+      document.querySelector("#rotateCubeXCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateCube("XCCW");
+        renderCube();
+      });
+      document.querySelector("#rotateCubeYCW")?.addEventListener("click", () => {
+        rubiksCube.rotateCube("YCW");
+        renderCube();
+      });
+      document.querySelector("#rotateCubeYCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateCube("YCCW");
         renderCube();
       });
       function renderCube() {

@@ -7,7 +7,25 @@
     <title>Cube</title>
 </head>
 <body>
-    <div class="d-flex">
+    <div class="d-flex-between">
+        <div class="controls">
+            <div class="d-flex">
+                <button id="rotateLeftYCW">Rotate Left YCW</button>
+                <button id="rotateCenterYCW">Rotate Center YCW</button>
+                <button id="rotateRightYCW">Rotate Right YCW</button>
+            </div>
+            <div class="d-flex">
+                <button id="rotateLeftYCCW">Rotate Left YCCW</button>
+                <button id="rotateCenterYCCW">Rotate Center YCCW</button>
+                <button id="rotateRightYCCW">Rotate Right YCCW</button>
+            </div>
+            <div class="d-flex">
+                <button id="rotateCubeXCW">Rotate Cube XCW</button>
+                <button id="rotateCubeXCCW">Rotate Cube XCCW</button>
+                <button id="rotateCubeYCW">Rotate Cube YCW</button>
+                <button id="rotateCubeYCCW">Rotate Cube YCCW</button>
+            </div>
+        </div>
         <div id="faces" class="d-flex-column">
             TOP
             <div id="top-face" class="face">
@@ -75,7 +93,18 @@
             BOTTOM
         </div>
         <div class="controls">
-            <button id="rotateTopCCW">Rotate Top CCW</button>
+            <div class="d-flex">
+                <button id="rotateTopCW">Rotate Top CW</button>
+                <button id="rotateTopCCW">Rotate Top CCW</button>
+            </div>
+            <div class="d-flex">
+                <button id="rotateMiddleCW">Rotate Middle CW</button>
+                <button id="rotateMiddleCCW">Rotate Middle CCW</button>
+            </div>
+            <div class="d-flex">
+                <button id="rotateBottomCW">Rotate Bottom CW</button>
+                <button id="rotateBottomCCW">Rotate Bottom CCW</button>
+            </div>
         </div>
     </div>
 </body>

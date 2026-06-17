@@ -147,31 +147,31 @@ export default class Cube {
     }
 
     switch(this.position) {
-        case positionMap[1 + positionOffset]:
+        case positionMap[7 + positionOffset]:
+            this.position = positionMap[1 + positionOffset]
+            break;
+        case positionMap[16 + positionOffset]:
+            this.position = positionMap[4 + positionOffset]
+            break;
+        case positionMap[25 + positionOffset]:
             this.position = positionMap[7 + positionOffset]
             break;
         case positionMap[4 + positionOffset]:
-            this.position = positionMap[16 + positionOffset]
-            break;
-        case positionMap[7 + positionOffset]:
-            this.position = positionMap[25 + positionOffset]
-            break;
-        case positionMap[10 + positionOffset]:
-            this.position = positionMap[4 + positionOffset]
+            this.position = positionMap[10 + positionOffset]
             break;
         case positionMap[13 + positionOffset]:
             break;
-        case positionMap[16 + positionOffset]:
+        case positionMap[22 + positionOffset]:
+            this.position = positionMap[16 + positionOffset]
+            break;
+        case positionMap[1 + positionOffset]:
+            this.position = positionMap[19 + positionOffset]
+            break;
+        case positionMap[10 + positionOffset]:
             this.position = positionMap[22 + positionOffset]
             break;
         case positionMap[19 + positionOffset]:
-            this.position = positionMap[1 + positionOffset]
-            break;
-        case positionMap[22 + positionOffset]:
-            this.position = positionMap[10 + positionOffset]
-            break;
-        case positionMap[25 + positionOffset]:
-            this.position = positionMap[19 + positionOffset]
+            this.position = positionMap[25 + positionOffset]
             break;
     }
   }
@@ -195,31 +195,31 @@ export default class Cube {
     }
 
     switch(this.position) {
-        case positionMap[7 + positionOffset]:
-            this.position = positionMap[1 + positionOffset]
-            break;
-        case positionMap[16 + positionOffset]:
-            this.position = positionMap[4 + positionOffset]
-            break;
-        case positionMap[25 + positionOffset]:
+        case positionMap[1 + positionOffset]:
             this.position = positionMap[7 + positionOffset]
             break;
         case positionMap[4 + positionOffset]:
-            this.position = positionMap[10 + positionOffset]
+            this.position = positionMap[16 + positionOffset]
+            break;
+        case positionMap[7 + positionOffset]:
+            this.position = positionMap[25 + positionOffset]
+            break;
+        case positionMap[10 + positionOffset]:
+            this.position = positionMap[4 + positionOffset]
             break;
         case positionMap[13 + positionOffset]:
             break;
-        case positionMap[22 + positionOffset]:
-            this.position = positionMap[16 + positionOffset]
-            break;
-        case positionMap[1 + positionOffset]:
-            this.position = positionMap[19 + positionOffset]
-            break;
-        case positionMap[10 + positionOffset]:
+        case positionMap[16 + positionOffset]:
             this.position = positionMap[22 + positionOffset]
             break;
         case positionMap[19 + positionOffset]:
-            this.position = positionMap[25 + positionOffset]
+            this.position = positionMap[1 + positionOffset]
+            break;
+        case positionMap[22 + positionOffset]:
+            this.position = positionMap[10 + positionOffset]
+            break;
+        case positionMap[25 + positionOffset]:
+            this.position = positionMap[19 + positionOffset]
             break;
     }
   }
