@@ -113,25 +113,33 @@ body {
 }
 
 .Y {
-  background-color: yellow;
+  background-color: rgba(255, 255, 0, 0.705);
 }
 
 .R {
-  background-color: red;
+  background-color: darkred;
 }
 
 .B {
-  background-color: blue;
+  background-color: darkblue;
 }
 
 .G {
-  background-color: green;
+  background-color: darkgreen;
 }
 
 .O {
-  background-color: orange;
+  background-color: darkorange;
 }
 
 .W {
-  background-color: white;
+  background-color: ivory;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 3;
 }
