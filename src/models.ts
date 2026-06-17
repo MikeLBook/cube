@@ -24,11 +24,11 @@ export interface Orientation {
     bottom?: Face
 }
 
-export const Directions = {
+export const Rotations = {
     XCW: 'X-CLOCKWISE',
     XCCW: 'X-COUNTER-CLOCKWISE',
     YCW: 'Y-CLOCKWISE',
     YCCW: 'Y-COUNTER-CLOCKWISE'
-}
+} as const
 
-export type Direction = keyof typeof Directions
+export type Rotation = keyof typeof Rotations

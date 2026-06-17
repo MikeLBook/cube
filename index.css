@@ -79,3 +79,27 @@ body {
     align-items: center;
     color: ivory;
 }
+
+.d-flex {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.d-flex-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1
+}
+
+.face {
+  width: 400px;
+  height: 400px;
+  border: black;
+  border-style: solid;
+  border-width: 8px;
+  border-radius: 2px;
+  margin: 4px;
+}
