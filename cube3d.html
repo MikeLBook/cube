@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="cube3d.css" />
+    <title>Cube · 3D</title>
+  </head>
+  <body>
+    <div class="view">
+      <!-- ===== Stage ===== -->
+      <div class="stage">
+        <a class="back-link" href="index.html">&larr; Net view</a>
+
+        <header class="stage__title">
+          <span class="eyebrow">Interactive</span>
+          <h1>3D Cube</h1>
+        </header>
+
+        <div id="scene" class="scene" aria-label="3D Rubik's cube"></div>
+
+        <p class="hint">
+          Drag a face to turn that layer · drag the background to orbit · arrow keys
+          <b>roll &amp; spin</b> the whole cube
+        </p>
+      </div>
+
+      <!-- ===== Control panel ===== -->
+      <aside class="panel" aria-label="Controls">
+        <div class="panel__brand">
+          <span class="brand">Phase2<span class="brand-accent">_</span></span>
+          <span class="brand-tag">Cube Lab</span>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <span class="stat__label">Time</span>
+            <span id="stat-time" class="stat__value">0.0</span>
+          </div>
+          <div class="stat">
+            <span class="stat__label">Moves</span>
+            <span id="stat-moves" class="stat__value">0</span>
+          </div>
+        </div>
+
+        <div id="status-pill" class="status-pill">
+          <span id="status-dot" class="status-dot"></span>
+          <span id="status-label" class="status-label">Ready</span>
+        </div>
+
+        <div class="actions">
+          <button id="btn-scramble" class="btn btn--primary">Scramble</button>
+          <button id="btn-reset" class="btn btn--ghost">Reset</button>
+        </div>
+
+        <div class="group">
+          <h2>Rotate Cube</h2>
+          <p class="group__desc">Re-orient the whole cube to bring any face to the top.</p>
+          <div class="group__grid">
+            <button id="btn-roll-up" class="btn">Roll up</button>
+            <button id="btn-roll-down" class="btn">Roll down</button>
+            <button id="btn-spin-left" class="btn">Spin left</button>
+            <button id="btn-spin-right" class="btn">Spin right</button>
+          </div>
+          <button id="btn-recenter" class="btn btn--ghost btn--wide">Recenter view</button>
+        </div>
+      </aside>
+    </div>
+
+    <script src="./cube3d.js"></script>
+  </body>
+</html>

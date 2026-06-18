@@ -1,6 +1,6 @@
 import Cube from "./Cube"
 import { positionMap } from "./helpers"
-import { Rotation } from "./models"
+import { Face, Orientation, Rotation } from "./models"
 
 export default class RubiksCube {
   cubes: Cube[]
@@ -8,7 +8,11 @@ export default class RubiksCube {
   private static instance: RubiksCube
 
   private constructor() {
-    this.cubes = [
+    this.cubes = RubiksCube.buildSolvedCubes()
+  }
+
+  private static buildSolvedCubes(): Cube[] {
+    return [
       // Top layer
       new Cube(positionMap[1], { top: "Y", left: "B", back: "O" }),
       new Cube(positionMap[2], { top: "Y", back: "O" }),
@@ -47,6 +51,22 @@ export default class RubiksCube {
       RubiksCube.instance = new RubiksCube()
     }
     return RubiksCube.instance
+  }
+
+  // Restore every cubie to its solved position and orientation.
+  public reset() {
+    this.cubes = RubiksCube.buildSolvedCubes()
+  }
+
+  // The cube is solved when every external face shows a single colour.
+  public isSolved(): boolean {
+    const faces: (keyof Orientation)[] = ["top", "bottom", "left", "right", "front", "back"]
+    return faces.every(face => {
+      const colors = this.cubes
+        .map(cube => cube.orientation[face])
+        .filter((color): color is Face => color !== undefined)
+      return colors.every(color => color === colors[0])
+    })
   }
 
   public rotateCube(rotation: Rotation) {

@@ -18,9 +18,6 @@
   };
 
   // src/helpers.ts
-  function JSONEquals(a, b) {
-    return JSON.stringify(a) === JSON.stringify(b);
-  }
   var positionMap;
   var init_helpers = __esm({
     "src/helpers.ts"() {
@@ -53,22 +50,6 @@
         25: { X: 0, Y: 2, Z: 2 },
         26: { X: 1, Y: 2, Z: 2 },
         27: { X: 2, Y: 2, Z: 2 }
-      };
-    }
-  });
-
-  // src/models.ts
-  var Faces;
-  var init_models = __esm({
-    "src/models.ts"() {
-      "use strict";
-      Faces = {
-        Y: "YELLOW",
-        B: "BLUE",
-        R: "RED",
-        G: "GREEN",
-        O: "ORANGE",
-        W: "WHITE"
       };
     }
   });
@@ -590,122 +571,505 @@
     }
   });
 
-  // src/app.ts
-  var require_app = __commonJS({
-    "src/app.ts"() {
-      init_helpers();
-      init_models();
+  // src/cube3d.ts
+  var require_cube3d = __commonJS({
+    "src/cube3d.ts"() {
       init_RubiksCube();
-      var FACE_CLASSES = Object.keys(Faces);
-      var rubiksCube = RubiksCube.getInstance();
-      document.querySelector("#rotateTopCW")?.addEventListener("click", () => {
-        rubiksCube.rotateTopCW();
-        renderCube();
-      });
-      document.querySelector("#rotateXMidCW")?.addEventListener("click", () => {
-        rubiksCube.rotateXMidCW();
-        renderCube();
-      });
-      document.querySelector("#rotateBottomCW")?.addEventListener("click", () => {
-        rubiksCube.rotateBottomCW();
-        renderCube();
-      });
-      document.querySelector("#rotateTopCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateTopCCW();
-        renderCube();
-      });
-      document.querySelector("#rotateXMidCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateXMidCCW();
-        renderCube();
-      });
-      document.querySelector("#rotateBottomCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateBottomCCW();
-        renderCube();
-      });
-      document.querySelector("#rotateLeftCW")?.addEventListener("click", () => {
-        rubiksCube.rotateLeftCW();
-        renderCube();
-      });
-      document.querySelector("#rotateYMidCW")?.addEventListener("click", () => {
-        rubiksCube.rotateYMidCW();
-        renderCube();
-      });
-      document.querySelector("#rotateRightCW")?.addEventListener("click", () => {
-        rubiksCube.rotateRightCW();
-        renderCube();
-      });
-      document.querySelector("#rotateLeftCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateLeftCCW();
-        renderCube();
-      });
-      document.querySelector("#rotateYMidCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateYMidCCW();
-        renderCube();
-      });
-      document.querySelector("#rotateRightCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateRightCCW();
-        renderCube();
-      });
-      document.querySelector("#rotateFrontCW")?.addEventListener("click", () => {
-        rubiksCube.rotateFrontCW();
-        renderCube();
-      });
-      document.querySelector("#rotateZMidCW")?.addEventListener("click", () => {
-        rubiksCube.rotateZMidCW();
-        renderCube();
-      });
-      document.querySelector("#rotateBackCW")?.addEventListener("click", () => {
-        rubiksCube.rotateBackCW();
-        renderCube();
-      });
-      document.querySelector("#rotateFrontCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateFrontCCW();
-        renderCube();
-      });
-      document.querySelector("#rotateZMidCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateZMidCCW();
-        renderCube();
-      });
-      document.querySelector("#rotateBackCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateBackCCW();
-        renderCube();
-      });
-      document.querySelector("#rotateCubeXCW")?.addEventListener("click", () => {
-        rubiksCube.rotateCube("XCW");
-        renderCube();
-      });
-      document.querySelector("#rotateCubeXCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateCube("XCCW");
-        renderCube();
-      });
-      document.querySelector("#rotateCubeYCW")?.addEventListener("click", () => {
-        rubiksCube.rotateCube("YCW");
-        renderCube();
-      });
-      document.querySelector("#rotateCubeYCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateCube("YCCW");
-        renderCube();
-      });
-      function renderCube() {
-        document.querySelectorAll(".cube").forEach((el) => {
-          const cubeElement = el;
-          const orientationKey = cubeElement.dataset.orientation;
-          const positionStr = cubeElement.dataset.position;
-          if (!orientationKey || !positionStr) return;
-          const positionInt = parseInt(positionStr);
-          const position = positionMap[positionInt];
-          if (!position) return;
-          const cube = rubiksCube.cubes.find((c) => JSONEquals(c.position, position));
-          if (!cube) return;
-          cubeElement.classList.remove(...FACE_CLASSES);
-          const faceColor = cube.orientation[orientationKey];
-          if (faceColor) {
-            cubeElement.classList.add(faceColor);
+      var CubeView = class {
+        constructor(sceneEl) {
+          this.rubiks = RubiksCube.getInstance();
+          this.entries = [];
+          // queued moves / animation gating
+          this.queue = [];
+          this.animating = false;
+          // session state (mirrored into the panel DOM)
+          this.moveCount = 0;
+          this.elapsed = 0;
+          this.status = "ready";
+          this.running = false;
+          this.hasScrambled = false;
+          this.scrambleLeft = 0;
+          this.t0 = 0;
+          // orbit
+          this.yaw = -34;
+          this.pitch = -22;
+          // drag bookkeeping
+          this.dragging = false;
+          this.dragFace = null;
+          this.turnCommitted = false;
+          this.px = 0;
+          this.py = 0;
+          this.yaw0 = 0;
+          this.pitch0 = 0;
+          // sticker colours (reuse the index.css palette)
+          this.COLORS = {
+            Y: "#ffd43b",
+            R: "#d92b3c",
+            B: "#2256d6",
+            G: "#1eaa5b",
+            O: "#ff7a18",
+            W: "#f4f4f0"
+          };
+          this.DIRS = ["front", "back", "right", "left", "top", "bottom"];
+          // geometry
+          this.S = 58;
+          this.HALF = 29;
+          this.UNIT = 63;
+          // calibration signs (flip if a turn animates the wrong way)
+          this.ANIM_SIGN = { X: 1, Y: -1, Z: 1 };
+          this.CW_SIGN = { X: -1, Y: -1, Z: 1 };
+          // notation -> engine method + animation metadata. Method names match RubiksCube exactly.
+          this.MOVES = {
+            U: { posAxis: "Z", layer: 0, cw: "rotateTopCW", ccw: "rotateTopCCW", cssAxis: "Y" },
+            E: { posAxis: "Z", layer: 1, cw: "rotateXMidCW", ccw: "rotateXMidCCW", cssAxis: "Y" },
+            D: { posAxis: "Z", layer: 2, cw: "rotateBottomCW", ccw: "rotateBottomCCW", cssAxis: "Y" },
+            L: { posAxis: "X", layer: 0, cw: "rotateLeftCW", ccw: "rotateLeftCCW", cssAxis: "X" },
+            M: { posAxis: "X", layer: 1, cw: "rotateYMidCW", ccw: "rotateYMidCCW", cssAxis: "X" },
+            R: { posAxis: "X", layer: 2, cw: "rotateRightCW", ccw: "rotateRightCCW", cssAxis: "X" },
+            B: { posAxis: "Y", layer: 0, cw: "rotateBackCW", ccw: "rotateBackCCW", cssAxis: "Z" },
+            S: { posAxis: "Y", layer: 1, cw: "rotateZMidCW", ccw: "rotateZMidCCW", cssAxis: "Z" },
+            F: { posAxis: "Y", layer: 2, cw: "rotateFrontCW", ccw: "rotateFrontCCW", cssAxis: "Z" }
+          };
+          this.NORMALS = {
+            right: { X: 1, Y: 0, Z: 0 },
+            left: { X: -1, Y: 0, Z: 0 },
+            top: { X: 0, Y: 0, Z: -1 },
+            bottom: { X: 0, Y: 0, Z: 1 },
+            front: { X: 0, Y: 1, Z: 0 },
+            back: { X: 0, Y: -1, Z: 0 }
+          };
+          // whole-cube re-orientation -> engine rotateCube + matching world animation
+          this.CUBE_MOVES = {
+            spinLeft: { rotation: "XCW", axis: "Y", angle: -90 },
+            spinRight: { rotation: "XCCW", axis: "Y", angle: 90 },
+            rollUp: { rotation: "YCW", axis: "X", angle: 90 },
+            rollDown: { rotation: "YCCW", axis: "X", angle: -90 }
+          };
+          this.sceneEl = sceneEl;
+          this.init();
+          this.wireControls();
+          window.addEventListener("keydown", (e) => this.onKey(e));
+        }
+        init() {
+          this.worldEl = document.createElement("div");
+          this.worldEl.style.cssText = "position:absolute; left:50%; top:50%; width:0; height:0; transform-style:preserve-3d; will-change:transform;";
+          this.sceneEl.appendChild(this.worldEl);
+          this.entries = this.rubiks.cubes.map((c) => this.createCubie(c));
+          this.entries.forEach((e) => this.worldEl.appendChild(e.el));
+          this.applyView(false);
+          this.renderCube();
+          this.updateStats();
+          this.updateStatus();
+          const sc = this.sceneEl;
+          sc.addEventListener("pointerdown", (e) => this.onDown(e));
+          sc.addEventListener("pointermove", (e) => this.onMove(e));
+          sc.addEventListener("pointerup", (e) => this.onUp(e));
+          sc.addEventListener("pointercancel", (e) => this.onUp(e));
+        }
+        // ---------- rendering ----------
+        createCubie(cube) {
+          const S = this.S, H = this.HALF;
+          const el = document.createElement("div");
+          el.style.cssText = "position:absolute; left:0; top:0; width:" + S + "px; height:" + S + "px; transform-style:preserve-3d;";
+          const faceTf = {
+            front: "translateZ(" + H + "px)",
+            back: "rotateY(180deg) translateZ(" + H + "px)",
+            right: "rotateY(90deg) translateZ(" + H + "px)",
+            left: "rotateY(-90deg) translateZ(" + H + "px)",
+            top: "rotateX(90deg) translateZ(" + H + "px)",
+            bottom: "rotateX(-90deg) translateZ(" + H + "px)"
+          };
+          const stickers = {};
+          const entry = { cube, el, stickers };
+          this.DIRS.forEach((dir) => {
+            const face = document.createElement("div");
+            face.className = "face";
+            face.dataset.dir = dir;
+            face.__entry = entry;
+            face.style.cssText = "position:absolute; left:0; top:0; width:" + S + "px; height:" + S + "px; background:#14141b; border-radius:9px; transform:" + faceTf[dir] + "; -webkit-backface-visibility:hidden; backface-visibility:hidden;";
+            const st = document.createElement("div");
+            st.style.cssText = "position:absolute; inset:5px; border-radius:7px; box-shadow: inset 0 2px 5px rgba(255,255,255,.18), inset 0 -3px 6px rgba(0,0,0,.4);";
+            face.appendChild(st);
+            el.appendChild(face);
+            stickers[dir] = st;
+          });
+          return entry;
+        }
+        renderCube() {
+          const U = this.UNIT, H = this.HALF;
+          this.entries.forEach((e) => {
+            const p = e.cube.position;
+            e.el.style.transform = "translate3d(" + ((p.X - 1) * U - H) + "px," + ((p.Z - 1) * U - H) + "px," + (p.Y - 1) * U + "px)";
+            this.DIRS.forEach((dir) => {
+              const col = e.cube.orientation[dir];
+              const st = e.stickers[dir];
+              if (col) {
+                st.style.display = "block";
+                st.style.background = this.COLORS[col];
+              } else {
+                st.style.display = "none";
+              }
+            });
+          });
+        }
+        applyView(animate) {
+          if (!this.worldEl) return;
+          this.worldEl.style.transition = animate ? "transform .4s cubic-bezier(.2,.6,.2,1)" : "none";
+          this.worldEl.style.transform = "rotateX(" + this.pitch + "deg) rotateY(" + this.yaw + "deg)";
+        }
+        // ---------- moves / animation ----------
+        move(face, prime, opts) {
+          if (!this.MOVES[face]) return;
+          this.queue.push({ kind: "turn", face, prime: !!prime, opts: opts || {} });
+          this.processQueue();
+        }
+        cubeMove(key) {
+          const c = this.CUBE_MOVES[key];
+          if (!c) return;
+          this.queue.push({ kind: "cube", c });
+          this.processQueue();
+        }
+        orbitStr() {
+          return "rotateX(" + this.pitch + "deg) rotateY(" + this.yaw + "deg)";
+        }
+        processQueue() {
+          if (this.animating || !this.queue.length || !this.worldEl) return;
+          const it = this.queue.shift();
+          if (it.kind === "cube") {
+            this.animateCube(it.c);
+            return;
           }
-        });
+          const m = this.MOVES[it.face];
+          const base = this.ANIM_SIGN[m.cssAxis] * 90;
+          const angle = it.prime ? -base : base;
+          const method = it.prime ? m.ccw : m.cw;
+          this.animateLayer(m, angle, method, it.opts);
+        }
+        animateCube(c) {
+          this.animating = true;
+          this.worldEl.style.transition = "transform 320ms cubic-bezier(.34,.66,.24,1)";
+          this.worldEl.style.transform = this.orbitStr() + " rotate" + c.axis + "(" + c.angle + "deg)";
+          let finished = false;
+          const done = () => {
+            if (finished) return;
+            finished = true;
+            this.rubiks.rotateCube(c.rotation);
+            this.worldEl.style.transition = "none";
+            this.worldEl.style.transform = this.orbitStr();
+            this.renderCube();
+            this.animating = false;
+            this.processQueue();
+          };
+          this.worldEl.addEventListener("transitionend", done, { once: true });
+          setTimeout(done, 470);
+        }
+        animateLayer(m, angle, method, opts) {
+          this.animating = true;
+          const group = document.createElement("div");
+          group.style.cssText = "position:absolute; left:0; top:0; width:0; height:0; transform-style:preserve-3d;";
+          this.worldEl.appendChild(group);
+          const moving = this.entries.filter((e) => e.cube.position[m.posAxis] === m.layer);
+          moving.forEach((e) => group.appendChild(e.el));
+          group.getBoundingClientRect();
+          const dur = opts.fast ? 135 : 290;
+          group.style.transition = "transform " + dur + "ms cubic-bezier(.34,.66,.24,1)";
+          group.style.transform = "rotate" + m.cssAxis + "(" + angle + "deg)";
+          let finished = false;
+          const done = () => {
+            if (finished) return;
+            finished = true;
+            this.rubiks[method]();
+            moving.forEach((e) => this.worldEl.appendChild(e.el));
+            group.remove();
+            this.renderCube();
+            this.afterMove(opts);
+            this.animating = false;
+            this.processQueue();
+          };
+          group.addEventListener("transitionend", done);
+          setTimeout(done, dur + 140);
+        }
+        afterMove(opts) {
+          if (opts.scramble) {
+            this.scrambleLeft--;
+            if (this.scrambleLeft <= 0) {
+              this.status = "ready";
+              this.updateStatus();
+            }
+            return;
+          }
+          if (opts.count !== false) {
+            this.startTimer();
+            this.moveCount++;
+            this.updateStats();
+          }
+          if (this.hasScrambled && this.rubiks.isSolved()) {
+            this.stopTimer();
+            this.status = "solved";
+            this.updateStatus();
+          }
+        }
+        // ---------- timer ----------
+        startTimer() {
+          if (this.running || this.status === "solved") return;
+          this.running = true;
+          this.t0 = performance.now();
+          this.status = "solving";
+          this.updateStatus();
+          this.timer = window.setInterval(() => {
+            this.elapsed = performance.now() - this.t0;
+            this.updateStats();
+          }, 60);
+        }
+        stopTimer() {
+          if (this.timer) clearInterval(this.timer);
+          this.running = false;
+          if (this.t0) {
+            this.elapsed = performance.now() - this.t0;
+            this.updateStats();
+          }
+        }
+        // ---------- scramble / reset ----------
+        scramble() {
+          this.doReset(false);
+          this.hasScrambled = true;
+          this.status = "scrambling";
+          this.moveCount = 0;
+          this.elapsed = 0;
+          this.updateStatus();
+          this.updateStats();
+          const faces = ["U", "D", "L", "R", "F", "B"];
+          const seq = [];
+          let lastAxis = "";
+          for (let i = 0; i < 24; i++) {
+            let f;
+            let guard = 0;
+            do {
+              f = faces[Math.floor(Math.random() * faces.length)];
+              guard++;
+            } while (this.MOVES[f].posAxis === lastAxis && guard < 8);
+            lastAxis = this.MOVES[f].posAxis;
+            seq.push({ f, prime: Math.random() < 0.5 });
+          }
+          this.scrambleLeft = seq.length;
+          seq.forEach((mv) => this.move(mv.f, mv.prime, { count: false, fast: true, scramble: true }));
+        }
+        reset() {
+          this.doReset(true);
+        }
+        doReset(resetView) {
+          if (this.timer) clearInterval(this.timer);
+          this.running = false;
+          this.queue = [];
+          this.animating = false;
+          this.rubiks.reset();
+          this.entries.forEach((e, i) => {
+            e.cube = this.rubiks.cubes[i];
+          });
+          if (this.entries && this.worldEl) {
+            this.entries.forEach((e) => this.worldEl.appendChild(e.el));
+            Array.prototype.slice.call(this.worldEl.children).forEach((ch) => {
+              if (!this.entries.some((e) => e.el === ch)) ch.remove();
+            });
+            this.renderCube();
+          }
+          if (resetView) {
+            this.hasScrambled = false;
+            this.yaw = -34;
+            this.pitch = -22;
+            this.applyView(true);
+          }
+          this.status = "ready";
+          this.moveCount = 0;
+          this.elapsed = 0;
+          this.updateStatus();
+          this.updateStats();
+        }
+        // ---------- view ----------
+        resetView() {
+          this.yaw = -34;
+          this.pitch = -22;
+          this.applyView(true);
+        }
+        // ---------- pointer ----------
+        onDown(e) {
+          this.sceneEl.setPointerCapture && this.sceneEl.setPointerCapture(e.pointerId);
+          this.px = e.clientX;
+          this.py = e.clientY;
+          this.yaw0 = this.yaw;
+          this.pitch0 = this.pitch;
+          this.dragging = true;
+          this.turnCommitted = false;
+          const target = e.target;
+          const faceEl = target.closest && target.closest(".face");
+          this.dragFace = faceEl && !this.animating ? faceEl : null;
+          this.sceneEl.style.cursor = "grabbing";
+        }
+        onMove(e) {
+          if (!this.dragging) return;
+          const dx = e.clientX - this.px, dy = e.clientY - this.py;
+          if (this.dragFace) {
+            if (!this.turnCommitted && Math.hypot(dx, dy) > 14) {
+              this.turnCommitted = true;
+              const mv = this.pickTurn(this.dragFace, dx, dy);
+              if (mv) this.move(mv.face, mv.prime);
+            }
+          } else {
+            this.yaw = this.yaw0 + dx * 0.42;
+            this.pitch = Math.max(-86, Math.min(86, this.pitch0 - dy * 0.42));
+            this.applyView(false);
+          }
+        }
+        onUp(_e) {
+          this.dragging = false;
+          this.dragFace = null;
+          this.sceneEl.style.cursor = "grab";
+        }
+        projectAxis(v) {
+          const a = this.pitch * Math.PI / 180, b = this.yaw * Math.PI / 180;
+          const x = v.X, y = v.Z, z = v.Y;
+          const x1 = x * Math.cos(b) + z * Math.sin(b);
+          const z1 = -x * Math.sin(b) + z * Math.cos(b);
+          const y1 = y;
+          const y2 = y1 * Math.cos(a) - z1 * Math.sin(a);
+          return { x: x1, y: y2 };
+        }
+        pickTurn(faceEl, dx, dy) {
+          const dir = faceEl.dataset.dir;
+          const entry = faceEl.__entry;
+          if (!entry) return null;
+          const cube = entry.cube;
+          const normal = this.NORMALS[dir];
+          const normalAxis = normal.X ? "X" : normal.Y ? "Y" : "Z";
+          const axes = ["X", "Y", "Z"].filter((a) => a !== normalAxis);
+          let best = null;
+          axes.forEach((axis) => {
+            const vec = { X: 0, Y: 0, Z: 0 };
+            vec[axis] = 1;
+            const proj = this.projectAxis(vec);
+            const dot = dx * proj.x + dy * proj.y;
+            if (!best || Math.abs(dot) > Math.abs(best.dot)) best = { axis, dot, sign: dot >= 0 ? 1 : -1 };
+          });
+          if (!best) return null;
+          const chosen = best;
+          const m = { X: 0, Y: 0, Z: 0 };
+          m[chosen.axis] = chosen.sign;
+          const r = {
+            X: normal.Y * m.Z - normal.Z * m.Y,
+            Y: normal.Z * m.X - normal.X * m.Z,
+            Z: normal.X * m.Y - normal.Y * m.X
+          };
+          const rAxis = Math.abs(r.X) > 0.5 ? "X" : Math.abs(r.Y) > 0.5 ? "Y" : "Z";
+          const rSign = r[rAxis] >= 0 ? 1 : -1;
+          const layer = cube.position[rAxis];
+          let face = null;
+          Object.keys(this.MOVES).forEach((k) => {
+            const mv = this.MOVES[k];
+            if (mv.posAxis === rAxis && mv.layer === layer) face = k;
+          });
+          if (!face) return null;
+          const prime = rSign === this.CW_SIGN[rAxis] ? false : true;
+          return { face, prime };
+        }
+        onKey(e) {
+          const tag = e.target?.tagName || "";
+          if (/input|textarea|select/i.test(tag)) return;
+          const k = e.key;
+          if (k === "ArrowLeft") {
+            this.cubeMove("spinLeft");
+            e.preventDefault();
+            return;
+          }
+          if (k === "ArrowRight") {
+            this.cubeMove("spinRight");
+            e.preventDefault();
+            return;
+          }
+          if (k === "ArrowUp") {
+            this.cubeMove("rollUp");
+            e.preventDefault();
+            return;
+          }
+          if (k === "ArrowDown") {
+            this.cubeMove("rollDown");
+            e.preventDefault();
+            return;
+          }
+          const map = {
+            u: "U",
+            d: "D",
+            l: "L",
+            r: "R",
+            f: "F",
+            b: "B",
+            m: "M",
+            e: "E",
+            s: "S"
+          };
+          const face = map[k.toLowerCase()];
+          if (face) {
+            this.move(face, e.shiftKey);
+            e.preventDefault();
+          }
+        }
+        // ---------- panel DOM ----------
+        timeText() {
+          const ms = this.elapsed || 0;
+          const total = ms / 1e3;
+          const mm = Math.floor(total / 60);
+          const ss = Math.floor(total % 60);
+          const t = Math.floor(ms % 1e3 / 100);
+          const ssStr = (mm > 0 && ss < 10 ? "0" : "") + ss;
+          return (mm > 0 ? mm + ":" : "") + ssStr + "." + t;
+        }
+        updateStats() {
+          const time = document.getElementById("stat-time");
+          const moves = document.getElementById("stat-moves");
+          if (time) time.textContent = this.timeText();
+          if (moves) moves.textContent = String(this.moveCount);
+        }
+        updateStatus() {
+          const statusMap = {
+            ready: { label: "Ready", color: "var(--text)" },
+            scrambling: { label: "Scrambling\u2026", color: "var(--accent-x)" },
+            solving: { label: "Solving\u2026", color: "var(--accent-z)" },
+            solved: { label: "Solved!", color: "var(--accent-y)" }
+          };
+          const st = statusMap[this.status];
+          const pill = document.getElementById("status-pill");
+          const dot = document.getElementById("status-dot");
+          const label = document.getElementById("status-label");
+          if (dot) {
+            dot.style.background = st.color;
+            dot.style.boxShadow = "0 0 10px " + st.color;
+          }
+          if (label) {
+            label.textContent = st.label;
+            label.style.color = st.color;
+          }
+          if (pill) pill.style.borderColor = st.color;
+        }
+        wireControls() {
+          const bind = (id, fn) => document.getElementById(id)?.addEventListener("click", fn);
+          bind("btn-scramble", () => this.scramble());
+          bind("btn-reset", () => this.reset());
+          bind("btn-recenter", () => this.resetView());
+          bind("btn-roll-up", () => this.cubeMove("rollUp"));
+          bind("btn-roll-down", () => this.cubeMove("rollDown"));
+          bind("btn-spin-left", () => this.cubeMove("spinLeft"));
+          bind("btn-spin-right", () => this.cubeMove("spinRight"));
+        }
+      };
+      function start() {
+        const scene = document.getElementById("scene");
+        if (scene) new CubeView(scene);
       }
-      renderCube();
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", start);
+      } else {
+        start();
+      }
     }
   });
-  require_app();
+  require_cube3d();
 })();
