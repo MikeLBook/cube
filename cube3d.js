@@ -23,33 +23,33 @@
     "src/engine/helpers.ts"() {
       "use strict";
       positionMap = {
-        1: { X: 0, Y: 0, Z: 0 },
-        2: { X: 1, Y: 0, Z: 0 },
-        3: { X: 2, Y: 0, Z: 0 },
-        4: { X: 0, Y: 1, Z: 0 },
-        5: { X: 1, Y: 1, Z: 0 },
-        6: { X: 2, Y: 1, Z: 0 },
-        7: { X: 0, Y: 2, Z: 0 },
-        8: { X: 1, Y: 2, Z: 0 },
-        9: { X: 2, Y: 2, Z: 0 },
-        10: { X: 0, Y: 0, Z: 1 },
-        11: { X: 1, Y: 0, Z: 1 },
-        12: { X: 2, Y: 0, Z: 1 },
-        13: { X: 0, Y: 1, Z: 1 },
-        14: { X: 1, Y: 1, Z: 1 },
-        15: { X: 2, Y: 1, Z: 1 },
-        16: { X: 0, Y: 2, Z: 1 },
-        17: { X: 1, Y: 2, Z: 1 },
-        18: { X: 2, Y: 2, Z: 1 },
-        19: { X: 0, Y: 0, Z: 2 },
-        20: { X: 1, Y: 0, Z: 2 },
-        21: { X: 2, Y: 0, Z: 2 },
-        22: { X: 0, Y: 1, Z: 2 },
-        23: { X: 1, Y: 1, Z: 2 },
-        24: { X: 2, Y: 1, Z: 2 },
-        25: { X: 0, Y: 2, Z: 2 },
-        26: { X: 1, Y: 2, Z: 2 },
-        27: { X: 2, Y: 2, Z: 2 }
+        1: { X: -1, Y: 1, Z: -1 },
+        2: { X: 0, Y: 1, Z: -1 },
+        3: { X: 1, Y: 1, Z: -1 },
+        4: { X: -1, Y: 1, Z: 0 },
+        5: { X: 0, Y: 1, Z: 0 },
+        6: { X: 1, Y: 1, Z: 0 },
+        7: { X: -1, Y: 1, Z: 1 },
+        8: { X: 0, Y: 1, Z: 1 },
+        9: { X: 1, Y: 1, Z: 1 },
+        10: { X: -1, Y: 0, Z: -1 },
+        11: { X: 0, Y: 0, Z: -1 },
+        12: { X: 1, Y: 0, Z: -1 },
+        13: { X: -1, Y: 0, Z: 0 },
+        14: { X: 0, Y: 0, Z: 0 },
+        15: { X: 1, Y: 0, Z: 0 },
+        16: { X: -1, Y: 0, Z: 1 },
+        17: { X: 0, Y: 0, Z: 1 },
+        18: { X: 1, Y: 0, Z: 1 },
+        19: { X: -1, Y: -1, Z: -1 },
+        20: { X: 0, Y: -1, Z: -1 },
+        21: { X: 1, Y: -1, Z: -1 },
+        22: { X: -1, Y: -1, Z: 0 },
+        23: { X: 0, Y: -1, Z: 0 },
+        24: { X: 1, Y: -1, Z: 0 },
+        25: { X: -1, Y: -1, Z: 1 },
+        26: { X: 0, Y: -1, Z: 1 },
+        27: { X: 1, Y: -1, Z: 1 }
       };
     }
   });
@@ -630,68 +630,68 @@
           this.UNIT = 63;
           // calibration signs (flip if a turn animates the wrong way)
           this.ANIM_SIGN = { X: 1, Y: -1, Z: 1 };
-          this.CW_SIGN = { X: -1, Y: -1, Z: 1 };
+          this.CW_SIGN = { X: -1, Y: -1, Z: -1 };
           // notation -> engine method + animation metadata. Method names match RubiksCube exactly.
           this.MOVES = {
             U: {
-              posAxis: "Z",
-              layer: 0,
+              posAxis: "Y",
+              layer: 1,
               cw: "rotateTopCW",
               ccw: "rotateTopCCW",
               cssAxis: "Y"
             },
             E: {
-              posAxis: "Z",
-              layer: 1,
+              posAxis: "Y",
+              layer: 0,
               cw: "rotateXMidCW",
               ccw: "rotateXMidCCW",
               cssAxis: "Y"
             },
             D: {
-              posAxis: "Z",
-              layer: 2,
+              posAxis: "Y",
+              layer: -1,
               cw: "rotateBottomCW",
               ccw: "rotateBottomCCW",
               cssAxis: "Y"
             },
             L: {
               posAxis: "X",
-              layer: 0,
+              layer: -1,
               cw: "rotateLeftCW",
               ccw: "rotateLeftCCW",
               cssAxis: "X"
             },
             M: {
               posAxis: "X",
-              layer: 1,
+              layer: 0,
               cw: "rotateYMidCW",
               ccw: "rotateYMidCCW",
               cssAxis: "X"
             },
             R: {
               posAxis: "X",
-              layer: 2,
+              layer: 1,
               cw: "rotateRightCW",
               ccw: "rotateRightCCW",
               cssAxis: "X"
             },
             B: {
-              posAxis: "Y",
-              layer: 0,
+              posAxis: "Z",
+              layer: -1,
               cw: "rotateBackCW",
               ccw: "rotateBackCCW",
               cssAxis: "Z"
             },
             S: {
-              posAxis: "Y",
-              layer: 1,
+              posAxis: "Z",
+              layer: 0,
               cw: "rotateZMidCW",
               ccw: "rotateZMidCCW",
               cssAxis: "Z"
             },
             F: {
-              posAxis: "Y",
-              layer: 2,
+              posAxis: "Z",
+              layer: 1,
               cw: "rotateFrontCW",
               ccw: "rotateFrontCCW",
               cssAxis: "Z"
@@ -700,10 +700,10 @@
           this.NORMALS = {
             right: { X: 1, Y: 0, Z: 0 },
             left: { X: -1, Y: 0, Z: 0 },
-            top: { X: 0, Y: 0, Z: -1 },
-            bottom: { X: 0, Y: 0, Z: 1 },
-            front: { X: 0, Y: 1, Z: 0 },
-            back: { X: 0, Y: -1, Z: 0 }
+            top: { X: 0, Y: 1, Z: 0 },
+            bottom: { X: 0, Y: -1, Z: 0 },
+            front: { X: 0, Y: 0, Z: 1 },
+            back: { X: 0, Y: 0, Z: -1 }
           };
           // whole-cube re-orientation -> engine rotateCube + matching world animation
           this.CUBE_MOVES = {
@@ -766,7 +766,7 @@
           const U = this.UNIT, H = this.HALF;
           this.entries.forEach((e) => {
             const p = e.cube.position;
-            e.el.style.transform = "translate3d(" + ((p.X - 1) * U - H) + "px," + ((p.Z - 1) * U - H) + "px," + (p.Y - 1) * U + "px)";
+            e.el.style.transform = "translate3d(" + (p.X * U - H) + "px," + (-p.Y * U - H) + "px," + p.Z * U + "px)";
             this.DIRS.forEach((dir) => {
               const col = e.cube.orientation[dir];
               const st = e.stickers[dir];
@@ -999,7 +999,7 @@
         }
         projectAxis(v) {
           const a = this.pitch * Math.PI / 180, b = this.yaw * Math.PI / 180;
-          const x = v.X, y = v.Z, z = v.Y;
+          const x = v.X, y = -v.Y, z = v.Z;
           const x1 = x * Math.cos(b) + z * Math.sin(b);
           const z1 = -x * Math.sin(b) + z * Math.cos(b);
           const y1 = y;
