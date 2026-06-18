@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "module": "none",
-    "outFile": "./app.js",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
+    "noEmit": true,
     "ignoreDeprecations": "6.0"
   },
   "include": ["src/**/*"]

@@ -17,13 +17,13 @@
     }
   };
 
-  // src/helpers.ts
+  // src/engine/helpers.ts
   function JSONEquals(a, b) {
     return JSON.stringify(a) === JSON.stringify(b);
   }
   var positionMap;
   var init_helpers = __esm({
-    "src/helpers.ts"() {
+    "src/engine/helpers.ts"() {
       "use strict";
       positionMap = {
         1: { X: 0, Y: 0, Z: 0 },
@@ -57,10 +57,10 @@
     }
   });
 
-  // src/models.ts
+  // src/engine/models.ts
   var Faces;
   var init_models = __esm({
-    "src/models.ts"() {
+    "src/engine/models.ts"() {
       "use strict";
       Faces = {
         Y: "YELLOW",
@@ -73,10 +73,10 @@
     }
   });
 
-  // src/Cube.ts
+  // src/engine/Cube.ts
   var Cube;
   var init_Cube = __esm({
-    "src/Cube.ts"() {
+    "src/engine/Cube.ts"() {
       "use strict";
       init_helpers();
       Cube = class {
@@ -111,6 +111,7 @@
         get isInBackLayer() {
           return this.orientation.back !== void 0;
         }
+        // isCorner, isEdge
         rotateXCW() {
           const oldOrientation = { ...this.orientation };
           this.orientation = {
@@ -381,10 +382,10 @@
     }
   });
 
-  // src/RubiksCube.ts
+  // src/engine/RubiksCube.ts
   var RubiksCube;
   var init_RubiksCube = __esm({
-    "src/RubiksCube.ts"() {
+    "src/engine/RubiksCube.ts"() {
       "use strict";
       init_Cube();
       init_helpers();
@@ -432,13 +433,18 @@
           }
           return _RubiksCube.instance;
         }
-        // Restore every cubie to its solved position and orientation.
         reset() {
           this.cubes = _RubiksCube.buildSolvedCubes();
         }
-        // The cube is solved when every external face shows a single colour.
         isSolved() {
-          const faces = ["top", "bottom", "left", "right", "front", "back"];
+          const faces = [
+            "top",
+            "bottom",
+            "left",
+            "right",
+            "front",
+            "back"
+          ];
           return faces.every((face) => {
             const colors = this.cubes.map((cube) => cube.orientation[face]).filter((color) => color !== void 0);
             return colors.every((color) => color === colors[0]);
@@ -590,9 +596,9 @@
     }
   });
 
-  // src/app.ts
-  var require_app = __commonJS({
-    "src/app.ts"() {
+  // src/index.ts
+  var require_index = __commonJS({
+    "src/index.ts"() {
       init_helpers();
       init_models();
       init_RubiksCube();
@@ -707,5 +713,5 @@
       renderCube();
     }
   });
-  require_app();
+  require_index();
 })();

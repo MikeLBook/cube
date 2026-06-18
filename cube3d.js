@@ -17,10 +17,10 @@
     }
   };
 
-  // src/helpers.ts
+  // src/engine/helpers.ts
   var positionMap;
   var init_helpers = __esm({
-    "src/helpers.ts"() {
+    "src/engine/helpers.ts"() {
       "use strict";
       positionMap = {
         1: { X: 0, Y: 0, Z: 0 },
@@ -54,10 +54,10 @@
     }
   });
 
-  // src/Cube.ts
+  // src/engine/Cube.ts
   var Cube;
   var init_Cube = __esm({
-    "src/Cube.ts"() {
+    "src/engine/Cube.ts"() {
       "use strict";
       init_helpers();
       Cube = class {
@@ -92,6 +92,7 @@
         get isInBackLayer() {
           return this.orientation.back !== void 0;
         }
+        // isCorner, isEdge
         rotateXCW() {
           const oldOrientation = { ...this.orientation };
           this.orientation = {
@@ -362,10 +363,10 @@
     }
   });
 
-  // src/RubiksCube.ts
+  // src/engine/RubiksCube.ts
   var RubiksCube;
   var init_RubiksCube = __esm({
-    "src/RubiksCube.ts"() {
+    "src/engine/RubiksCube.ts"() {
       "use strict";
       init_Cube();
       init_helpers();
@@ -413,13 +414,18 @@
           }
           return _RubiksCube.instance;
         }
-        // Restore every cubie to its solved position and orientation.
         reset() {
           this.cubes = _RubiksCube.buildSolvedCubes();
         }
-        // The cube is solved when every external face shows a single colour.
         isSolved() {
-          const faces = ["top", "bottom", "left", "right", "front", "back"];
+          const faces = [
+            "top",
+            "bottom",
+            "left",
+            "right",
+            "front",
+            "back"
+          ];
           return faces.every((face) => {
             const colors = this.cubes.map((cube) => cube.orientation[face]).filter((color) => color !== void 0);
             return colors.every((color) => color === colors[0]);
@@ -610,7 +616,14 @@
             O: "#ff7a18",
             W: "#f4f4f0"
           };
-          this.DIRS = ["front", "back", "right", "left", "top", "bottom"];
+          this.DIRS = [
+            "front",
+            "back",
+            "right",
+            "left",
+            "top",
+            "bottom"
+          ];
           // geometry
           this.S = 58;
           this.HALF = 29;
@@ -620,15 +633,69 @@
           this.CW_SIGN = { X: -1, Y: -1, Z: 1 };
           // notation -> engine method + animation metadata. Method names match RubiksCube exactly.
           this.MOVES = {
-            U: { posAxis: "Z", layer: 0, cw: "rotateTopCW", ccw: "rotateTopCCW", cssAxis: "Y" },
-            E: { posAxis: "Z", layer: 1, cw: "rotateXMidCW", ccw: "rotateXMidCCW", cssAxis: "Y" },
-            D: { posAxis: "Z", layer: 2, cw: "rotateBottomCW", ccw: "rotateBottomCCW", cssAxis: "Y" },
-            L: { posAxis: "X", layer: 0, cw: "rotateLeftCW", ccw: "rotateLeftCCW", cssAxis: "X" },
-            M: { posAxis: "X", layer: 1, cw: "rotateYMidCW", ccw: "rotateYMidCCW", cssAxis: "X" },
-            R: { posAxis: "X", layer: 2, cw: "rotateRightCW", ccw: "rotateRightCCW", cssAxis: "X" },
-            B: { posAxis: "Y", layer: 0, cw: "rotateBackCW", ccw: "rotateBackCCW", cssAxis: "Z" },
-            S: { posAxis: "Y", layer: 1, cw: "rotateZMidCW", ccw: "rotateZMidCCW", cssAxis: "Z" },
-            F: { posAxis: "Y", layer: 2, cw: "rotateFrontCW", ccw: "rotateFrontCCW", cssAxis: "Z" }
+            U: {
+              posAxis: "Z",
+              layer: 0,
+              cw: "rotateTopCW",
+              ccw: "rotateTopCCW",
+              cssAxis: "Y"
+            },
+            E: {
+              posAxis: "Z",
+              layer: 1,
+              cw: "rotateXMidCW",
+              ccw: "rotateXMidCCW",
+              cssAxis: "Y"
+            },
+            D: {
+              posAxis: "Z",
+              layer: 2,
+              cw: "rotateBottomCW",
+              ccw: "rotateBottomCCW",
+              cssAxis: "Y"
+            },
+            L: {
+              posAxis: "X",
+              layer: 0,
+              cw: "rotateLeftCW",
+              ccw: "rotateLeftCCW",
+              cssAxis: "X"
+            },
+            M: {
+              posAxis: "X",
+              layer: 1,
+              cw: "rotateYMidCW",
+              ccw: "rotateYMidCCW",
+              cssAxis: "X"
+            },
+            R: {
+              posAxis: "X",
+              layer: 2,
+              cw: "rotateRightCW",
+              ccw: "rotateRightCCW",
+              cssAxis: "X"
+            },
+            B: {
+              posAxis: "Y",
+              layer: 0,
+              cw: "rotateBackCW",
+              ccw: "rotateBackCCW",
+              cssAxis: "Z"
+            },
+            S: {
+              posAxis: "Y",
+              layer: 1,
+              cw: "rotateZMidCW",
+              ccw: "rotateZMidCCW",
+              cssAxis: "Z"
+            },
+            F: {
+              posAxis: "Y",
+              layer: 2,
+              cw: "rotateFrontCW",
+              ccw: "rotateFrontCCW",
+              cssAxis: "Z"
+            }
           };
           this.NORMALS = {
             right: { X: 1, Y: 0, Z: 0 },
@@ -768,7 +835,9 @@
           const group = document.createElement("div");
           group.style.cssText = "position:absolute; left:0; top:0; width:0; height:0; transform-style:preserve-3d;";
           this.worldEl.appendChild(group);
-          const moving = this.entries.filter((e) => e.cube.position[m.posAxis] === m.layer);
+          const moving = this.entries.filter(
+            (e) => e.cube.position[m.posAxis] === m.layer
+          );
           moving.forEach((e) => group.appendChild(e.el));
           group.getBoundingClientRect();
           const dur = opts.fast ? 135 : 290;
@@ -852,7 +921,9 @@
             seq.push({ f, prime: Math.random() < 0.5 });
           }
           this.scrambleLeft = seq.length;
-          seq.forEach((mv) => this.move(mv.f, mv.prime, { count: false, fast: true, scramble: true }));
+          seq.forEach(
+            (mv) => this.move(mv.f, mv.prime, { count: false, fast: true, scramble: true })
+          );
         }
         reset() {
           this.doReset(true);
@@ -869,7 +940,8 @@
           if (this.entries && this.worldEl) {
             this.entries.forEach((e) => this.worldEl.appendChild(e.el));
             Array.prototype.slice.call(this.worldEl.children).forEach((ch) => {
-              if (!this.entries.some((e) => e.el === ch)) ch.remove();
+              if (!this.entries.some((e) => e.el === ch))
+                ch.remove();
             });
             this.renderCube();
           }
@@ -948,7 +1020,8 @@
             vec[axis] = 1;
             const proj = this.projectAxis(vec);
             const dot = dx * proj.x + dy * proj.y;
-            if (!best || Math.abs(dot) > Math.abs(best.dot)) best = { axis, dot, sign: dot >= 0 ? 1 : -1 };
+            if (!best || Math.abs(dot) > Math.abs(best.dot))
+              best = { axis, dot, sign: dot >= 0 ? 1 : -1 };
           });
           if (!best) return null;
           const chosen = best;

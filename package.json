@@ -7,8 +7,8 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "build": "esbuild src/app.ts src/cube3d.ts --bundle --outdir=.",
-    "watch": "esbuild src/app.ts src/cube3d.ts --bundle --outdir=. --watch"
+    "build": "esbuild src/index.ts src/cube3d.ts --bundle --outdir=.",
+    "watch": "esbuild src/index.ts src/cube3d.ts --bundle --outdir=. --watch"
   },
   "dependencies": {
     "typescript": "^6.0.3"

@@ -1,6 +1,6 @@
-import RubiksCube from "./RubiksCube";
-import Cube from "./Cube";
-import { Face, Orientation, Rotation } from "./models";
+import RubiksCube from "./engine/RubiksCube";
+import Cube from "./engine/Cube";
+import { Face, Orientation, Rotation } from "./engine/models";
 
 // The no-argument layer-rotation methods on RubiksCube that a single face turn maps to.
 type LayerMethod =

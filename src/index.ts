@@ -1,6 +1,6 @@
-import { JSONEquals, positionMap } from "./helpers";
-import { Face, Faces, Orientation } from "./models";
-import RubiksCube from "./RubiksCube";
+import { JSONEquals, positionMap } from "./engine/helpers";
+import { Face, Faces, Orientation } from "./engine/models";
+import RubiksCube from "./engine/RubiksCube";
 
 const FACE_CLASSES = Object.keys(Faces) as Face[];
 
