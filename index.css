@@ -98,7 +98,14 @@ body {
     radial-gradient(1100px 700px at 50% -15%, #2a2b3c 0%, transparent 60%),
     linear-gradient(180deg, #15151d 0%, #0f0f15 100%);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
   display: flex;
   justify-content: center;
 }
@@ -132,7 +139,10 @@ body {
   font-size: 0.85rem;
   font-weight: 600;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.06s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.06s ease;
 }
 
 .view-3d-link:hover {
@@ -180,12 +190,24 @@ body {
   border-radius: 18px;
 }
 
-.area-top    { grid-area: top; }
-.area-left   { grid-area: left; }
-.area-front  { grid-area: front; }
-.area-right  { grid-area: right; }
-.area-back   { grid-area: back; }
-.area-bottom { grid-area: bottom; }
+.area-top {
+  grid-area: top;
+}
+.area-left {
+  grid-area: left;
+}
+.area-front {
+  grid-area: front;
+}
+.area-right {
+  grid-area: right;
+}
+.area-back {
+  grid-area: back;
+}
+.area-bottom {
+  grid-area: bottom;
+}
 
 .face-wrap {
   display: flex;
@@ -222,12 +244,24 @@ body {
     inset 0 0.12rem 0.2rem rgba(255, 255, 255, 0.06);
 }
 
-.Y { background-color: #ffd43b; }
-.R { background-color: #d92b3c; }
-.B { background-color: #2256d6; }
-.G { background-color: #1eaa5b; }
-.O { background-color: #ff7a18; }
-.W { background-color: #f4f4f0; }
+.Y {
+  background-color: #ffd43b;
+}
+.R {
+  background-color: #d92b3c;
+}
+.B {
+  background-color: #2256d6;
+}
+.G {
+  background-color: #1eaa5b;
+}
+.O {
+  background-color: #ff7a18;
+}
+.W {
+  background-color: #f4f4f0;
+}
 
 /* ---------- Controls ---------- */
 .controls-grid {
@@ -245,10 +279,18 @@ body {
   padding: 1rem;
 }
 
-.group-x    { --group-accent: var(--accent-x); }
-.group-y    { --group-accent: var(--accent-y); }
-.group-z    { --group-accent: var(--accent-z); }
-.group-cube { --group-accent: var(--accent-cube); }
+.group-x {
+  --group-accent: var(--accent-x);
+}
+.group-y {
+  --group-accent: var(--accent-y);
+}
+.group-z {
+  --group-accent: var(--accent-z);
+}
+.group-cube {
+  --group-accent: var(--accent-cube);
+}
 
 .control-group h2 {
   font-size: 0.72rem;
@@ -280,7 +322,10 @@ button {
   cursor: pointer;
   user-select: none;
   touch-action: manipulation;
-  transition: transform 0.06s ease, background 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.06s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 button .dir {

@@ -1,14 +1,14 @@
-import Cube from "./Cube"
-import { positionMap } from "./helpers"
-import { Face, Orientation, Rotation } from "./models"
+import Cube from "./Cube";
+import { positionMap } from "./helpers";
+import { Face, Orientation, Rotation } from "./models";
 
 export default class RubiksCube {
-  cubes: Cube[]
+  cubes: Cube[];
 
-  private static instance: RubiksCube
+  private static instance: RubiksCube;
 
   private constructor() {
-    this.cubes = RubiksCube.buildSolvedCubes()
+    this.cubes = RubiksCube.buildSolvedCubes();
   }
 
   private static buildSolvedCubes(): Cube[] {
@@ -43,190 +43,195 @@ export default class RubiksCube {
       new Cube(positionMap[25], { bottom: "W", left: "B", front: "R" }),
       new Cube(positionMap[26], { bottom: "W", front: "R" }),
       new Cube(positionMap[27], { bottom: "W", right: "G", front: "R" }),
-    ]
+    ];
   }
 
   public static getInstance() {
     if (!RubiksCube.instance) {
-      RubiksCube.instance = new RubiksCube()
+      RubiksCube.instance = new RubiksCube();
     }
-    return RubiksCube.instance
+    return RubiksCube.instance;
   }
 
-  // Restore every cubie to its solved position and orientation.
   public reset() {
-    this.cubes = RubiksCube.buildSolvedCubes()
+    this.cubes = RubiksCube.buildSolvedCubes();
   }
 
-  // The cube is solved when every external face shows a single colour.
   public isSolved(): boolean {
-    const faces: (keyof Orientation)[] = ["top", "bottom", "left", "right", "front", "back"]
-    return faces.every(face => {
+    const faces: (keyof Orientation)[] = [
+      "top",
+      "bottom",
+      "left",
+      "right",
+      "front",
+      "back",
+    ];
+    return faces.every((face) => {
       const colors = this.cubes
-        .map(cube => cube.orientation[face])
-        .filter((color): color is Face => color !== undefined)
-      return colors.every(color => color === colors[0])
-    })
+        .map((cube) => cube.orientation[face])
+        .filter((color): color is Face => color !== undefined);
+      return colors.every((color) => color === colors[0]);
+    });
   }
 
   public rotateCube(rotation: Rotation) {
-    switch(rotation) {
+    switch (rotation) {
       case "XCW":
-        this.cubes.forEach(cube => cube.rotateXCW())
+        this.cubes.forEach((cube) => cube.rotateXCW());
         break;
       case "XCCW":
-        this.cubes.forEach(cube => cube.rotateXCCW())
+        this.cubes.forEach((cube) => cube.rotateXCCW());
         break;
       case "YCW":
-        this.cubes.forEach(cube => cube.rotateYCW())
+        this.cubes.forEach((cube) => cube.rotateYCW());
         break;
       case "YCCW":
-        this.cubes.forEach(cube => cube.rotateYCCW())
+        this.cubes.forEach((cube) => cube.rotateYCCW());
         break;
     }
   }
 
   public rotateTopCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInTopLayer) {
-        cube.rotateXCW()
+        cube.rotateXCW();
       }
-    })
+    });
   }
 
   public rotateXMidCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInXMidLayer) {
-        cube.rotateXCW()
+        cube.rotateXCW();
       }
-    })
+    });
   }
 
   public rotateBottomCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInBottomLayer) {
-        cube.rotateXCW()
+        cube.rotateXCW();
       }
-    })
+    });
   }
 
   public rotateTopCCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInTopLayer) {
-        cube.rotateXCCW()
+        cube.rotateXCCW();
       }
-    })
+    });
   }
 
   public rotateXMidCCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInXMidLayer) {
-        cube.rotateXCCW()
+        cube.rotateXCCW();
       }
-    })
+    });
   }
 
   public rotateBottomCCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInBottomLayer) {
-        cube.rotateXCCW()
+        cube.rotateXCCW();
       }
-    })
+    });
   }
 
   public rotateLeftCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInLeftLayer) {
-        cube.rotateYCW()
+        cube.rotateYCW();
       }
-    })
+    });
   }
 
   public rotateYMidCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInYMidLayer) {
-        cube.rotateYCW()
+        cube.rotateYCW();
       }
-    })
+    });
   }
 
   public rotateRightCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInRightLayer) {
-        cube.rotateYCW()
+        cube.rotateYCW();
       }
-    })
+    });
   }
 
   public rotateLeftCCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInLeftLayer) {
-        cube.rotateYCCW()
+        cube.rotateYCCW();
       }
-    })
+    });
   }
 
   public rotateYMidCCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInYMidLayer) {
-        cube.rotateYCCW()
+        cube.rotateYCCW();
       }
-    })
+    });
   }
 
   public rotateRightCCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInRightLayer) {
-        cube.rotateYCCW()
+        cube.rotateYCCW();
       }
-    })
+    });
   }
 
   public rotateFrontCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInFrontLayer) {
-        cube.rotateZCW()
+        cube.rotateZCW();
       }
-    })
+    });
   }
 
   public rotateZMidCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInZMidLayer) {
-        cube.rotateZCW()
+        cube.rotateZCW();
       }
-    })
+    });
   }
 
   public rotateBackCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInBackLayer) {
-        cube.rotateZCW()
+        cube.rotateZCW();
       }
-    })
+    });
   }
 
   public rotateFrontCCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInFrontLayer) {
-        cube.rotateZCCW()
+        cube.rotateZCCW();
       }
-    })
+    });
   }
 
   public rotateZMidCCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInZMidLayer) {
-        cube.rotateZCCW()
+        cube.rotateZCCW();
       }
-    })
+    });
   }
 
   public rotateBackCCW() {
-    this.cubes.forEach(cube => {
+    this.cubes.forEach((cube) => {
       if (cube.isInBackLayer) {
-        cube.rotateZCCW()
+        cube.rotateZCCW();
       }
-    })
+    });
   }
 }

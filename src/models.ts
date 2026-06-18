@@ -1,34 +1,34 @@
 export const Faces = {
-  Y: 'YELLOW',
-  B: 'BLUE',
-  R: 'RED',
-  G: 'GREEN',
-  O: 'ORANGE',
-  W: 'WHITE'
+  Y: "YELLOW",
+  B: "BLUE",
+  R: "RED",
+  G: "GREEN",
+  O: "ORANGE",
+  W: "WHITE",
 } as const;
 
-export type Face = keyof typeof Faces
+export type Face = keyof typeof Faces;
 
 export interface Position {
-    X: number
-    Y: number
-    Z: number
+  X: number;
+  Y: number;
+  Z: number;
 }
 
 export interface Orientation {
-    top?: Face,
-    left?: Face,
-    front?: Face,
-    right?: Face,
-    back?: Face,
-    bottom?: Face
+  top?: Face;
+  left?: Face;
+  front?: Face;
+  right?: Face;
+  back?: Face;
+  bottom?: Face;
 }
 
 export const Rotations = {
-    XCW: 'X-CLOCKWISE',
-    XCCW: 'X-COUNTER-CLOCKWISE',
-    YCW: 'Y-CLOCKWISE',
-    YCCW: 'Y-COUNTER-CLOCKWISE'
-} as const
+  XCW: "X-CLOCKWISE",
+  XCCW: "X-COUNTER-CLOCKWISE",
+  YCW: "Y-CLOCKWISE",
+  YCCW: "Y-COUNTER-CLOCKWISE",
+} as const;
 
-export type Rotation = keyof typeof Rotations
+export type Rotation = keyof typeof Rotations;
