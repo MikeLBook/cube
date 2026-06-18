@@ -87,7 +87,7 @@
         get isInTopLayer() {
           return this.orientation.top !== void 0;
         }
-        get isInMiddleLayer() {
+        get isInXMidLayer() {
           return this.orientation.top === void 0 && this.orientation.bottom === void 0;
         }
         get isInBottomLayer() {
@@ -96,11 +96,20 @@
         get isInLeftLayer() {
           return this.orientation.left !== void 0;
         }
-        get isInCenterLayer() {
+        get isInYMidLayer() {
           return this.orientation.left === void 0 && this.orientation.right === void 0;
         }
         get isInRightLayer() {
           return this.orientation.right !== void 0;
+        }
+        get isInFrontLayer() {
+          return this.orientation.front !== void 0;
+        }
+        get isInZMidLayer() {
+          return this.orientation.front === void 0 && this.orientation.back === void 0;
+        }
+        get isInBackLayer() {
+          return this.orientation.back !== void 0;
         }
         rotateXCW() {
           const oldOrientation = { ...this.orientation };
@@ -113,7 +122,7 @@
             back: oldOrientation.left
           };
           let positionOffset = 0;
-          if (this.isInMiddleLayer) {
+          if (this.isInXMidLayer) {
             positionOffset = 9;
           } else if (this.isInBottomLayer) {
             positionOffset = 18;
@@ -157,7 +166,7 @@
             back: oldOrientation.right
           };
           let positionOffset = 0;
-          if (this.isInMiddleLayer) {
+          if (this.isInXMidLayer) {
             positionOffset = 9;
           } else if (this.isInBottomLayer) {
             positionOffset = 18;
@@ -201,7 +210,7 @@
             right: oldOrientation.right
           };
           let positionOffset = 0;
-          if (this.isInCenterLayer) {
+          if (this.isInYMidLayer) {
             positionOffset = 1;
           } else if (this.isInRightLayer) {
             positionOffset = 2;
@@ -246,7 +255,7 @@
             right: oldOrientation.right
           };
           let positionOffset = 0;
-          if (this.isInCenterLayer) {
+          if (this.isInYMidLayer) {
             positionOffset = 1;
           } else if (this.isInRightLayer) {
             positionOffset = 2;
@@ -278,6 +287,94 @@
             case positionMap[25 + positionOffset]:
               this.position = positionMap[19 + positionOffset];
               break;
+          }
+        }
+        rotateZCW() {
+          const oldOrientation = { ...this.orientation };
+          this.orientation = {
+            top: oldOrientation.left,
+            right: oldOrientation.top,
+            bottom: oldOrientation.right,
+            left: oldOrientation.bottom,
+            front: oldOrientation.front,
+            back: oldOrientation.back
+          };
+          let positionOffset = 0;
+          if (this.isInZMidLayer) {
+            positionOffset = 3;
+          } else if (this.isInFrontLayer) {
+            positionOffset = 6;
+          }
+          switch (this.position) {
+            case positionMap[1 + positionOffset]:
+              this.position = positionMap[3 + positionOffset];
+              break;
+            case positionMap[2 + positionOffset]:
+              this.position = positionMap[12 + positionOffset];
+              break;
+            case positionMap[3 + positionOffset]:
+              this.position = positionMap[21 + positionOffset];
+              break;
+            case positionMap[10 + positionOffset]:
+              this.position = positionMap[2 + positionOffset];
+              break;
+            case positionMap[11 + positionOffset]:
+              break;
+            case positionMap[12 + positionOffset]:
+              this.position = positionMap[20 + positionOffset];
+              break;
+            case positionMap[19 + positionOffset]:
+              this.position = positionMap[1 + positionOffset];
+              break;
+            case positionMap[20 + positionOffset]:
+              this.position = positionMap[10 + positionOffset];
+              break;
+            case positionMap[21 + positionOffset]:
+              this.position = positionMap[19 + positionOffset];
+          }
+        }
+        rotateZCCW() {
+          const oldOrientation = { ...this.orientation };
+          this.orientation = {
+            top: oldOrientation.right,
+            right: oldOrientation.bottom,
+            bottom: oldOrientation.left,
+            left: oldOrientation.top,
+            front: oldOrientation.front,
+            back: oldOrientation.back
+          };
+          let positionOffset = 0;
+          if (this.isInZMidLayer) {
+            positionOffset = 3;
+          } else if (this.isInFrontLayer) {
+            positionOffset = 6;
+          }
+          switch (this.position) {
+            case positionMap[3 + positionOffset]:
+              this.position = positionMap[1 + positionOffset];
+              break;
+            case positionMap[12 + positionOffset]:
+              this.position = positionMap[2 + positionOffset];
+              break;
+            case positionMap[21 + positionOffset]:
+              this.position = positionMap[3 + positionOffset];
+              break;
+            case positionMap[2 + positionOffset]:
+              this.position = positionMap[10 + positionOffset];
+              break;
+            case positionMap[11 + positionOffset]:
+              break;
+            case positionMap[20 + positionOffset]:
+              this.position = positionMap[12 + positionOffset];
+              break;
+            case positionMap[1 + positionOffset]:
+              this.position = positionMap[19 + positionOffset];
+              break;
+            case positionMap[10 + positionOffset]:
+              this.position = positionMap[20 + positionOffset];
+              break;
+            case positionMap[19 + positionOffset]:
+              this.position = positionMap[21 + positionOffset];
           }
         }
       };
@@ -355,9 +452,9 @@
             }
           });
         }
-        rotateMiddleCW() {
+        rotateXMidCW() {
           this.cubes.forEach((cube) => {
-            if (cube.isInMiddleLayer) {
+            if (cube.isInXMidLayer) {
               cube.rotateXCW();
             }
           });
@@ -376,9 +473,9 @@
             }
           });
         }
-        rotateMiddleCCW() {
+        rotateXMidCCW() {
           this.cubes.forEach((cube) => {
-            if (cube.isInMiddleLayer) {
+            if (cube.isInXMidLayer) {
               cube.rotateXCCW();
             }
           });
@@ -390,45 +487,87 @@
             }
           });
         }
-        rotateLeftYCW() {
+        rotateLeftCW() {
           this.cubes.forEach((cube) => {
             if (cube.isInLeftLayer) {
               cube.rotateYCW();
             }
           });
         }
-        rotateCenterYCW() {
+        rotateYMidCW() {
           this.cubes.forEach((cube) => {
-            if (cube.isInCenterLayer) {
+            if (cube.isInYMidLayer) {
               cube.rotateYCW();
             }
           });
         }
-        rotateRightYCW() {
+        rotateRightCW() {
           this.cubes.forEach((cube) => {
             if (cube.isInRightLayer) {
               cube.rotateYCW();
             }
           });
         }
-        rotateLeftYCCW() {
+        rotateLeftCCW() {
           this.cubes.forEach((cube) => {
             if (cube.isInLeftLayer) {
               cube.rotateYCCW();
             }
           });
         }
-        rotateCenterYCCW() {
+        rotateYMidCCW() {
           this.cubes.forEach((cube) => {
-            if (cube.isInCenterLayer) {
+            if (cube.isInYMidLayer) {
               cube.rotateYCCW();
             }
           });
         }
-        rotateRightYCCW() {
+        rotateRightCCW() {
           this.cubes.forEach((cube) => {
             if (cube.isInRightLayer) {
               cube.rotateYCCW();
+            }
+          });
+        }
+        rotateFrontCW() {
+          this.cubes.forEach((cube) => {
+            if (cube.isInFrontLayer) {
+              cube.rotateZCW();
+            }
+          });
+        }
+        rotateZMidCW() {
+          this.cubes.forEach((cube) => {
+            if (cube.isInZMidLayer) {
+              cube.rotateZCW();
+            }
+          });
+        }
+        rotateBackCW() {
+          this.cubes.forEach((cube) => {
+            if (cube.isInBackLayer) {
+              cube.rotateZCW();
+            }
+          });
+        }
+        rotateFrontCCW() {
+          this.cubes.forEach((cube) => {
+            if (cube.isInFrontLayer) {
+              cube.rotateZCCW();
+            }
+          });
+        }
+        rotateZMidCCW() {
+          this.cubes.forEach((cube) => {
+            if (cube.isInZMidLayer) {
+              cube.rotateZCCW();
+            }
+          });
+        }
+        rotateBackCCW() {
+          this.cubes.forEach((cube) => {
+            if (cube.isInBackLayer) {
+              cube.rotateZCCW();
             }
           });
         }
@@ -448,8 +587,8 @@
         rubiksCube.rotateTopCW();
         renderCube();
       });
-      document.querySelector("#rotateMiddleCW")?.addEventListener("click", () => {
-        rubiksCube.rotateMiddleCW();
+      document.querySelector("#rotateXMidCW")?.addEventListener("click", () => {
+        rubiksCube.rotateXMidCW();
         renderCube();
       });
       document.querySelector("#rotateBottomCW")?.addEventListener("click", () => {
@@ -460,36 +599,60 @@
         rubiksCube.rotateTopCCW();
         renderCube();
       });
-      document.querySelector("#rotateMiddleCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateMiddleCCW();
+      document.querySelector("#rotateXMidCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateXMidCCW();
         renderCube();
       });
       document.querySelector("#rotateBottomCCW")?.addEventListener("click", () => {
         rubiksCube.rotateBottomCCW();
         renderCube();
       });
-      document.querySelector("#rotateLeftYCW")?.addEventListener("click", () => {
-        rubiksCube.rotateLeftYCW();
+      document.querySelector("#rotateLeftCW")?.addEventListener("click", () => {
+        rubiksCube.rotateLeftCW();
         renderCube();
       });
-      document.querySelector("#rotateCenterYCW")?.addEventListener("click", () => {
-        rubiksCube.rotateCenterYCW();
+      document.querySelector("#rotateYMidCW")?.addEventListener("click", () => {
+        rubiksCube.rotateYMidCW();
         renderCube();
       });
-      document.querySelector("#rotateRightYCW")?.addEventListener("click", () => {
-        rubiksCube.rotateRightYCW();
+      document.querySelector("#rotateRightCW")?.addEventListener("click", () => {
+        rubiksCube.rotateRightCW();
         renderCube();
       });
-      document.querySelector("#rotateLeftYCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateLeftYCCW();
+      document.querySelector("#rotateLeftCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateLeftCCW();
         renderCube();
       });
-      document.querySelector("#rotateCenterYCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateCenterYCCW();
+      document.querySelector("#rotateYMidCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateYMidCCW();
         renderCube();
       });
-      document.querySelector("#rotateRightYCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateRightYCCW();
+      document.querySelector("#rotateRightCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateRightCCW();
+        renderCube();
+      });
+      document.querySelector("#rotateFrontCW")?.addEventListener("click", () => {
+        rubiksCube.rotateFrontCW();
+        renderCube();
+      });
+      document.querySelector("#rotateZMidCW")?.addEventListener("click", () => {
+        rubiksCube.rotateZMidCW();
+        renderCube();
+      });
+      document.querySelector("#rotateBackCW")?.addEventListener("click", () => {
+        rubiksCube.rotateBackCW();
+        renderCube();
+      });
+      document.querySelector("#rotateFrontCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateFrontCCW();
+        renderCube();
+      });
+      document.querySelector("#rotateZMidCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateZMidCCW();
+        renderCube();
+      });
+      document.querySelector("#rotateBackCCW")?.addEventListener("click", () => {
+        rubiksCube.rotateBackCCW();
         renderCube();
       });
       document.querySelector("#rotateCubeXCW")?.addEventListener("click", () => {

@@ -11,8 +11,8 @@ document.querySelector('#rotateTopCW')?.addEventListener('click', () => {
     renderCube()
 })
 
-document.querySelector('#rotateMiddleCW')?.addEventListener('click', () => {
-    rubiksCube.rotateMiddleCW()
+document.querySelector('#rotateXMidCW')?.addEventListener('click', () => {
+    rubiksCube.rotateXMidCW()
     renderCube()
 })
 
@@ -26,8 +26,8 @@ document.querySelector('#rotateTopCCW')?.addEventListener('click', () => {
     renderCube()
 })
 
-document.querySelector('#rotateMiddleCCW')?.addEventListener('click', () => {
-    rubiksCube.rotateMiddleCCW()
+document.querySelector('#rotateXMidCCW')?.addEventListener('click', () => {
+    rubiksCube.rotateXMidCCW()
     renderCube()
 })
 
@@ -36,33 +36,63 @@ document.querySelector('#rotateBottomCCW')?.addEventListener('click', () => {
     renderCube()
 })
 
-document.querySelector('#rotateLeftYCW')?.addEventListener('click', () => {
-    rubiksCube.rotateLeftYCW()
+document.querySelector('#rotateLeftCW')?.addEventListener('click', () => {
+    rubiksCube.rotateLeftCW()
     renderCube()
 })
 
-document.querySelector('#rotateCenterYCW')?.addEventListener('click', () => {
-    rubiksCube.rotateCenterYCW()
+document.querySelector('#rotateYMidCW')?.addEventListener('click', () => {
+    rubiksCube.rotateYMidCW()
     renderCube()
 })
 
-document.querySelector('#rotateRightYCW')?.addEventListener('click', () => {
-    rubiksCube.rotateRightYCW()
+document.querySelector('#rotateRightCW')?.addEventListener('click', () => {
+    rubiksCube.rotateRightCW()
     renderCube()
 })
 
-document.querySelector('#rotateLeftYCCW')?.addEventListener('click', () => {
-    rubiksCube.rotateLeftYCCW()
+document.querySelector('#rotateLeftCCW')?.addEventListener('click', () => {
+    rubiksCube.rotateLeftCCW()
     renderCube()
 })
 
-document.querySelector('#rotateCenterYCCW')?.addEventListener('click', () => {
-    rubiksCube.rotateCenterYCCW()
+document.querySelector('#rotateYMidCCW')?.addEventListener('click', () => {
+    rubiksCube.rotateYMidCCW()
     renderCube()
 })
 
-document.querySelector('#rotateRightYCCW')?.addEventListener('click', () => {
-    rubiksCube.rotateRightYCCW()
+document.querySelector('#rotateRightCCW')?.addEventListener('click', () => {
+    rubiksCube.rotateRightCCW()
+    renderCube()
+})
+
+document.querySelector('#rotateFrontCW')?.addEventListener('click', () => {
+    rubiksCube.rotateFrontCW()
+    renderCube()
+})
+
+document.querySelector('#rotateZMidCW')?.addEventListener('click', () => {
+    rubiksCube.rotateZMidCW()
+    renderCube()
+})
+
+document.querySelector('#rotateBackCW')?.addEventListener('click', () => {
+    rubiksCube.rotateBackCW()
+    renderCube()
+})
+
+document.querySelector('#rotateFrontCCW')?.addEventListener('click', () => {
+    rubiksCube.rotateFrontCCW()
+    renderCube()
+})
+
+document.querySelector('#rotateZMidCCW')?.addEventListener('click', () => {
+    rubiksCube.rotateZMidCCW()
+    renderCube()
+})
+
+document.querySelector('#rotateBackCCW')?.addEventListener('click', () => {
+    rubiksCube.rotateBackCCW()
     renderCube()
 })
 

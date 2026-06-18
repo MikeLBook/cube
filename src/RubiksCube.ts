@@ -74,9 +74,9 @@ export default class RubiksCube {
     })
   }
 
-  public rotateMiddleCW() {
+  public rotateXMidCW() {
     this.cubes.forEach(cube => {
-      if (cube.isInMiddleLayer) {
+      if (cube.isInXMidLayer) {
         cube.rotateXCW()
       }
     })
@@ -98,9 +98,9 @@ export default class RubiksCube {
     })
   }
 
-  public rotateMiddleCCW() {
+  public rotateXMidCCW() {
     this.cubes.forEach(cube => {
-      if (cube.isInMiddleLayer) {
+      if (cube.isInXMidLayer) {
         cube.rotateXCCW()
       }
     })
@@ -114,7 +114,7 @@ export default class RubiksCube {
     })
   }
 
-  public rotateLeftYCW() {
+  public rotateLeftCW() {
     this.cubes.forEach(cube => {
       if (cube.isInLeftLayer) {
         cube.rotateYCW()
@@ -122,15 +122,15 @@ export default class RubiksCube {
     })
   }
 
-  public rotateCenterYCW() {
+  public rotateYMidCW() {
     this.cubes.forEach(cube => {
-      if (cube.isInCenterLayer) {
+      if (cube.isInYMidLayer) {
         cube.rotateYCW()
       }
     })
   }
 
-  public rotateRightYCW() {
+  public rotateRightCW() {
     this.cubes.forEach(cube => {
       if (cube.isInRightLayer) {
         cube.rotateYCW()
@@ -138,7 +138,7 @@ export default class RubiksCube {
     })
   }
 
-  public rotateLeftYCCW() {
+  public rotateLeftCCW() {
     this.cubes.forEach(cube => {
       if (cube.isInLeftLayer) {
         cube.rotateYCCW()
@@ -146,18 +146,66 @@ export default class RubiksCube {
     })
   }
 
-  public rotateCenterYCCW() {
+  public rotateYMidCCW() {
     this.cubes.forEach(cube => {
-      if (cube.isInCenterLayer) {
+      if (cube.isInYMidLayer) {
         cube.rotateYCCW()
       }
     })
   }
 
-  public rotateRightYCCW() {
+  public rotateRightCCW() {
     this.cubes.forEach(cube => {
       if (cube.isInRightLayer) {
         cube.rotateYCCW()
+      }
+    })
+  }
+
+  public rotateFrontCW() {
+    this.cubes.forEach(cube => {
+      if (cube.isInFrontLayer) {
+        cube.rotateZCW()
+      }
+    })
+  }
+
+  public rotateZMidCW() {
+    this.cubes.forEach(cube => {
+      if (cube.isInZMidLayer) {
+        cube.rotateZCW()
+      }
+    })
+  }
+
+  public rotateBackCW() {
+    this.cubes.forEach(cube => {
+      if (cube.isInBackLayer) {
+        cube.rotateZCW()
+      }
+    })
+  }
+
+  public rotateFrontCCW() {
+    this.cubes.forEach(cube => {
+      if (cube.isInFrontLayer) {
+        cube.rotateZCCW()
+      }
+    })
+  }
+
+  public rotateZMidCCW() {
+    this.cubes.forEach(cube => {
+      if (cube.isInZMidLayer) {
+        cube.rotateZCCW()
+      }
+    })
+  }
+
+  public rotateBackCCW() {
+    this.cubes.forEach(cube => {
+      if (cube.isInBackLayer) {
+        cube.rotateZCCW()
       }
     })
   }
