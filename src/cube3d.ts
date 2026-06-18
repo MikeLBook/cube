@@ -138,69 +138,69 @@ class CubeView {
 
   // calibration signs (flip if a turn animates the wrong way)
   private readonly ANIM_SIGN: Record<Axis, number> = { X: 1, Y: -1, Z: 1 };
-  private readonly CW_SIGN: Record<Axis, number> = { X: -1, Y: -1, Z: 1 };
+  private readonly CW_SIGN: Record<Axis, number> = { X: -1, Y: -1, Z: -1 };
 
   // notation -> engine method + animation metadata. Method names match RubiksCube exactly.
   private readonly MOVES = {
     U: {
-      posAxis: "Z",
-      layer: 0,
+      posAxis: "Y",
+      layer: 1,
       cw: "rotateTopCW",
       ccw: "rotateTopCCW",
       cssAxis: "Y",
     },
     E: {
-      posAxis: "Z",
-      layer: 1,
+      posAxis: "Y",
+      layer: 0,
       cw: "rotateXMidCW",
       ccw: "rotateXMidCCW",
       cssAxis: "Y",
     },
     D: {
-      posAxis: "Z",
-      layer: 2,
+      posAxis: "Y",
+      layer: -1,
       cw: "rotateBottomCW",
       ccw: "rotateBottomCCW",
       cssAxis: "Y",
     },
     L: {
       posAxis: "X",
-      layer: 0,
+      layer: -1,
       cw: "rotateLeftCW",
       ccw: "rotateLeftCCW",
       cssAxis: "X",
     },
     M: {
       posAxis: "X",
-      layer: 1,
+      layer: 0,
       cw: "rotateYMidCW",
       ccw: "rotateYMidCCW",
       cssAxis: "X",
     },
     R: {
       posAxis: "X",
-      layer: 2,
+      layer: 1,
       cw: "rotateRightCW",
       ccw: "rotateRightCCW",
       cssAxis: "X",
     },
     B: {
-      posAxis: "Y",
-      layer: 0,
+      posAxis: "Z",
+      layer: -1,
       cw: "rotateBackCW",
       ccw: "rotateBackCCW",
       cssAxis: "Z",
     },
     S: {
-      posAxis: "Y",
-      layer: 1,
+      posAxis: "Z",
+      layer: 0,
       cw: "rotateZMidCW",
       ccw: "rotateZMidCCW",
       cssAxis: "Z",
     },
     F: {
-      posAxis: "Y",
-      layer: 2,
+      posAxis: "Z",
+      layer: 1,
       cw: "rotateFrontCW",
       ccw: "rotateFrontCCW",
       cssAxis: "Z",
@@ -210,10 +210,10 @@ class CubeView {
   private readonly NORMALS: Record<keyof Orientation, Vec3> = {
     right: { X: 1, Y: 0, Z: 0 },
     left: { X: -1, Y: 0, Z: 0 },
-    top: { X: 0, Y: 0, Z: -1 },
-    bottom: { X: 0, Y: 0, Z: 1 },
-    front: { X: 0, Y: 1, Z: 0 },
-    back: { X: 0, Y: -1, Z: 0 },
+    top: { X: 0, Y: 1, Z: 0 },
+    bottom: { X: 0, Y: -1, Z: 0 },
+    front: { X: 0, Y: 0, Z: 1 },
+    back: { X: 0, Y: 0, Z: -1 },
   };
 
   // whole-cube re-orientation -> engine rotateCube + matching world animation
@@ -301,13 +301,14 @@ class CubeView {
       H = this.HALF;
     this.entries.forEach((e) => {
       const p = e.cube.position;
+      // engine pos -> CSS: X = right(+), Y = up(+) so screen-down is -Y, Z = front(+) toward viewer
       e.el.style.transform =
         "translate3d(" +
-        ((p.X - 1) * U - H) +
+        (p.X * U - H) +
         "px," +
-        ((p.Z - 1) * U - H) +
+        (-p.Y * U - H) +
         "px," +
-        (p.Y - 1) * U +
+        p.Z * U +
         "px)";
       this.DIRS.forEach((dir) => {
         const col = e.cube.orientation[dir];
@@ -576,12 +577,12 @@ class CubeView {
   }
 
   private projectAxis(v: Vec3) {
-    // position-space vector -> css-space (cssX=X, cssY=Z, cssZ=Y) -> screen via Rx(pitch)Ry(yaw)
+    // position-space vector -> css-space (cssX=X, cssY=-Y, cssZ=Z) -> screen via Rx(pitch)Ry(yaw)
     const a = (this.pitch * Math.PI) / 180,
       b = (this.yaw * Math.PI) / 180;
     const x = v.X,
-      y = v.Z,
-      z = v.Y;
+      y = -v.Y,
+      z = v.Z;
     const x1 = x * Math.cos(b) + z * Math.sin(b);
     const z1 = -x * Math.sin(b) + z * Math.cos(b);
     const y1 = y;
