@@ -1061,11 +1061,6 @@
           const tag = e.target?.tagName || "";
           if (/input|textarea|select/i.test(tag)) return;
           const k = e.key;
-          if (k === " ") {
-            this.resetView();
-            e.preventDefault();
-            return;
-          }
           if (k === "a") {
             this.cubeMove("spinLeft");
             e.preventDefault();
