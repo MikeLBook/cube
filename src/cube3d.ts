@@ -386,7 +386,7 @@ class CubeView {
       if (finished) return;
       finished = true;
       this.worldEl.removeEventListener("transitionend", onEnd);
-      this.rubiks.rotateCube(c.rotation); // re-key model so the spun look becomes the new resting state
+      this.rubiks.rotateRubiksCube(c.rotation); // re-key model so the spun look becomes the new resting state
       this.worldEl.style.transition = "none";
       this.worldEl.style.transform = this.orbitStr();
       this.renderCube();

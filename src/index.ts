@@ -1,4 +1,4 @@
-import { JSONEquals, positionMap } from "./engine/helpers";
+import { JSONEquals } from "./engine/helpers";
 import { Face, Faces, Orientation } from "./engine/models";
 import RubiksCube from "./engine/RubiksCube";
 
@@ -97,22 +97,22 @@ document.querySelector("#rotateBackCCW")?.addEventListener("click", () => {
 });
 
 document.querySelector("#rotateCubeXCW")?.addEventListener("click", () => {
-  rubiksCube.rotateCube("XCW");
+  rubiksCube.rotateRubiksCube("XCW");
   renderCube();
 });
 
 document.querySelector("#rotateCubeXCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateCube("XCCW");
+  rubiksCube.rotateRubiksCube("XCCW");
   renderCube();
 });
 
 document.querySelector("#rotateCubeYCW")?.addEventListener("click", () => {
-  rubiksCube.rotateCube("YCW");
+  rubiksCube.rotateRubiksCube("YCW");
   renderCube();
 });
 
 document.querySelector("#rotateCubeYCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateCube("YCCW");
+  rubiksCube.rotateRubiksCube("YCCW");
   renderCube();
 });
 
@@ -120,12 +120,14 @@ function renderCube() {
   document.querySelectorAll(".cube").forEach((el) => {
     const cubeElement = el as HTMLElement;
     const orientationKey = cubeElement.dataset.orientation;
-    const positionStr = cubeElement.dataset.position;
-    if (!orientationKey || !positionStr) return;
+    const { posX, posY, posZ } = cubeElement.dataset;
+    if (!orientationKey || posX === undefined || posY === undefined || posZ === undefined) return;
 
-    const positionInt = parseInt(positionStr);
-    const position = positionMap[positionInt];
-    if (!position) return;
+    const position = {
+      X: parseInt(posX),
+      Y: parseInt(posY),
+      Z: parseInt(posZ),
+    };
 
     const cube = rubiksCube.cubes.find((c) => JSONEquals(c.position, position));
     if (!cube) return;

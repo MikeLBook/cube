@@ -134,88 +134,50 @@
     }
   });
 
-  // src/engine/helpers.ts
-  var positionMap;
-  var init_helpers = __esm({
-    "src/engine/helpers.ts"() {
-      "use strict";
-      positionMap = {
-        1: { X: -1, Y: 1, Z: -1 },
-        2: { X: 0, Y: 1, Z: -1 },
-        3: { X: 1, Y: 1, Z: -1 },
-        4: { X: -1, Y: 1, Z: 0 },
-        5: { X: 0, Y: 1, Z: 0 },
-        6: { X: 1, Y: 1, Z: 0 },
-        7: { X: -1, Y: 1, Z: 1 },
-        8: { X: 0, Y: 1, Z: 1 },
-        9: { X: 1, Y: 1, Z: 1 },
-        10: { X: -1, Y: 0, Z: -1 },
-        11: { X: 0, Y: 0, Z: -1 },
-        12: { X: 1, Y: 0, Z: -1 },
-        13: { X: -1, Y: 0, Z: 0 },
-        14: { X: 0, Y: 0, Z: 0 },
-        15: { X: 1, Y: 0, Z: 0 },
-        16: { X: -1, Y: 0, Z: 1 },
-        17: { X: 0, Y: 0, Z: 1 },
-        18: { X: 1, Y: 0, Z: 1 },
-        19: { X: -1, Y: -1, Z: -1 },
-        20: { X: 0, Y: -1, Z: -1 },
-        21: { X: 1, Y: -1, Z: -1 },
-        22: { X: -1, Y: -1, Z: 0 },
-        23: { X: 0, Y: -1, Z: 0 },
-        24: { X: 1, Y: -1, Z: 0 },
-        25: { X: -1, Y: -1, Z: 1 },
-        26: { X: 0, Y: -1, Z: 1 },
-        27: { X: 1, Y: -1, Z: 1 }
-      };
-    }
-  });
-
   // src/engine/RubiksCube.ts
   var RubiksCube;
   var init_RubiksCube = __esm({
     "src/engine/RubiksCube.ts"() {
       "use strict";
       init_Cube();
-      init_helpers();
       RubiksCube = class _RubiksCube {
         cubes;
         static instance;
         constructor() {
-          this.cubes = _RubiksCube.buildSolvedCubes();
+          this.cubes = _RubiksCube.initSolvedRubiksCube();
         }
-        static buildSolvedCubes() {
+        static initSolvedRubiksCube() {
           return [
             // Top layer
-            new Cube(positionMap[1], { top: "Y", left: "B", back: "O" }),
-            new Cube(positionMap[2], { top: "Y", back: "O" }),
-            new Cube(positionMap[3], { top: "Y", right: "G", back: "O" }),
-            new Cube(positionMap[4], { top: "Y", left: "B" }),
-            new Cube(positionMap[5], { top: "Y" }),
-            new Cube(positionMap[6], { top: "Y", right: "G" }),
-            new Cube(positionMap[7], { top: "Y", left: "B", front: "R" }),
-            new Cube(positionMap[8], { top: "Y", front: "R" }),
-            new Cube(positionMap[9], { top: "Y", right: "G", front: "R" }),
+            new Cube({ X: -1, Y: 1, Z: -1 }, { top: "Y", left: "B", back: "O" }),
+            new Cube({ X: 0, Y: 1, Z: -1 }, { top: "Y", back: "O" }),
+            new Cube({ X: 1, Y: 1, Z: -1 }, { top: "Y", right: "G", back: "O" }),
+            new Cube({ X: -1, Y: 1, Z: 0 }, { top: "Y", left: "B" }),
+            new Cube({ X: 0, Y: 1, Z: 0 }, { top: "Y" }),
+            new Cube({ X: 1, Y: 1, Z: 0 }, { top: "Y", right: "G" }),
+            new Cube({ X: -1, Y: 1, Z: 1 }, { top: "Y", left: "B", front: "R" }),
+            new Cube({ X: 0, Y: 1, Z: 1 }, { top: "Y", front: "R" }),
+            new Cube({ X: 1, Y: 1, Z: 1 }, { top: "Y", right: "G", front: "R" }),
             // Middle layer
-            new Cube(positionMap[10], { left: "B", back: "O" }),
-            new Cube(positionMap[11], { back: "O" }),
-            new Cube(positionMap[12], { right: "G", back: "O" }),
-            new Cube(positionMap[13], { left: "B" }),
-            new Cube(positionMap[14], {}),
-            new Cube(positionMap[15], { right: "G" }),
-            new Cube(positionMap[16], { left: "B", front: "R" }),
-            new Cube(positionMap[17], { front: "R" }),
-            new Cube(positionMap[18], { right: "G", front: "R" }),
+            new Cube({ X: -1, Y: 0, Z: -1 }, { left: "B", back: "O" }),
+            new Cube({ X: 0, Y: 0, Z: -1 }, { back: "O" }),
+            new Cube({ X: 1, Y: 0, Z: -1 }, { right: "G", back: "O" }),
+            new Cube({ X: -1, Y: 0, Z: 0 }, { left: "B" }),
+            new Cube({ X: 0, Y: 0, Z: 0 }, {}),
+            new Cube({ X: 1, Y: 0, Z: 0 }, { right: "G" }),
+            new Cube({ X: -1, Y: 0, Z: 1 }, { left: "B", front: "R" }),
+            new Cube({ X: 0, Y: 0, Z: 1 }, { front: "R" }),
+            new Cube({ X: 1, Y: 0, Z: 1 }, { right: "G", front: "R" }),
             // Bottom layer
-            new Cube(positionMap[19], { bottom: "W", left: "B", back: "O" }),
-            new Cube(positionMap[20], { bottom: "W", back: "O" }),
-            new Cube(positionMap[21], { bottom: "W", right: "G", back: "O" }),
-            new Cube(positionMap[22], { bottom: "W", left: "B" }),
-            new Cube(positionMap[23], { bottom: "W" }),
-            new Cube(positionMap[24], { bottom: "W", right: "G" }),
-            new Cube(positionMap[25], { bottom: "W", left: "B", front: "R" }),
-            new Cube(positionMap[26], { bottom: "W", front: "R" }),
-            new Cube(positionMap[27], { bottom: "W", right: "G", front: "R" })
+            new Cube({ X: -1, Y: -1, Z: -1 }, { bottom: "W", left: "B", back: "O" }),
+            new Cube({ X: 0, Y: -1, Z: -1 }, { bottom: "W", back: "O" }),
+            new Cube({ X: 1, Y: -1, Z: -1 }, { bottom: "W", right: "G", back: "O" }),
+            new Cube({ X: -1, Y: -1, Z: 0 }, { bottom: "W", left: "B" }),
+            new Cube({ X: 0, Y: -1, Z: 0 }, { bottom: "W" }),
+            new Cube({ X: 1, Y: -1, Z: 0 }, { bottom: "W", right: "G" }),
+            new Cube({ X: -1, Y: -1, Z: 1 }, { bottom: "W", left: "B", front: "R" }),
+            new Cube({ X: 0, Y: -1, Z: 1 }, { bottom: "W", front: "R" }),
+            new Cube({ X: 1, Y: -1, Z: 1 }, { bottom: "W", right: "G", front: "R" })
           ];
         }
         static getInstance() {
@@ -223,9 +185,6 @@
             _RubiksCube.instance = new _RubiksCube();
           }
           return _RubiksCube.instance;
-        }
-        reset() {
-          this.cubes = _RubiksCube.buildSolvedCubes();
         }
         isSolved() {
           const faces = [
@@ -241,7 +200,10 @@
             return colors.every((color) => color === colors[0]);
           });
         }
-        rotateCube(rotation) {
+        reset() {
+          this.cubes = _RubiksCube.initSolvedRubiksCube();
+        }
+        rotateRubiksCube(rotation) {
           switch (rotation) {
             case "XCW":
               this.cubes.forEach((cube) => cube.rotateXCW());
@@ -640,7 +602,7 @@
             if (finished) return;
             finished = true;
             this.worldEl.removeEventListener("transitionend", onEnd);
-            this.rubiks.rotateCube(c.rotation);
+            this.rubiks.rotateRubiksCube(c.rotation);
             this.worldEl.style.transition = "none";
             this.worldEl.style.transform = this.orbitStr();
             this.renderCube();
