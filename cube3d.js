@@ -581,6 +581,8 @@
   var require_cube3d = __commonJS({
     "src/cube3d.ts"() {
       init_RubiksCube();
+      var DEFAULT_YAW = -45;
+      var DEFAULT_PITCH = -19.5;
       var CubeView = class {
         constructor(sceneEl) {
           this.rubiks = RubiksCube.getInstance();
@@ -597,8 +599,8 @@
           this.scrambleLeft = 0;
           this.t0 = 0;
           // orbit
-          this.yaw = -34;
-          this.pitch = -22;
+          this.yaw = DEFAULT_YAW;
+          this.pitch = DEFAULT_PITCH;
           // drag bookkeeping
           this.dragging = false;
           this.dragFace = null;
@@ -814,12 +816,16 @@
         }
         animateCube(c) {
           this.animating = true;
+          this.worldEl.style.transition = "none";
+          this.worldEl.style.transform = this.orbitStr();
+          this.worldEl.getBoundingClientRect();
           this.worldEl.style.transition = "transform 320ms cubic-bezier(.34,.66,.24,1)";
           this.worldEl.style.transform = this.orbitStr() + " rotate" + c.axis + "(" + c.angle + "deg)";
           let finished = false;
           const done = () => {
             if (finished) return;
             finished = true;
+            this.worldEl.removeEventListener("transitionend", onEnd);
             this.rubiks.rotateCube(c.rotation);
             this.worldEl.style.transition = "none";
             this.worldEl.style.transform = this.orbitStr();
@@ -827,7 +833,10 @@
             this.animating = false;
             this.processQueue();
           };
-          this.worldEl.addEventListener("transitionend", done, { once: true });
+          const onEnd = (e) => {
+            if (e.target === this.worldEl && e.propertyName === "transform") done();
+          };
+          this.worldEl.addEventListener("transitionend", onEnd);
           setTimeout(done, 470);
         }
         animateLayer(m, angle, method, opts) {
@@ -847,6 +856,7 @@
           const done = () => {
             if (finished) return;
             finished = true;
+            group.removeEventListener("transitionend", onEnd);
             this.rubiks[method]();
             moving.forEach((e) => this.worldEl.appendChild(e.el));
             group.remove();
@@ -855,7 +865,10 @@
             this.animating = false;
             this.processQueue();
           };
-          group.addEventListener("transitionend", done);
+          const onEnd = (e) => {
+            if (e.target === group && e.propertyName === "transform") done();
+          };
+          group.addEventListener("transitionend", onEnd);
           setTimeout(done, dur + 140);
         }
         afterMove(opts) {
@@ -947,8 +960,8 @@
           }
           if (resetView) {
             this.hasScrambled = false;
-            this.yaw = -34;
-            this.pitch = -22;
+            this.yaw = DEFAULT_YAW;
+            this.pitch = DEFAULT_PITCH;
             this.applyView(true);
           }
           this.status = "ready";
@@ -959,8 +972,8 @@
         }
         // ---------- view ----------
         resetView() {
-          this.yaw = -34;
-          this.pitch = -22;
+          this.yaw = DEFAULT_YAW;
+          this.pitch = DEFAULT_PITCH;
           this.applyView(true);
         }
         // ---------- pointer ----------
@@ -1048,22 +1061,27 @@
           const tag = e.target?.tagName || "";
           if (/input|textarea|select/i.test(tag)) return;
           const k = e.key;
-          if (k === "ArrowLeft") {
+          if (k === " ") {
+            this.resetView();
+            e.preventDefault();
+            return;
+          }
+          if (k === "a") {
             this.cubeMove("spinLeft");
             e.preventDefault();
             return;
           }
-          if (k === "ArrowRight") {
+          if (k === "d") {
             this.cubeMove("spinRight");
             e.preventDefault();
             return;
           }
-          if (k === "ArrowUp") {
+          if (k === "w") {
             this.cubeMove("rollUp");
             e.preventDefault();
             return;
           }
-          if (k === "ArrowDown") {
+          if (k === "s") {
             this.cubeMove("rollDown");
             e.preventDefault();
             return;
@@ -1075,9 +1093,9 @@
             r: "R",
             f: "F",
             b: "B",
-            m: "M",
-            e: "E",
-            s: "S"
+            y: "M",
+            x: "E",
+            z: "S"
           };
           const face = map[k.toLowerCase()];
           if (face) {

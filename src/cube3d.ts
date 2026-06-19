@@ -29,6 +29,9 @@ type Status = "ready" | "scrambling" | "solving" | "solved";
 // Singmaster-style face notation keys handled by this view.
 type MoveKey = "U" | "E" | "D" | "L" | "M" | "R" | "B" | "S" | "F";
 
+const DEFAULT_YAW = -45;
+const DEFAULT_PITCH = -19.5;
+
 interface MoveDef {
   posAxis: Axis;
   layer: number;
@@ -101,8 +104,8 @@ class CubeView {
   private t0 = 0;
 
   // orbit
-  private yaw = -34;
-  private pitch = -22;
+  private yaw = DEFAULT_YAW;
+  private pitch = DEFAULT_PITCH;
 
   // drag bookkeeping
   private dragging = false;
@@ -366,6 +369,13 @@ class CubeView {
 
   private animateCube(c: CubeMoveDef) {
     this.animating = true;
+    // Commit a clean resting orientation as the animation's starting point. Without the
+    // forced reflow, a queued rotation's reset (transition:none) and the next rotation's
+    // transition+transform collapse into one style pass with no baseline to animate from,
+    // so every turn after the first would jump instantly instead of animating.
+    this.worldEl.style.transition = "none";
+    this.worldEl.style.transform = this.orbitStr();
+    this.worldEl.getBoundingClientRect(); // reflow
     this.worldEl.style.transition =
       "transform 320ms cubic-bezier(.34,.66,.24,1)";
     this.worldEl.style.transform =
@@ -374,6 +384,7 @@ class CubeView {
     const done = () => {
       if (finished) return;
       finished = true;
+      this.worldEl.removeEventListener("transitionend", onEnd);
       this.rubiks.rotateCube(c.rotation); // re-key model so the spun look becomes the new resting state
       this.worldEl.style.transition = "none";
       this.worldEl.style.transform = this.orbitStr();
@@ -381,7 +392,13 @@ class CubeView {
       this.animating = false;
       this.processQueue();
     };
-    this.worldEl.addEventListener("transitionend", done, { once: true });
+    // Only react to worldEl's own transform transition. transitionend bubbles, so a layer
+    // turn's group event (which finishes just before this animation starts) would otherwise
+    // fire this handler instantly and skip the animation.
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target === this.worldEl && e.propertyName === "transform") done();
+    };
+    this.worldEl.addEventListener("transitionend", onEnd);
     setTimeout(done, 470);
   }
 
@@ -410,6 +427,7 @@ class CubeView {
     const done = () => {
       if (finished) return;
       finished = true;
+      group.removeEventListener("transitionend", onEnd);
       this.rubiks[method]();
       moving.forEach((e) => this.worldEl.appendChild(e.el));
       group.remove();
@@ -418,7 +436,11 @@ class CubeView {
       this.animating = false;
       this.processQueue();
     };
-    group.addEventListener("transitionend", done);
+    // Only react to this group's own transform transition (ignore any bubbled child events).
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target === group && e.propertyName === "transform") done();
+    };
+    group.addEventListener("transitionend", onEnd);
     setTimeout(done, dur + 140);
   }
 
@@ -518,8 +540,8 @@ class CubeView {
     }
     if (resetView) {
       this.hasScrambled = false;
-      this.yaw = -34;
-      this.pitch = -22;
+      this.yaw = DEFAULT_YAW;
+      this.pitch = DEFAULT_PITCH;
       this.applyView(true);
     }
     this.status = "ready";
@@ -531,8 +553,8 @@ class CubeView {
 
   // ---------- view ----------
   private resetView() {
-    this.yaw = -34;
-    this.pitch = -22;
+    this.yaw = DEFAULT_YAW;
+    this.pitch = DEFAULT_PITCH;
     this.applyView(true);
   }
 
@@ -639,22 +661,27 @@ class CubeView {
     const tag = (e.target as HTMLElement | null)?.tagName || "";
     if (/input|textarea|select/i.test(tag)) return;
     const k = e.key;
-    if (k === "ArrowLeft") {
+    if (k === " ") {
+      this.resetView();
+      e.preventDefault();
+      return;
+    }
+    if (k === "a") {
       this.cubeMove("spinLeft");
       e.preventDefault();
       return;
     }
-    if (k === "ArrowRight") {
+    if (k === "d") {
       this.cubeMove("spinRight");
       e.preventDefault();
       return;
     }
-    if (k === "ArrowUp") {
+    if (k === "w") {
       this.cubeMove("rollUp");
       e.preventDefault();
       return;
     }
-    if (k === "ArrowDown") {
+    if (k === "s") {
       this.cubeMove("rollDown");
       e.preventDefault();
       return;
@@ -666,9 +693,9 @@ class CubeView {
       r: "R",
       f: "F",
       b: "B",
-      m: "M",
-      e: "E",
-      s: "S",
+      y: "M",
+      x: "E",
+      z: "S",
     };
     const face = map[k.toLowerCase()];
     if (face) {
