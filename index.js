@@ -78,8 +78,9 @@
   var init_Cube = __esm({
     "src/engine/Cube.ts"() {
       "use strict";
-      init_helpers();
       Cube = class {
+        position;
+        orientation;
         constructor(position, orientation) {
           this.position = position;
           this.orientation = orientation;
@@ -111,272 +112,79 @@
         get isInBackLayer() {
           return this.orientation.back !== void 0;
         }
-        // isCorner, isEdge
-        rotateXCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.top,
-            bottom: oldOrientation.bottom,
-            left: oldOrientation.front,
-            front: oldOrientation.right,
-            right: oldOrientation.back,
-            back: oldOrientation.left
+        get isCorner() {
+          return Object.values(this.orientation).filter((o) => o !== void 0).length === 3;
+        }
+        get isEdge() {
+          return Object.values(this.orientation).filter((o) => o !== void 0).length === 2;
+        }
+        rotate(newOrientation) {
+          this.position = {
+            X: newOrientation.left ? -1 : newOrientation.right ? 1 : 0,
+            Y: newOrientation.top ? 1 : newOrientation.bottom ? -1 : 0,
+            Z: newOrientation.front ? 1 : newOrientation.back ? -1 : 0
           };
-          let positionOffset = 0;
-          if (this.isInXMidLayer) {
-            positionOffset = 9;
-          } else if (this.isInBottomLayer) {
-            positionOffset = 18;
-          }
-          switch (this.position) {
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[3 + positionOffset];
-              break;
-            case positionMap[2 + positionOffset]:
-              this.position = positionMap[6 + positionOffset];
-              break;
-            case positionMap[3 + positionOffset]:
-              this.position = positionMap[9 + positionOffset];
-              break;
-            case positionMap[4 + positionOffset]:
-              this.position = positionMap[2 + positionOffset];
-              break;
-            case positionMap[5 + positionOffset]:
-              break;
-            case positionMap[6 + positionOffset]:
-              this.position = positionMap[8 + positionOffset];
-              break;
-            case positionMap[7 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[8 + positionOffset]:
-              this.position = positionMap[4 + positionOffset];
-              break;
-            case positionMap[9 + positionOffset]:
-              this.position = positionMap[7 + positionOffset];
-          }
+          this.orientation = newOrientation;
+        }
+        rotateXCW() {
+          this.rotate({
+            top: this.orientation.top,
+            bottom: this.orientation.bottom,
+            left: this.orientation.front,
+            front: this.orientation.right,
+            right: this.orientation.back,
+            back: this.orientation.left
+          });
         }
         rotateXCCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.top,
-            bottom: oldOrientation.bottom,
-            left: oldOrientation.back,
-            front: oldOrientation.left,
-            right: oldOrientation.front,
-            back: oldOrientation.right
-          };
-          let positionOffset = 0;
-          if (this.isInXMidLayer) {
-            positionOffset = 9;
-          } else if (this.isInBottomLayer) {
-            positionOffset = 18;
-          }
-          switch (this.position) {
-            case positionMap[3 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[6 + positionOffset]:
-              this.position = positionMap[2 + positionOffset];
-              break;
-            case positionMap[9 + positionOffset]:
-              this.position = positionMap[3 + positionOffset];
-              break;
-            case positionMap[2 + positionOffset]:
-              this.position = positionMap[4 + positionOffset];
-              break;
-            case positionMap[5 + positionOffset]:
-              break;
-            case positionMap[8 + positionOffset]:
-              this.position = positionMap[6 + positionOffset];
-              break;
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[7 + positionOffset];
-              break;
-            case positionMap[4 + positionOffset]:
-              this.position = positionMap[8 + positionOffset];
-              break;
-            case positionMap[7 + positionOffset]:
-              this.position = positionMap[9 + positionOffset];
-          }
+          this.rotate({
+            top: this.orientation.top,
+            bottom: this.orientation.bottom,
+            left: this.orientation.back,
+            front: this.orientation.left,
+            right: this.orientation.front,
+            back: this.orientation.right
+          });
         }
         rotateYCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.front,
-            back: oldOrientation.top,
-            bottom: oldOrientation.back,
-            front: oldOrientation.bottom,
-            left: oldOrientation.left,
-            right: oldOrientation.right
-          };
-          let positionOffset = 0;
-          if (this.isInYMidLayer) {
-            positionOffset = 1;
-          } else if (this.isInRightLayer) {
-            positionOffset = 2;
-          }
-          switch (this.position) {
-            case positionMap[7 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[16 + positionOffset]:
-              this.position = positionMap[4 + positionOffset];
-              break;
-            case positionMap[25 + positionOffset]:
-              this.position = positionMap[7 + positionOffset];
-              break;
-            case positionMap[4 + positionOffset]:
-              this.position = positionMap[10 + positionOffset];
-              break;
-            case positionMap[13 + positionOffset]:
-              break;
-            case positionMap[22 + positionOffset]:
-              this.position = positionMap[16 + positionOffset];
-              break;
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[19 + positionOffset];
-              break;
-            case positionMap[10 + positionOffset]:
-              this.position = positionMap[22 + positionOffset];
-              break;
-            case positionMap[19 + positionOffset]:
-              this.position = positionMap[25 + positionOffset];
-              break;
-          }
+          this.rotate({
+            top: this.orientation.front,
+            back: this.orientation.top,
+            bottom: this.orientation.back,
+            front: this.orientation.bottom,
+            left: this.orientation.left,
+            right: this.orientation.right
+          });
         }
         rotateYCCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.back,
-            front: oldOrientation.top,
-            bottom: oldOrientation.front,
-            back: oldOrientation.bottom,
-            left: oldOrientation.left,
-            right: oldOrientation.right
-          };
-          let positionOffset = 0;
-          if (this.isInYMidLayer) {
-            positionOffset = 1;
-          } else if (this.isInRightLayer) {
-            positionOffset = 2;
-          }
-          switch (this.position) {
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[7 + positionOffset];
-              break;
-            case positionMap[4 + positionOffset]:
-              this.position = positionMap[16 + positionOffset];
-              break;
-            case positionMap[7 + positionOffset]:
-              this.position = positionMap[25 + positionOffset];
-              break;
-            case positionMap[10 + positionOffset]:
-              this.position = positionMap[4 + positionOffset];
-              break;
-            case positionMap[13 + positionOffset]:
-              break;
-            case positionMap[16 + positionOffset]:
-              this.position = positionMap[22 + positionOffset];
-              break;
-            case positionMap[19 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[22 + positionOffset]:
-              this.position = positionMap[10 + positionOffset];
-              break;
-            case positionMap[25 + positionOffset]:
-              this.position = positionMap[19 + positionOffset];
-              break;
-          }
+          this.rotate({
+            top: this.orientation.back,
+            front: this.orientation.top,
+            bottom: this.orientation.front,
+            back: this.orientation.bottom,
+            left: this.orientation.left,
+            right: this.orientation.right
+          });
         }
         rotateZCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.left,
-            right: oldOrientation.top,
-            bottom: oldOrientation.right,
-            left: oldOrientation.bottom,
-            front: oldOrientation.front,
-            back: oldOrientation.back
-          };
-          let positionOffset = 0;
-          if (this.isInZMidLayer) {
-            positionOffset = 3;
-          } else if (this.isInFrontLayer) {
-            positionOffset = 6;
-          }
-          switch (this.position) {
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[3 + positionOffset];
-              break;
-            case positionMap[2 + positionOffset]:
-              this.position = positionMap[12 + positionOffset];
-              break;
-            case positionMap[3 + positionOffset]:
-              this.position = positionMap[21 + positionOffset];
-              break;
-            case positionMap[10 + positionOffset]:
-              this.position = positionMap[2 + positionOffset];
-              break;
-            case positionMap[11 + positionOffset]:
-              break;
-            case positionMap[12 + positionOffset]:
-              this.position = positionMap[20 + positionOffset];
-              break;
-            case positionMap[19 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[20 + positionOffset]:
-              this.position = positionMap[10 + positionOffset];
-              break;
-            case positionMap[21 + positionOffset]:
-              this.position = positionMap[19 + positionOffset];
-          }
+          this.rotate({
+            top: this.orientation.left,
+            right: this.orientation.top,
+            bottom: this.orientation.right,
+            left: this.orientation.bottom,
+            front: this.orientation.front,
+            back: this.orientation.back
+          });
         }
         rotateZCCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.right,
-            right: oldOrientation.bottom,
-            bottom: oldOrientation.left,
-            left: oldOrientation.top,
-            front: oldOrientation.front,
-            back: oldOrientation.back
-          };
-          let positionOffset = 0;
-          if (this.isInZMidLayer) {
-            positionOffset = 3;
-          } else if (this.isInFrontLayer) {
-            positionOffset = 6;
-          }
-          switch (this.position) {
-            case positionMap[3 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[12 + positionOffset]:
-              this.position = positionMap[2 + positionOffset];
-              break;
-            case positionMap[21 + positionOffset]:
-              this.position = positionMap[3 + positionOffset];
-              break;
-            case positionMap[2 + positionOffset]:
-              this.position = positionMap[10 + positionOffset];
-              break;
-            case positionMap[11 + positionOffset]:
-              break;
-            case positionMap[20 + positionOffset]:
-              this.position = positionMap[12 + positionOffset];
-              break;
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[19 + positionOffset];
-              break;
-            case positionMap[10 + positionOffset]:
-              this.position = positionMap[20 + positionOffset];
-              break;
-            case positionMap[19 + positionOffset]:
-              this.position = positionMap[21 + positionOffset];
-          }
+          this.rotate({
+            top: this.orientation.right,
+            right: this.orientation.bottom,
+            bottom: this.orientation.left,
+            left: this.orientation.top,
+            front: this.orientation.front,
+            back: this.orientation.back
+          });
         }
       };
     }
@@ -390,6 +198,8 @@
       init_Cube();
       init_helpers();
       RubiksCube = class _RubiksCube {
+        cubes;
+        static instance;
         constructor() {
           this.cubes = _RubiksCube.buildSolvedCubes();
         }

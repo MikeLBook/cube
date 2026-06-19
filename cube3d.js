@@ -17,6 +17,123 @@
     }
   };
 
+  // src/engine/Cube.ts
+  var Cube;
+  var init_Cube = __esm({
+    "src/engine/Cube.ts"() {
+      "use strict";
+      Cube = class {
+        position;
+        orientation;
+        constructor(position, orientation) {
+          this.position = position;
+          this.orientation = orientation;
+        }
+        get isInTopLayer() {
+          return this.orientation.top !== void 0;
+        }
+        get isInXMidLayer() {
+          return this.orientation.top === void 0 && this.orientation.bottom === void 0;
+        }
+        get isInBottomLayer() {
+          return this.orientation.bottom !== void 0;
+        }
+        get isInLeftLayer() {
+          return this.orientation.left !== void 0;
+        }
+        get isInYMidLayer() {
+          return this.orientation.left === void 0 && this.orientation.right === void 0;
+        }
+        get isInRightLayer() {
+          return this.orientation.right !== void 0;
+        }
+        get isInFrontLayer() {
+          return this.orientation.front !== void 0;
+        }
+        get isInZMidLayer() {
+          return this.orientation.front === void 0 && this.orientation.back === void 0;
+        }
+        get isInBackLayer() {
+          return this.orientation.back !== void 0;
+        }
+        get isCorner() {
+          return Object.values(this.orientation).filter((o) => o !== void 0).length === 3;
+        }
+        get isEdge() {
+          return Object.values(this.orientation).filter((o) => o !== void 0).length === 2;
+        }
+        rotate(newOrientation) {
+          this.position = {
+            X: newOrientation.left ? -1 : newOrientation.right ? 1 : 0,
+            Y: newOrientation.top ? 1 : newOrientation.bottom ? -1 : 0,
+            Z: newOrientation.front ? 1 : newOrientation.back ? -1 : 0
+          };
+          this.orientation = newOrientation;
+        }
+        rotateXCW() {
+          this.rotate({
+            top: this.orientation.top,
+            bottom: this.orientation.bottom,
+            left: this.orientation.front,
+            front: this.orientation.right,
+            right: this.orientation.back,
+            back: this.orientation.left
+          });
+        }
+        rotateXCCW() {
+          this.rotate({
+            top: this.orientation.top,
+            bottom: this.orientation.bottom,
+            left: this.orientation.back,
+            front: this.orientation.left,
+            right: this.orientation.front,
+            back: this.orientation.right
+          });
+        }
+        rotateYCW() {
+          this.rotate({
+            top: this.orientation.front,
+            back: this.orientation.top,
+            bottom: this.orientation.back,
+            front: this.orientation.bottom,
+            left: this.orientation.left,
+            right: this.orientation.right
+          });
+        }
+        rotateYCCW() {
+          this.rotate({
+            top: this.orientation.back,
+            front: this.orientation.top,
+            bottom: this.orientation.front,
+            back: this.orientation.bottom,
+            left: this.orientation.left,
+            right: this.orientation.right
+          });
+        }
+        rotateZCW() {
+          this.rotate({
+            top: this.orientation.left,
+            right: this.orientation.top,
+            bottom: this.orientation.right,
+            left: this.orientation.bottom,
+            front: this.orientation.front,
+            back: this.orientation.back
+          });
+        }
+        rotateZCCW() {
+          this.rotate({
+            top: this.orientation.right,
+            right: this.orientation.bottom,
+            bottom: this.orientation.left,
+            left: this.orientation.top,
+            front: this.orientation.front,
+            back: this.orientation.back
+          });
+        }
+      };
+    }
+  });
+
   // src/engine/helpers.ts
   var positionMap;
   var init_helpers = __esm({
@@ -54,315 +171,6 @@
     }
   });
 
-  // src/engine/Cube.ts
-  var Cube;
-  var init_Cube = __esm({
-    "src/engine/Cube.ts"() {
-      "use strict";
-      init_helpers();
-      Cube = class {
-        constructor(position, orientation) {
-          this.position = position;
-          this.orientation = orientation;
-        }
-        get isInTopLayer() {
-          return this.orientation.top !== void 0;
-        }
-        get isInXMidLayer() {
-          return this.orientation.top === void 0 && this.orientation.bottom === void 0;
-        }
-        get isInBottomLayer() {
-          return this.orientation.bottom !== void 0;
-        }
-        get isInLeftLayer() {
-          return this.orientation.left !== void 0;
-        }
-        get isInYMidLayer() {
-          return this.orientation.left === void 0 && this.orientation.right === void 0;
-        }
-        get isInRightLayer() {
-          return this.orientation.right !== void 0;
-        }
-        get isInFrontLayer() {
-          return this.orientation.front !== void 0;
-        }
-        get isInZMidLayer() {
-          return this.orientation.front === void 0 && this.orientation.back === void 0;
-        }
-        get isInBackLayer() {
-          return this.orientation.back !== void 0;
-        }
-        // isCorner, isEdge
-        rotateXCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.top,
-            bottom: oldOrientation.bottom,
-            left: oldOrientation.front,
-            front: oldOrientation.right,
-            right: oldOrientation.back,
-            back: oldOrientation.left
-          };
-          let positionOffset = 0;
-          if (this.isInXMidLayer) {
-            positionOffset = 9;
-          } else if (this.isInBottomLayer) {
-            positionOffset = 18;
-          }
-          switch (this.position) {
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[3 + positionOffset];
-              break;
-            case positionMap[2 + positionOffset]:
-              this.position = positionMap[6 + positionOffset];
-              break;
-            case positionMap[3 + positionOffset]:
-              this.position = positionMap[9 + positionOffset];
-              break;
-            case positionMap[4 + positionOffset]:
-              this.position = positionMap[2 + positionOffset];
-              break;
-            case positionMap[5 + positionOffset]:
-              break;
-            case positionMap[6 + positionOffset]:
-              this.position = positionMap[8 + positionOffset];
-              break;
-            case positionMap[7 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[8 + positionOffset]:
-              this.position = positionMap[4 + positionOffset];
-              break;
-            case positionMap[9 + positionOffset]:
-              this.position = positionMap[7 + positionOffset];
-          }
-        }
-        rotateXCCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.top,
-            bottom: oldOrientation.bottom,
-            left: oldOrientation.back,
-            front: oldOrientation.left,
-            right: oldOrientation.front,
-            back: oldOrientation.right
-          };
-          let positionOffset = 0;
-          if (this.isInXMidLayer) {
-            positionOffset = 9;
-          } else if (this.isInBottomLayer) {
-            positionOffset = 18;
-          }
-          switch (this.position) {
-            case positionMap[3 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[6 + positionOffset]:
-              this.position = positionMap[2 + positionOffset];
-              break;
-            case positionMap[9 + positionOffset]:
-              this.position = positionMap[3 + positionOffset];
-              break;
-            case positionMap[2 + positionOffset]:
-              this.position = positionMap[4 + positionOffset];
-              break;
-            case positionMap[5 + positionOffset]:
-              break;
-            case positionMap[8 + positionOffset]:
-              this.position = positionMap[6 + positionOffset];
-              break;
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[7 + positionOffset];
-              break;
-            case positionMap[4 + positionOffset]:
-              this.position = positionMap[8 + positionOffset];
-              break;
-            case positionMap[7 + positionOffset]:
-              this.position = positionMap[9 + positionOffset];
-          }
-        }
-        rotateYCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.front,
-            back: oldOrientation.top,
-            bottom: oldOrientation.back,
-            front: oldOrientation.bottom,
-            left: oldOrientation.left,
-            right: oldOrientation.right
-          };
-          let positionOffset = 0;
-          if (this.isInYMidLayer) {
-            positionOffset = 1;
-          } else if (this.isInRightLayer) {
-            positionOffset = 2;
-          }
-          switch (this.position) {
-            case positionMap[7 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[16 + positionOffset]:
-              this.position = positionMap[4 + positionOffset];
-              break;
-            case positionMap[25 + positionOffset]:
-              this.position = positionMap[7 + positionOffset];
-              break;
-            case positionMap[4 + positionOffset]:
-              this.position = positionMap[10 + positionOffset];
-              break;
-            case positionMap[13 + positionOffset]:
-              break;
-            case positionMap[22 + positionOffset]:
-              this.position = positionMap[16 + positionOffset];
-              break;
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[19 + positionOffset];
-              break;
-            case positionMap[10 + positionOffset]:
-              this.position = positionMap[22 + positionOffset];
-              break;
-            case positionMap[19 + positionOffset]:
-              this.position = positionMap[25 + positionOffset];
-              break;
-          }
-        }
-        rotateYCCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.back,
-            front: oldOrientation.top,
-            bottom: oldOrientation.front,
-            back: oldOrientation.bottom,
-            left: oldOrientation.left,
-            right: oldOrientation.right
-          };
-          let positionOffset = 0;
-          if (this.isInYMidLayer) {
-            positionOffset = 1;
-          } else if (this.isInRightLayer) {
-            positionOffset = 2;
-          }
-          switch (this.position) {
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[7 + positionOffset];
-              break;
-            case positionMap[4 + positionOffset]:
-              this.position = positionMap[16 + positionOffset];
-              break;
-            case positionMap[7 + positionOffset]:
-              this.position = positionMap[25 + positionOffset];
-              break;
-            case positionMap[10 + positionOffset]:
-              this.position = positionMap[4 + positionOffset];
-              break;
-            case positionMap[13 + positionOffset]:
-              break;
-            case positionMap[16 + positionOffset]:
-              this.position = positionMap[22 + positionOffset];
-              break;
-            case positionMap[19 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[22 + positionOffset]:
-              this.position = positionMap[10 + positionOffset];
-              break;
-            case positionMap[25 + positionOffset]:
-              this.position = positionMap[19 + positionOffset];
-              break;
-          }
-        }
-        rotateZCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.left,
-            right: oldOrientation.top,
-            bottom: oldOrientation.right,
-            left: oldOrientation.bottom,
-            front: oldOrientation.front,
-            back: oldOrientation.back
-          };
-          let positionOffset = 0;
-          if (this.isInZMidLayer) {
-            positionOffset = 3;
-          } else if (this.isInFrontLayer) {
-            positionOffset = 6;
-          }
-          switch (this.position) {
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[3 + positionOffset];
-              break;
-            case positionMap[2 + positionOffset]:
-              this.position = positionMap[12 + positionOffset];
-              break;
-            case positionMap[3 + positionOffset]:
-              this.position = positionMap[21 + positionOffset];
-              break;
-            case positionMap[10 + positionOffset]:
-              this.position = positionMap[2 + positionOffset];
-              break;
-            case positionMap[11 + positionOffset]:
-              break;
-            case positionMap[12 + positionOffset]:
-              this.position = positionMap[20 + positionOffset];
-              break;
-            case positionMap[19 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[20 + positionOffset]:
-              this.position = positionMap[10 + positionOffset];
-              break;
-            case positionMap[21 + positionOffset]:
-              this.position = positionMap[19 + positionOffset];
-          }
-        }
-        rotateZCCW() {
-          const oldOrientation = { ...this.orientation };
-          this.orientation = {
-            top: oldOrientation.right,
-            right: oldOrientation.bottom,
-            bottom: oldOrientation.left,
-            left: oldOrientation.top,
-            front: oldOrientation.front,
-            back: oldOrientation.back
-          };
-          let positionOffset = 0;
-          if (this.isInZMidLayer) {
-            positionOffset = 3;
-          } else if (this.isInFrontLayer) {
-            positionOffset = 6;
-          }
-          switch (this.position) {
-            case positionMap[3 + positionOffset]:
-              this.position = positionMap[1 + positionOffset];
-              break;
-            case positionMap[12 + positionOffset]:
-              this.position = positionMap[2 + positionOffset];
-              break;
-            case positionMap[21 + positionOffset]:
-              this.position = positionMap[3 + positionOffset];
-              break;
-            case positionMap[2 + positionOffset]:
-              this.position = positionMap[10 + positionOffset];
-              break;
-            case positionMap[11 + positionOffset]:
-              break;
-            case positionMap[20 + positionOffset]:
-              this.position = positionMap[12 + positionOffset];
-              break;
-            case positionMap[1 + positionOffset]:
-              this.position = positionMap[19 + positionOffset];
-              break;
-            case positionMap[10 + positionOffset]:
-              this.position = positionMap[20 + positionOffset];
-              break;
-            case positionMap[19 + positionOffset]:
-              this.position = positionMap[21 + positionOffset];
-          }
-        }
-      };
-    }
-  });
-
   // src/engine/RubiksCube.ts
   var RubiksCube;
   var init_RubiksCube = __esm({
@@ -371,6 +179,8 @@
       init_Cube();
       init_helpers();
       RubiksCube = class _RubiksCube {
+        cubes;
+        static instance;
         constructor() {
           this.cubes = _RubiksCube.buildSolvedCubes();
         }
@@ -584,136 +394,139 @@
       var DEFAULT_YAW = -45;
       var DEFAULT_PITCH = -19.5;
       var CubeView = class {
+        rubiks = RubiksCube.getInstance();
+        sceneEl;
+        worldEl;
+        entries = [];
+        // queued moves / animation gating
+        queue = [];
+        animating = false;
+        // session state (mirrored into the panel DOM)
+        moveCount = 0;
+        elapsed = 0;
+        status = "ready";
+        running = false;
+        hasScrambled = false;
+        scrambleLeft = 0;
+        timer;
+        t0 = 0;
+        // orbit
+        yaw = DEFAULT_YAW;
+        pitch = DEFAULT_PITCH;
+        // drag bookkeeping
+        dragging = false;
+        dragFace = null;
+        turnCommitted = false;
+        px = 0;
+        py = 0;
+        yaw0 = 0;
+        pitch0 = 0;
+        // sticker colours (reuse the index.css palette)
+        COLORS = {
+          Y: "#ffd43b",
+          R: "#d92b3c",
+          B: "#2256d6",
+          G: "#1eaa5b",
+          O: "#ff7a18",
+          W: "#f4f4f0"
+        };
+        DIRS = [
+          "front",
+          "back",
+          "right",
+          "left",
+          "top",
+          "bottom"
+        ];
+        // geometry
+        S = 58;
+        HALF = 29;
+        UNIT = 63;
+        // calibration signs (flip if a turn animates the wrong way)
+        ANIM_SIGN = { X: 1, Y: -1, Z: 1 };
+        CW_SIGN = { X: -1, Y: -1, Z: -1 };
+        // notation -> engine method + animation metadata. Method names match RubiksCube exactly.
+        MOVES = {
+          U: {
+            posAxis: "Y",
+            layer: 1,
+            cw: "rotateTopCW",
+            ccw: "rotateTopCCW",
+            cssAxis: "Y"
+          },
+          E: {
+            posAxis: "Y",
+            layer: 0,
+            cw: "rotateXMidCW",
+            ccw: "rotateXMidCCW",
+            cssAxis: "Y"
+          },
+          D: {
+            posAxis: "Y",
+            layer: -1,
+            cw: "rotateBottomCW",
+            ccw: "rotateBottomCCW",
+            cssAxis: "Y"
+          },
+          L: {
+            posAxis: "X",
+            layer: -1,
+            cw: "rotateLeftCW",
+            ccw: "rotateLeftCCW",
+            cssAxis: "X"
+          },
+          M: {
+            posAxis: "X",
+            layer: 0,
+            cw: "rotateYMidCW",
+            ccw: "rotateYMidCCW",
+            cssAxis: "X"
+          },
+          R: {
+            posAxis: "X",
+            layer: 1,
+            cw: "rotateRightCW",
+            ccw: "rotateRightCCW",
+            cssAxis: "X"
+          },
+          B: {
+            posAxis: "Z",
+            layer: -1,
+            cw: "rotateBackCW",
+            ccw: "rotateBackCCW",
+            cssAxis: "Z"
+          },
+          S: {
+            posAxis: "Z",
+            layer: 0,
+            cw: "rotateZMidCW",
+            ccw: "rotateZMidCCW",
+            cssAxis: "Z"
+          },
+          F: {
+            posAxis: "Z",
+            layer: 1,
+            cw: "rotateFrontCW",
+            ccw: "rotateFrontCCW",
+            cssAxis: "Z"
+          }
+        };
+        NORMALS = {
+          right: { X: 1, Y: 0, Z: 0 },
+          left: { X: -1, Y: 0, Z: 0 },
+          top: { X: 0, Y: 1, Z: 0 },
+          bottom: { X: 0, Y: -1, Z: 0 },
+          front: { X: 0, Y: 0, Z: 1 },
+          back: { X: 0, Y: 0, Z: -1 }
+        };
+        // whole-cube re-orientation -> engine rotateCube + matching world animation
+        CUBE_MOVES = {
+          spinLeft: { rotation: "XCW", axis: "Y", angle: -90 },
+          spinRight: { rotation: "XCCW", axis: "Y", angle: 90 },
+          rollUp: { rotation: "YCW", axis: "X", angle: 90 },
+          rollDown: { rotation: "YCCW", axis: "X", angle: -90 }
+        };
         constructor(sceneEl) {
-          this.rubiks = RubiksCube.getInstance();
-          this.entries = [];
-          // queued moves / animation gating
-          this.queue = [];
-          this.animating = false;
-          // session state (mirrored into the panel DOM)
-          this.moveCount = 0;
-          this.elapsed = 0;
-          this.status = "ready";
-          this.running = false;
-          this.hasScrambled = false;
-          this.scrambleLeft = 0;
-          this.t0 = 0;
-          // orbit
-          this.yaw = DEFAULT_YAW;
-          this.pitch = DEFAULT_PITCH;
-          // drag bookkeeping
-          this.dragging = false;
-          this.dragFace = null;
-          this.turnCommitted = false;
-          this.px = 0;
-          this.py = 0;
-          this.yaw0 = 0;
-          this.pitch0 = 0;
-          // sticker colours (reuse the index.css palette)
-          this.COLORS = {
-            Y: "#ffd43b",
-            R: "#d92b3c",
-            B: "#2256d6",
-            G: "#1eaa5b",
-            O: "#ff7a18",
-            W: "#f4f4f0"
-          };
-          this.DIRS = [
-            "front",
-            "back",
-            "right",
-            "left",
-            "top",
-            "bottom"
-          ];
-          // geometry
-          this.S = 58;
-          this.HALF = 29;
-          this.UNIT = 63;
-          // calibration signs (flip if a turn animates the wrong way)
-          this.ANIM_SIGN = { X: 1, Y: -1, Z: 1 };
-          this.CW_SIGN = { X: -1, Y: -1, Z: -1 };
-          // notation -> engine method + animation metadata. Method names match RubiksCube exactly.
-          this.MOVES = {
-            U: {
-              posAxis: "Y",
-              layer: 1,
-              cw: "rotateTopCW",
-              ccw: "rotateTopCCW",
-              cssAxis: "Y"
-            },
-            E: {
-              posAxis: "Y",
-              layer: 0,
-              cw: "rotateXMidCW",
-              ccw: "rotateXMidCCW",
-              cssAxis: "Y"
-            },
-            D: {
-              posAxis: "Y",
-              layer: -1,
-              cw: "rotateBottomCW",
-              ccw: "rotateBottomCCW",
-              cssAxis: "Y"
-            },
-            L: {
-              posAxis: "X",
-              layer: -1,
-              cw: "rotateLeftCW",
-              ccw: "rotateLeftCCW",
-              cssAxis: "X"
-            },
-            M: {
-              posAxis: "X",
-              layer: 0,
-              cw: "rotateYMidCW",
-              ccw: "rotateYMidCCW",
-              cssAxis: "X"
-            },
-            R: {
-              posAxis: "X",
-              layer: 1,
-              cw: "rotateRightCW",
-              ccw: "rotateRightCCW",
-              cssAxis: "X"
-            },
-            B: {
-              posAxis: "Z",
-              layer: -1,
-              cw: "rotateBackCW",
-              ccw: "rotateBackCCW",
-              cssAxis: "Z"
-            },
-            S: {
-              posAxis: "Z",
-              layer: 0,
-              cw: "rotateZMidCW",
-              ccw: "rotateZMidCCW",
-              cssAxis: "Z"
-            },
-            F: {
-              posAxis: "Z",
-              layer: 1,
-              cw: "rotateFrontCW",
-              ccw: "rotateFrontCCW",
-              cssAxis: "Z"
-            }
-          };
-          this.NORMALS = {
-            right: { X: 1, Y: 0, Z: 0 },
-            left: { X: -1, Y: 0, Z: 0 },
-            top: { X: 0, Y: 1, Z: 0 },
-            bottom: { X: 0, Y: -1, Z: 0 },
-            front: { X: 0, Y: 0, Z: 1 },
-            back: { X: 0, Y: 0, Z: -1 }
-          };
-          // whole-cube re-orientation -> engine rotateCube + matching world animation
-          this.CUBE_MOVES = {
-            spinLeft: { rotation: "XCW", axis: "Y", angle: -90 },
-            spinRight: { rotation: "XCCW", axis: "Y", angle: 90 },
-            rollUp: { rotation: "YCW", axis: "X", angle: 90 },
-            rollDown: { rotation: "YCCW", axis: "X", angle: -90 }
-          };
           this.sceneEl = sceneEl;
           this.init();
           this.wireControls();
@@ -782,6 +595,7 @@
           });
         }
         applyView(animate) {
+          if (this.animating) return;
           if (!this.worldEl) return;
           this.worldEl.style.transition = animate ? "transform .4s cubic-bezier(.2,.6,.2,1)" : "none";
           this.worldEl.style.transform = "rotateX(" + this.pitch + "deg) rotateY(" + this.yaw + "deg)";

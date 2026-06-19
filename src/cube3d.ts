@@ -327,6 +327,7 @@ class CubeView {
   }
 
   private applyView(animate: boolean) {
+    if (this.animating) return;
     if (!this.worldEl) return;
     this.worldEl.style.transition = animate
       ? "transform .4s cubic-bezier(.2,.6,.2,1)"
