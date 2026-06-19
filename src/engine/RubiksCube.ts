@@ -1,5 +1,6 @@
 import Cube from "./Cube";
-import { Face, Orientation, Rotation } from "./models";
+import { isCubeArray } from "./helpers";
+import { Face, ORIENTATION_KEYS, Rotation } from "./models";
 
 // 3D layout of the 27 cubes in a Rubiks Cube. Coordinates are (X, Y, Z):
 //   X:  -1 = left    →   1 = right
@@ -30,10 +31,10 @@ export default class RubiksCube {
   private static instance: RubiksCube;
 
   private constructor() {
-    this.cubes = RubiksCube.initSolvedRubiksCube();
+    this.cubes = RubiksCube.initCubes();
   }
 
-  private static initSolvedRubiksCube(): Cube[] {
+  private static initCubes(): Cube[] {
     return [
       // Top layer
       new Cube({ X: -1, Y: 1, Z: -1 }, { top: "Y", left: "B", back: "O" }),
@@ -75,16 +76,22 @@ export default class RubiksCube {
     return RubiksCube.instance;
   }
 
+  public setState(cubeState: string) {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(cubeState);
+    } catch (e) {
+      console.error("error", e);
+      return;
+    }
+    if (!isCubeArray(parsed)) return;
+    // Rehydrate into real Cube instances — JSON.parse yields plain objects with
+    // no prototype, so the rotation methods/getters would be missing otherwise.
+    this.cubes = parsed.map((c) => new Cube(c.position, c.orientation));
+  }
+
   public isSolved(): boolean {
-    const orientations: (keyof Orientation)[] = [
-      "top",
-      "bottom",
-      "left",
-      "right",
-      "front",
-      "back",
-    ];
-    return orientations.every((orientation) => {
+    return ORIENTATION_KEYS.every((orientation) => {
       const faces = this.cubes
         .map((cube) => cube.orientation[orientation])
         .filter((face): face is Face => face !== undefined);
@@ -93,7 +100,7 @@ export default class RubiksCube {
   }
 
   public reset() {
-    this.cubes = RubiksCube.initSolvedRubiksCube();
+    this.cubes = RubiksCube.initCubes();
   }
 
   public rotateRubiksCube(rotation: Rotation) {

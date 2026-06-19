@@ -134,19 +134,73 @@
     }
   });
 
+  // src/engine/models.ts
+  var Faces, AXES, ORIENTATION_KEYS;
+  var init_models = __esm({
+    "src/engine/models.ts"() {
+      "use strict";
+      Faces = {
+        Y: "YELLOW",
+        B: "BLUE",
+        R: "RED",
+        G: "GREEN",
+        O: "ORANGE",
+        W: "WHITE"
+      };
+      AXES = ["X", "Y", "Z"];
+      ORIENTATION_KEYS = [
+        "top",
+        "bottom",
+        "left",
+        "right",
+        "front",
+        "back"
+      ];
+    }
+  });
+
+  // src/engine/helpers.ts
+  function isFace(value) {
+    return typeof value === "string" && value in Faces;
+  }
+  function isPosition(value) {
+    if (!value || typeof value !== "object") return false;
+    return AXES.every((axis) => typeof value[axis] === "number");
+  }
+  function isOrientation(value) {
+    if (!value || typeof value !== "object") return false;
+    return ORIENTATION_KEYS.every((key) => {
+      const face = value[key];
+      return face === void 0 || isFace(face);
+    });
+  }
+  function isCubeArray(value) {
+    return Array.isArray(value) && value.length === 27 && value.every(
+      (cube) => cube && typeof cube === "object" && isPosition(cube.position) && isOrientation(cube.orientation)
+    );
+  }
+  var init_helpers = __esm({
+    "src/engine/helpers.ts"() {
+      "use strict";
+      init_models();
+    }
+  });
+
   // src/engine/RubiksCube.ts
   var RubiksCube;
   var init_RubiksCube = __esm({
     "src/engine/RubiksCube.ts"() {
       "use strict";
       init_Cube();
+      init_helpers();
+      init_models();
       RubiksCube = class _RubiksCube {
         cubes;
         static instance;
         constructor() {
-          this.cubes = _RubiksCube.initSolvedRubiksCube();
+          this.cubes = _RubiksCube.initCubes();
         }
-        static initSolvedRubiksCube() {
+        static initCubes() {
           return [
             // Top layer
             new Cube({ X: -1, Y: 1, Z: -1 }, { top: "Y", left: "B", back: "O" }),
@@ -186,22 +240,25 @@
           }
           return _RubiksCube.instance;
         }
+        setState(cubeState) {
+          let parsed;
+          try {
+            parsed = JSON.parse(cubeState);
+          } catch (e) {
+            console.error("error", e);
+            return;
+          }
+          if (!isCubeArray(parsed)) return;
+          this.cubes = parsed.map((c) => new Cube(c.position, c.orientation));
+        }
         isSolved() {
-          const orientations = [
-            "top",
-            "bottom",
-            "left",
-            "right",
-            "front",
-            "back"
-          ];
-          return orientations.every((orientation) => {
+          return ORIENTATION_KEYS.every((orientation) => {
             const faces = this.cubes.map((cube) => cube.orientation[orientation]).filter((face) => face !== void 0);
             return new Set(faces).size === 1;
           });
         }
         reset() {
-          this.cubes = _RubiksCube.initSolvedRubiksCube();
+          this.cubes = _RubiksCube.initCubes();
         }
         rotateRubiksCube(rotation) {
           switch (rotation) {
@@ -498,6 +555,8 @@
           this.worldEl = document.createElement("div");
           this.worldEl.style.cssText = "position:absolute; left:50%; top:50%; width:0; height:0; transform-style:preserve-3d; will-change:transform;";
           this.sceneEl.appendChild(this.worldEl);
+          const saved = localStorage.getItem("cubeState");
+          if (saved) this.rubiks.setState(saved);
           this.entries = this.rubiks.cubes.map((c) => this.createCubie(c));
           this.entries.forEach((e) => this.worldEl.appendChild(e.el));
           this.applyView(false);
@@ -538,6 +597,10 @@
             stickers[dir] = st;
           });
           return entry;
+        }
+        // Write engine state to the localStorage key shared with the 2D page.
+        persist() {
+          localStorage.setItem("cubeState", JSON.stringify(this.rubiks.cubes));
         }
         renderCube() {
           const U = this.UNIT, H = this.HALF;
@@ -603,6 +666,7 @@
             finished = true;
             this.worldEl.removeEventListener("transitionend", onEnd);
             this.rubiks.rotateRubiksCube(c.rotation);
+            this.persist();
             this.worldEl.style.transition = "none";
             this.worldEl.style.transform = this.orbitStr();
             this.renderCube();
@@ -634,6 +698,7 @@
             finished = true;
             group.removeEventListener("transitionend", onEnd);
             this.rubiks[method]();
+            this.persist();
             moving.forEach((e) => this.worldEl.appendChild(e.el));
             group.remove();
             this.renderCube();
@@ -690,7 +755,7 @@
         }
         // ---------- scramble / reset ----------
         scramble() {
-          this.doReset(false);
+          this.doReset(false, false);
           this.hasScrambled = true;
           this.status = "scrambling";
           this.moveCount = 0;
@@ -716,14 +781,17 @@
           );
         }
         reset() {
-          this.doReset(true);
+          this.doReset(true, true);
         }
-        doReset(resetView) {
+        doReset(resetView, resetCubes) {
           if (this.timer) clearInterval(this.timer);
           this.running = false;
           this.queue = [];
           this.animating = false;
-          this.rubiks.reset();
+          if (resetCubes) {
+            this.rubiks.reset();
+            this.persist();
+          }
           this.entries.forEach((e, i) => {
             e.cube = this.rubiks.cubes[i];
           });

@@ -240,6 +240,11 @@ class CubeView {
       "position:absolute; left:50%; top:50%; width:0; height:0; transform-style:preserve-3d; will-change:transform;";
     this.sceneEl.appendChild(this.worldEl);
 
+    // Load any state persisted by the other page before building cubies — setState
+    // swaps in fresh Cube instances, so entries must reference the post-load array.
+    const saved = localStorage.getItem("cubeState");
+    if (saved) this.rubiks.setState(saved);
+
     this.entries = this.rubiks.cubes.map((c) => this.createCubie(c));
     this.entries.forEach((e) => this.worldEl.appendChild(e.el));
 
@@ -297,6 +302,11 @@ class CubeView {
       stickers[dir] = st;
     });
     return entry;
+  }
+
+  // Write engine state to the localStorage key shared with the 2D page.
+  private persist() {
+    localStorage.setItem("cubeState", JSON.stringify(this.rubiks.cubes));
   }
 
   private renderCube() {
@@ -387,6 +397,7 @@ class CubeView {
       finished = true;
       this.worldEl.removeEventListener("transitionend", onEnd);
       this.rubiks.rotateRubiksCube(c.rotation); // re-key model so the spun look becomes the new resting state
+      this.persist();
       this.worldEl.style.transition = "none";
       this.worldEl.style.transform = this.orbitStr();
       this.renderCube();
@@ -430,6 +441,7 @@ class CubeView {
       finished = true;
       group.removeEventListener("transitionend", onEnd);
       this.rubiks[method]();
+      this.persist();
       moving.forEach((e) => this.worldEl.appendChild(e.el));
       group.remove();
       this.renderCube();
@@ -494,7 +506,7 @@ class CubeView {
 
   // ---------- scramble / reset ----------
   private scramble() {
-    this.doReset(false);
+    this.doReset(false, false);
     this.hasScrambled = true;
     this.status = "scrambling";
     this.moveCount = 0;
@@ -521,15 +533,18 @@ class CubeView {
   }
 
   private reset() {
-    this.doReset(true);
+    this.doReset(true, true);
   }
 
-  private doReset(resetView: boolean) {
+  private doReset(resetView: boolean, resetCubes: boolean) {
     if (this.timer) clearInterval(this.timer);
     this.running = false;
     this.queue = [];
     this.animating = false;
-    this.rubiks.reset();
+    if (resetCubes) {
+      this.rubiks.reset();
+      this.persist();
+    }
     // our engine rebuilds its cubes array on reset, so re-point each rendered entry at the fresh Cube
     this.entries.forEach((e, i) => {
       e.cube = this.rubiks.cubes[i];

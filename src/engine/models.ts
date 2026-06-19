@@ -15,6 +15,8 @@ export interface Position {
   Z: number;
 }
 
+export const AXES = ["X", "Y", "Z"] as const;
+
 export interface Orientation {
   top?: Face;
   left?: Face;
@@ -23,6 +25,15 @@ export interface Orientation {
   back?: Face;
   bottom?: Face;
 }
+
+export const ORIENTATION_KEYS = [
+  "top",
+  "bottom",
+  "left",
+  "right",
+  "front",
+  "back",
+] as const;
 
 export const Rotations = {
   XCW: "X-CLOCKWISE",

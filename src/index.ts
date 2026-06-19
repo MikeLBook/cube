@@ -2,126 +2,145 @@ import { JSONEquals } from "./engine/helpers";
 import { Face, Faces, Orientation } from "./engine/models";
 import RubiksCube from "./engine/RubiksCube";
 
-const FACE_CLASSES = Object.keys(Faces) as Face[];
-
 const rubiksCube = RubiksCube.getInstance();
+const cubeState = localStorage.getItem("cubeState");
+
+if (cubeState) rubiksCube.setState(cubeState);
+
+const FACE_CLASSES = Object.keys(Faces) as Face[];
 
 document.querySelector("#rotateTopCW")?.addEventListener("click", () => {
   rubiksCube.rotateTopCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateXMidCW")?.addEventListener("click", () => {
   rubiksCube.rotateXMidCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateBottomCW")?.addEventListener("click", () => {
   rubiksCube.rotateBottomCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateTopCCW")?.addEventListener("click", () => {
   rubiksCube.rotateTopCCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateXMidCCW")?.addEventListener("click", () => {
   rubiksCube.rotateXMidCCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateBottomCCW")?.addEventListener("click", () => {
   rubiksCube.rotateBottomCCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateLeftCW")?.addEventListener("click", () => {
   rubiksCube.rotateLeftCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateYMidCW")?.addEventListener("click", () => {
   rubiksCube.rotateYMidCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateRightCW")?.addEventListener("click", () => {
   rubiksCube.rotateRightCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateLeftCCW")?.addEventListener("click", () => {
   rubiksCube.rotateLeftCCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateYMidCCW")?.addEventListener("click", () => {
   rubiksCube.rotateYMidCCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateRightCCW")?.addEventListener("click", () => {
   rubiksCube.rotateRightCCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateFrontCW")?.addEventListener("click", () => {
   rubiksCube.rotateFrontCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateZMidCW")?.addEventListener("click", () => {
   rubiksCube.rotateZMidCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateBackCW")?.addEventListener("click", () => {
   rubiksCube.rotateBackCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateFrontCCW")?.addEventListener("click", () => {
   rubiksCube.rotateFrontCCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateZMidCCW")?.addEventListener("click", () => {
   rubiksCube.rotateZMidCCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateBackCCW")?.addEventListener("click", () => {
   rubiksCube.rotateBackCCW();
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateCubeXCW")?.addEventListener("click", () => {
   rubiksCube.rotateRubiksCube("XCW");
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateCubeXCCW")?.addEventListener("click", () => {
   rubiksCube.rotateRubiksCube("XCCW");
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateCubeYCW")?.addEventListener("click", () => {
   rubiksCube.rotateRubiksCube("YCW");
-  renderCube();
+  updateClient();
 });
 
 document.querySelector("#rotateCubeYCCW")?.addEventListener("click", () => {
   rubiksCube.rotateRubiksCube("YCCW");
-  renderCube();
+  updateClient();
 });
+
+document.querySelector("#reset")?.addEventListener("click", () => {
+  rubiksCube.reset();
+  updateClient();
+});
+
+function updateClient() {
+  localStorage.setItem("cubeState", JSON.stringify(rubiksCube.cubes));
+  renderCube();
+}
 
 function renderCube() {
   document.querySelectorAll(".cube").forEach((el) => {
     const cubeElement = el as HTMLElement;
     const orientationKey = cubeElement.dataset.orientation;
     const { posX, posY, posZ } = cubeElement.dataset;
-    if (!orientationKey || posX === undefined || posY === undefined || posZ === undefined) return;
+    if (
+      !orientationKey ||
+      posX === undefined ||
+      posY === undefined ||
+      posZ === undefined
+    )
+      return;
 
     const position = {
       X: parseInt(posX),

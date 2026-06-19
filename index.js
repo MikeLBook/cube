@@ -17,18 +17,8 @@
     }
   };
 
-  // src/engine/helpers.ts
-  function JSONEquals(a, b) {
-    return JSON.stringify(a) === JSON.stringify(b);
-  }
-  var init_helpers = __esm({
-    "src/engine/helpers.ts"() {
-      "use strict";
-    }
-  });
-
   // src/engine/models.ts
-  var Faces;
+  var Faces, AXES, ORIENTATION_KEYS;
   var init_models = __esm({
     "src/engine/models.ts"() {
       "use strict";
@@ -40,6 +30,45 @@
         O: "ORANGE",
         W: "WHITE"
       };
+      AXES = ["X", "Y", "Z"];
+      ORIENTATION_KEYS = [
+        "top",
+        "bottom",
+        "left",
+        "right",
+        "front",
+        "back"
+      ];
+    }
+  });
+
+  // src/engine/helpers.ts
+  function JSONEquals(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+  function isFace(value) {
+    return typeof value === "string" && value in Faces;
+  }
+  function isPosition(value) {
+    if (!value || typeof value !== "object") return false;
+    return AXES.every((axis) => typeof value[axis] === "number");
+  }
+  function isOrientation(value) {
+    if (!value || typeof value !== "object") return false;
+    return ORIENTATION_KEYS.every((key) => {
+      const face = value[key];
+      return face === void 0 || isFace(face);
+    });
+  }
+  function isCubeArray(value) {
+    return Array.isArray(value) && value.length === 27 && value.every(
+      (cube) => cube && typeof cube === "object" && isPosition(cube.position) && isOrientation(cube.orientation)
+    );
+  }
+  var init_helpers = __esm({
+    "src/engine/helpers.ts"() {
+      "use strict";
+      init_models();
     }
   });
 
@@ -166,13 +195,15 @@
     "src/engine/RubiksCube.ts"() {
       "use strict";
       init_Cube();
+      init_helpers();
+      init_models();
       RubiksCube = class _RubiksCube {
         cubes;
         static instance;
         constructor() {
-          this.cubes = _RubiksCube.initSolvedRubiksCube();
+          this.cubes = _RubiksCube.initCubes();
         }
-        static initSolvedRubiksCube() {
+        static initCubes() {
           return [
             // Top layer
             new Cube({ X: -1, Y: 1, Z: -1 }, { top: "Y", left: "B", back: "O" }),
@@ -212,22 +243,25 @@
           }
           return _RubiksCube.instance;
         }
+        setState(cubeState) {
+          let parsed;
+          try {
+            parsed = JSON.parse(cubeState);
+          } catch (e) {
+            console.error("error", e);
+            return;
+          }
+          if (!isCubeArray(parsed)) return;
+          this.cubes = parsed.map((c) => new Cube(c.position, c.orientation));
+        }
         isSolved() {
-          const orientations = [
-            "top",
-            "bottom",
-            "left",
-            "right",
-            "front",
-            "back"
-          ];
-          return orientations.every((orientation) => {
+          return ORIENTATION_KEYS.every((orientation) => {
             const faces = this.cubes.map((cube) => cube.orientation[orientation]).filter((face) => face !== void 0);
             return new Set(faces).size === 1;
           });
         }
         reset() {
-          this.cubes = _RubiksCube.initSolvedRubiksCube();
+          this.cubes = _RubiksCube.initCubes();
         }
         rotateRubiksCube(rotation) {
           switch (rotation) {
@@ -381,102 +415,113 @@
       init_helpers();
       init_models();
       init_RubiksCube();
-      var FACE_CLASSES = Object.keys(Faces);
       var rubiksCube = RubiksCube.getInstance();
+      var cubeState = localStorage.getItem("cubeState");
+      if (cubeState) rubiksCube.setState(cubeState);
+      var FACE_CLASSES = Object.keys(Faces);
       document.querySelector("#rotateTopCW")?.addEventListener("click", () => {
         rubiksCube.rotateTopCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateXMidCW")?.addEventListener("click", () => {
         rubiksCube.rotateXMidCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateBottomCW")?.addEventListener("click", () => {
         rubiksCube.rotateBottomCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateTopCCW")?.addEventListener("click", () => {
         rubiksCube.rotateTopCCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateXMidCCW")?.addEventListener("click", () => {
         rubiksCube.rotateXMidCCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateBottomCCW")?.addEventListener("click", () => {
         rubiksCube.rotateBottomCCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateLeftCW")?.addEventListener("click", () => {
         rubiksCube.rotateLeftCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateYMidCW")?.addEventListener("click", () => {
         rubiksCube.rotateYMidCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateRightCW")?.addEventListener("click", () => {
         rubiksCube.rotateRightCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateLeftCCW")?.addEventListener("click", () => {
         rubiksCube.rotateLeftCCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateYMidCCW")?.addEventListener("click", () => {
         rubiksCube.rotateYMidCCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateRightCCW")?.addEventListener("click", () => {
         rubiksCube.rotateRightCCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateFrontCW")?.addEventListener("click", () => {
         rubiksCube.rotateFrontCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateZMidCW")?.addEventListener("click", () => {
         rubiksCube.rotateZMidCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateBackCW")?.addEventListener("click", () => {
         rubiksCube.rotateBackCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateFrontCCW")?.addEventListener("click", () => {
         rubiksCube.rotateFrontCCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateZMidCCW")?.addEventListener("click", () => {
         rubiksCube.rotateZMidCCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateBackCCW")?.addEventListener("click", () => {
         rubiksCube.rotateBackCCW();
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateCubeXCW")?.addEventListener("click", () => {
         rubiksCube.rotateRubiksCube("XCW");
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateCubeXCCW")?.addEventListener("click", () => {
         rubiksCube.rotateRubiksCube("XCCW");
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateCubeYCW")?.addEventListener("click", () => {
         rubiksCube.rotateRubiksCube("YCW");
-        renderCube();
+        updateClient();
       });
       document.querySelector("#rotateCubeYCCW")?.addEventListener("click", () => {
         rubiksCube.rotateRubiksCube("YCCW");
-        renderCube();
+        updateClient();
       });
+      document.querySelector("#reset")?.addEventListener("click", () => {
+        rubiksCube.reset();
+        updateClient();
+      });
+      function updateClient() {
+        localStorage.setItem("cubeState", JSON.stringify(rubiksCube.cubes));
+        renderCube();
+      }
       function renderCube() {
         document.querySelectorAll(".cube").forEach((el) => {
           const cubeElement = el;
           const orientationKey = cubeElement.dataset.orientation;
           const { posX, posY, posZ } = cubeElement.dataset;
-          if (!orientationKey || posX === void 0 || posY === void 0 || posZ === void 0) return;
+          if (!orientationKey || posX === void 0 || posY === void 0 || posZ === void 0)
+            return;
           const position = {
             X: parseInt(posX),
             Y: parseInt(posY),
