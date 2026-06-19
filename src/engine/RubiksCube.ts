@@ -76,7 +76,7 @@ export default class RubiksCube {
   }
 
   public isSolved(): boolean {
-    const faces: (keyof Orientation)[] = [
+    const orientations: (keyof Orientation)[] = [
       "top",
       "bottom",
       "left",
@@ -84,11 +84,11 @@ export default class RubiksCube {
       "front",
       "back",
     ];
-    return faces.every((face) => {
-      const colors = this.cubes
-        .map((cube) => cube.orientation[face])
-        .filter((color): color is Face => color !== undefined);
-      return colors.every((color) => color === colors[0]);
+    return orientations.every((orientation) => {
+      const faces = this.cubes
+        .map((cube) => cube.orientation[orientation])
+        .filter((face): face is Face => face !== undefined);
+      return new Set(faces).size === 1;
     });
   }
 

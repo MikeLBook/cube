@@ -24,7 +24,7 @@ type LayerMethod =
   | "rotateBackCCW";
 
 type Axis = "X" | "Y" | "Z";
-type Status = "ready" | "scrambling" | "solving" | "solved";
+type Status = "free" | "ready" | "scrambling" | "solving" | "solved";
 
 // Singmaster-style face notation keys handled by this view.
 type MoveKey = "U" | "E" | "D" | "L" | "M" | "R" | "B" | "S" | "F";
@@ -96,7 +96,7 @@ class CubeView {
   // session state (mirrored into the panel DOM)
   private moveCount = 0;
   private elapsed = 0;
-  private status: Status = "ready";
+  private status: Status = "free";
   private running = false;
   private hasScrambled = false;
   private scrambleLeft = 0;
@@ -454,13 +454,17 @@ class CubeView {
       }
       return;
     }
-    if (opts.count !== false) {
+    // Timing/counting only run during a scramble-initiated solve attempt; casual play
+    // on an unscrambled cube neither starts the clock nor counts moves.
+    if (opts.count !== false && this.hasScrambled) {
       this.startTimer();
       this.moveCount++;
       this.updateStats();
     }
     if (this.hasScrambled && this.rubiks.isSolved()) {
       this.stopTimer();
+      // Attempt is over; disarm so post-solve play stays idle. Only a new scramble re-arms timing.
+      this.hasScrambled = false;
       this.status = "solved";
       this.updateStatus();
     }
@@ -545,7 +549,7 @@ class CubeView {
       this.pitch = DEFAULT_PITCH;
       this.applyView(true);
     }
-    this.status = "ready";
+    this.status = "free";
     this.moveCount = 0;
     this.elapsed = 0;
     this.updateStatus();
@@ -726,6 +730,7 @@ class CubeView {
 
   private updateStatus() {
     const statusMap: Record<Status, { label: string; color: string }> = {
+      free: { label: "Free Play", color: "var(--text)" },
       ready: { label: "Ready", color: "var(--text)" },
       scrambling: { label: "Scrambling…", color: "var(--accent-x)" },
       solving: { label: "Solving…", color: "var(--accent-z)" },

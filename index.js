@@ -213,7 +213,7 @@
           return _RubiksCube.instance;
         }
         isSolved() {
-          const faces = [
+          const orientations = [
             "top",
             "bottom",
             "left",
@@ -221,9 +221,9 @@
             "front",
             "back"
           ];
-          return faces.every((face) => {
-            const colors = this.cubes.map((cube) => cube.orientation[face]).filter((color) => color !== void 0);
-            return colors.every((color) => color === colors[0]);
+          return orientations.every((orientation) => {
+            const faces = this.cubes.map((cube) => cube.orientation[orientation]).filter((face) => face !== void 0);
+            return new Set(faces).size === 1;
           });
         }
         reset() {

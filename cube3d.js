@@ -187,7 +187,7 @@
           return _RubiksCube.instance;
         }
         isSolved() {
-          const faces = [
+          const orientations = [
             "top",
             "bottom",
             "left",
@@ -195,9 +195,9 @@
             "front",
             "back"
           ];
-          return faces.every((face) => {
-            const colors = this.cubes.map((cube) => cube.orientation[face]).filter((color) => color !== void 0);
-            return colors.every((color) => color === colors[0]);
+          return orientations.every((orientation) => {
+            const faces = this.cubes.map((cube) => cube.orientation[orientation]).filter((face) => face !== void 0);
+            return new Set(faces).size === 1;
           });
         }
         reset() {
@@ -366,7 +366,7 @@
         // session state (mirrored into the panel DOM)
         moveCount = 0;
         elapsed = 0;
-        status = "ready";
+        status = "free";
         running = false;
         hasScrambled = false;
         scrambleLeft = 0;
@@ -656,13 +656,14 @@
             }
             return;
           }
-          if (opts.count !== false) {
+          if (opts.count !== false && this.hasScrambled) {
             this.startTimer();
             this.moveCount++;
             this.updateStats();
           }
           if (this.hasScrambled && this.rubiks.isSolved()) {
             this.stopTimer();
+            this.hasScrambled = false;
             this.status = "solved";
             this.updateStatus();
           }
@@ -740,7 +741,7 @@
             this.pitch = DEFAULT_PITCH;
             this.applyView(true);
           }
-          this.status = "ready";
+          this.status = "free";
           this.moveCount = 0;
           this.elapsed = 0;
           this.updateStatus();
@@ -898,6 +899,7 @@
         }
         updateStatus() {
           const statusMap = {
+            free: { label: "Free Play", color: "var(--text)" },
             ready: { label: "Ready", color: "var(--text)" },
             scrambling: { label: "Scrambling\u2026", color: "var(--accent-x)" },
             solving: { label: "Solving\u2026", color: "var(--accent-z)" },
