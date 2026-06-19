@@ -660,6 +660,7 @@ class CubeView {
   private onKey(e: KeyboardEvent) {
     const tag = (e.target as HTMLElement | null)?.tagName || "";
     if (/input|textarea|select/i.test(tag)) return;
+    if (this.dragging) return; // ignore keypresses while the pointer is held down
     const k = e.key;
     if (k === "a") {
       this.cubeMove("spinLeft");
@@ -678,6 +679,11 @@ class CubeView {
     }
     if (k === "s") {
       this.cubeMove("rollDown");
+      e.preventDefault();
+      return;
+    }
+    if (k === " ") {
+      this.resetView();
       e.preventDefault();
       return;
     }

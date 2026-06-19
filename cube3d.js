@@ -1060,6 +1060,7 @@
         onKey(e) {
           const tag = e.target?.tagName || "";
           if (/input|textarea|select/i.test(tag)) return;
+          if (this.dragging) return;
           const k = e.key;
           if (k === "a") {
             this.cubeMove("spinLeft");
@@ -1078,6 +1079,11 @@
           }
           if (k === "s") {
             this.cubeMove("rollDown");
+            e.preventDefault();
+            return;
+          }
+          if (k === " ") {
+            this.resetView();
             e.preventDefault();
             return;
           }
