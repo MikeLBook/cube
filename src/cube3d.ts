@@ -708,12 +708,12 @@ class CubeView {
       return;
     }
     const map: Record<string, MoveKey> = {
-      u: "U",
-      d: "D",
+      t: "U",
+      b: "D",
       l: "L",
       r: "R",
       f: "F",
-      b: "B",
+      q: "B",
       y: "M",
       x: "E",
       z: "S",
