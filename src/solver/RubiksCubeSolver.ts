@@ -6,7 +6,7 @@ import RubiksCube from "../engine/RubiksCube";
 // world — it never references a concrete representation.
 export interface MovePacer {
   // Resolves once the representation has finished presenting the latest move (animation
-  // settled / motor movement complete). A representation may reject it to signal a failure.
+  // or motor movement complete). A representation may reject the Promise to signal a failure.
   settled(): Promise<void>;
 }
 
@@ -19,17 +19,13 @@ export default class RubiksCubeSolver {
     this.pacer = pacer;
   }
 
-  private determineNextMove() {
-    this.rubiks.rotateBackCCW();
-  }
-
-  // The "person" solving the cube: mutate the engine one move at a time and wait for the
-  // representation to present each before continuing. A real solver would loop until the cube
-  // is solved; this placeholder applies a fixed sequence so we can prove out the pacing.
+  // Mutate the engine one move at a time and wait for the presentation to settle
+  // before continuing. The finished solver will loop until the cube is solved;
+  // This placeholder is under active development
   public async run(signal?: AbortSignal) {
     for (let i = 0; i < 10; i++) {
       if (signal?.aborted) return;
-      this.determineNextMove();
+      this.rubiks.rotateBackCCW();
       await this.pacer.settled();
     }
   }
