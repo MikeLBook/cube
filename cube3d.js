@@ -229,8 +229,8 @@
             new Cube({ X: 1, Y: -1, Z: 1 }, { bottom: "W", right: "G", front: "R" })
           ];
         }
-        onMove() {
-          this.observers.forEach((observer) => observer.onMove());
+        onMove(move) {
+          this.observers.forEach((observer) => observer.onMove(move));
         }
         static getInstance() {
           if (!_RubiksCube.instance) {
@@ -255,7 +255,7 @@
         removeObserver(observer) {
           return this.observers = [...this.observers].filter((o) => o !== observer);
         }
-        isSolved() {
+        get isSolved() {
           return ORIENTATION_KEYS.every((orientation) => {
             const faces = this.cubes.map((cube) => cube.orientation[orientation]).filter((face) => face !== void 0);
             return new Set(faces).size === 1;
@@ -280,7 +280,7 @@
               this.cubes.forEach((cube) => cube.rotateYCCW());
               break;
           }
-          this.onMove();
+          this.onMove(rotation);
         }
         rotateTopCW() {
           this.cubes.forEach((cube) => {
@@ -288,7 +288,7 @@
               cube.rotateXCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateTopCW");
         }
         rotateXMidCW() {
           this.cubes.forEach((cube) => {
@@ -296,7 +296,7 @@
               cube.rotateXCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateXMidCW");
         }
         rotateBottomCW() {
           this.cubes.forEach((cube) => {
@@ -304,7 +304,7 @@
               cube.rotateXCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateBottomCW");
         }
         rotateTopCCW() {
           this.cubes.forEach((cube) => {
@@ -312,7 +312,7 @@
               cube.rotateXCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateTopCCW");
         }
         rotateXMidCCW() {
           this.cubes.forEach((cube) => {
@@ -320,7 +320,7 @@
               cube.rotateXCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateXMidCCW");
         }
         rotateBottomCCW() {
           this.cubes.forEach((cube) => {
@@ -328,7 +328,7 @@
               cube.rotateXCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateBottomCCW");
         }
         rotateLeftCW() {
           this.cubes.forEach((cube) => {
@@ -336,7 +336,7 @@
               cube.rotateYCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateLeftCW");
         }
         rotateYMidCW() {
           this.cubes.forEach((cube) => {
@@ -344,7 +344,7 @@
               cube.rotateYCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateYMidCW");
         }
         rotateRightCW() {
           this.cubes.forEach((cube) => {
@@ -352,7 +352,7 @@
               cube.rotateYCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateRightCW");
         }
         rotateLeftCCW() {
           this.cubes.forEach((cube) => {
@@ -360,7 +360,7 @@
               cube.rotateYCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateLeftCCW");
         }
         rotateYMidCCW() {
           this.cubes.forEach((cube) => {
@@ -368,7 +368,7 @@
               cube.rotateYCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateYMidCCW");
         }
         rotateRightCCW() {
           this.cubes.forEach((cube) => {
@@ -376,7 +376,7 @@
               cube.rotateYCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateRightCCW");
         }
         rotateFrontCW() {
           this.cubes.forEach((cube) => {
@@ -384,7 +384,7 @@
               cube.rotateZCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateFrontCW");
         }
         rotateZMidCW() {
           this.cubes.forEach((cube) => {
@@ -392,7 +392,7 @@
               cube.rotateZCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateZMidCW");
         }
         rotateBackCW() {
           this.cubes.forEach((cube) => {
@@ -400,7 +400,7 @@
               cube.rotateZCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateBackCW");
         }
         rotateFrontCCW() {
           this.cubes.forEach((cube) => {
@@ -408,7 +408,7 @@
               cube.rotateZCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateFrontCCW");
         }
         rotateZMidCCW() {
           this.cubes.forEach((cube) => {
@@ -416,7 +416,7 @@
               cube.rotateZCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateZMidCCW");
         }
         rotateBackCCW() {
           this.cubes.forEach((cube) => {
@@ -424,7 +424,36 @@
               cube.rotateZCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateBackCCW");
+        }
+      };
+    }
+  });
+
+  // src/solver/RubiksCubeSolver.ts
+  var RubiksCubeSolver;
+  var init_RubiksCubeSolver = __esm({
+    "src/solver/RubiksCubeSolver.ts"() {
+      "use strict";
+      RubiksCubeSolver = class {
+        rubiks;
+        pacer;
+        constructor(rubiks, pacer) {
+          this.rubiks = rubiks;
+          this.pacer = pacer;
+        }
+        determineNextMove() {
+          this.rubiks.rotateBackCCW();
+        }
+        // The "person" solving the cube: mutate the engine one move at a time and wait for the
+        // representation to present each before continuing. A real solver would loop until the cube
+        // is solved; this placeholder applies a fixed sequence so we can prove out the pacing.
+        async run(signal) {
+          for (let i = 0; i < 10; i++) {
+            if (signal?.aborted) return;
+            this.determineNextMove();
+            await this.pacer.settled();
+          }
         }
       };
     }
@@ -434,10 +463,20 @@
   var require_cube3d = __commonJS({
     "src/cube3d.ts"() {
       init_RubiksCube();
+      init_RubiksCubeSolver();
       var DEFAULT_YAW = -45;
       var DEFAULT_PITCH = -19.5;
       var CubeView = class {
         rubiks = RubiksCube.getInstance();
+        // We are this solver's pacer (see MovePacer): it mutates the engine directly and awaits
+        // settled() after each move, so we present one turn at a time.
+        solver = new RubiksCubeSolver(this.rubiks, this);
+        // A solve runs the solver's whole paced sequence; guard against a second concurrent run and
+        // give reset() a way to stop one in flight.
+        solving = false;
+        solveAbort;
+        // Callbacks awaiting settled() — resolved once the view goes idle (animation finished).
+        settleWaiters = [];
         sceneEl;
         worldEl;
         entries = [];
@@ -576,6 +615,10 @@
           window.addEventListener("keydown", (e) => this.onKey(e));
         }
         init() {
+          document.querySelector("#solve")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            this.startSolve();
+          });
           this.worldEl = document.createElement("div");
           this.worldEl.style.cssText = "position:absolute; left:50%; top:50%; width:0; height:0; transform-style:preserve-3d; will-change:transform;";
           this.sceneEl.appendChild(this.worldEl);
@@ -629,11 +672,56 @@
         }
         // Observer hook fired by the engine after every state mutation. reset() rebuilds the
         // cubes array, so re-point each rendered cubie at the current engine Cube (a no-op for
-        // in-place layer/whole-cube turns), then persist and repaint.
-        onMove() {
+        // in-place layer/whole-cube turns), then persist.
+        onMove(move) {
           this.entries.forEach((e, i) => e.cube = this.rubiks.cubes[i]);
           this.persist();
-          this.renderCube();
+          if (this.animating || !move) {
+            this.renderCube();
+            return;
+          }
+          this.animateObservedMove(move);
+        }
+        // Animate a layer turn the engine has *already* applied (e.g. driven directly by the
+        // solver). The DOM still shows the pre-move state, so we reuse the normal layer spin —
+        // with method=null so animateLayer settles instead of re-applying the move to the engine.
+        animateObservedMove(move) {
+          const key = Object.keys(this.MOVES).find(
+            (k) => this.MOVES[k].cw === move || this.MOVES[k].ccw === move
+          );
+          if (!key) {
+            this.renderCube();
+            return;
+          }
+          const m = this.MOVES[key];
+          const prime = m.ccw === move;
+          const base = this.ANIM_SIGN[m.cssAxis] * 90;
+          this.animateLayer(m, prime ? -base : base, null, {});
+        }
+        // One click runs the solver's whole sequence, paced by us. The solver mutates the engine
+        // directly (each move fires onMove → animateObservedMove) and awaits settled() between moves,
+        // so we present one turn at a time. Ignore clicks while a solve is already running.
+        startSolve() {
+          if (this.solving) return;
+          this.solving = true;
+          this.solveAbort = new AbortController();
+          this.solver.run(this.solveAbort.signal).finally(() => {
+            this.solving = false;
+            this.solveAbort = void 0;
+          });
+        }
+        // MovePacer: the solver awaits this after each move. Resolve immediately when idle, otherwise
+        // once the in-flight animation settles (see flushSettled). This is how the "reporter" tells
+        // the "solver" it may proceed — a robot would resolve it when the physical turn completes.
+        settled() {
+          if (!this.animating) return Promise.resolve();
+          return new Promise((resolve) => this.settleWaiters.push(resolve));
+        }
+        // Wake every solver waiting on settled(). Called when the view goes idle.
+        flushSettled() {
+          const waiters = this.settleWaiters;
+          this.settleWaiters = [];
+          waiters.forEach((resolve) => resolve());
         }
         renderCube() {
           const U = this.UNIT, H = this.HALF;
@@ -703,6 +791,7 @@
             this.rubiks.rotateRubiksCube(c.rotation);
             this.animating = false;
             this.processQueue();
+            if (!this.animating) this.flushSettled();
           };
           const onEnd = (e) => {
             if (e.target === this.worldEl && e.propertyName === "transform") done();
@@ -730,10 +819,15 @@
             group.removeEventListener("transitionend", onEnd);
             moving.forEach((e) => this.worldEl.appendChild(e.el));
             group.remove();
-            this.rubiks[method]();
-            this.afterMove(opts);
+            if (method) {
+              this.rubiks[method]();
+              this.afterMove(opts);
+            } else {
+              this.renderCube();
+            }
             this.animating = false;
             this.processQueue();
+            if (!this.animating) this.flushSettled();
           };
           const onEnd = (e) => {
             if (e.target === group && e.propertyName === "transform") done();
@@ -755,7 +849,7 @@
             this.moveCount++;
             this.updateStats();
           }
-          if (this.hasScrambled && this.rubiks.isSolved()) {
+          if (this.hasScrambled && this.rubiks.isSolved) {
             this.stopTimer();
             this.hasScrambled = false;
             this.status = "solved";
@@ -784,6 +878,7 @@
         }
         // ---------- scramble / reset ----------
         scramble() {
+          if (this.status === "scrambling") return;
           this.doReset(false, false);
           this.hasScrambled = true;
           this.status = "scrambling";
@@ -817,6 +912,8 @@
           this.running = false;
           this.queue = [];
           this.animating = false;
+          this.solveAbort?.abort();
+          this.flushSettled();
           if (this.entries && this.worldEl) {
             this.entries.forEach((e) => this.worldEl.appendChild(e.el));
             Array.prototype.slice.call(this.worldEl.children).forEach((ch) => {

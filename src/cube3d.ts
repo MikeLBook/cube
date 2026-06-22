@@ -1,7 +1,8 @@
-import RubiksCube from "./engine/RubiksCube";
+import RubiksCube, { IRubiksCubeObserver } from "./engine/RubiksCube";
 import Cube from "./engine/Cube";
-import { Face, IRubiksCubeObserver, Orientation, Rotation } from "./engine/models";
+import { Face, Orientation, Rotation } from "./engine/models";
 import { LayerMove } from "./engine/models";
+import RubiksCubeSolver, { MovePacer } from "./solver/RubiksCubeSolver";
 
 type Axis = "X" | "Y" | "Z";
 type Status = "free" | "ready" | "scrambling" | "solving" | "solved";
@@ -62,8 +63,18 @@ interface MoveOpts {
  * orbit, scramble, timer); ALL cube state lives in and mutates through our engine
  * (RubiksCube / Cube). No cube logic is duplicated here.
  */
-class CubeView implements IRubiksCubeObserver {
+class CubeView implements IRubiksCubeObserver, MovePacer {
   private rubiks = RubiksCube.getInstance();
+  // We are this solver's pacer (see MovePacer): it mutates the engine directly and awaits
+  // settled() after each move, so we present one turn at a time.
+  private solver = new RubiksCubeSolver(this.rubiks, this);
+
+  // A solve runs the solver's whole paced sequence; guard against a second concurrent run and
+  // give reset() a way to stop one in flight.
+  private solving = false;
+  private solveAbort: AbortController | undefined;
+  // Callbacks awaiting settled() — resolved once the view goes idle (animation finished).
+  private settleWaiters: Array<() => void> = [];
 
   private sceneEl: HTMLElement;
   private worldEl!: HTMLElement;
@@ -215,6 +226,10 @@ class CubeView implements IRubiksCubeObserver {
   }
 
   private init() {
+    document.querySelector("#solve")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      this.startSolve();
+    });
     this.worldEl = document.createElement("div");
     this.worldEl.style.cssText =
       "position:absolute; left:50%; top:50%; width:0; height:0; transform-style:preserve-3d; will-change:transform;";
@@ -295,11 +310,65 @@ class CubeView implements IRubiksCubeObserver {
 
   // Observer hook fired by the engine after every state mutation. reset() rebuilds the
   // cubes array, so re-point each rendered cubie at the current engine Cube (a no-op for
-  // in-place layer/whole-cube turns), then persist and repaint.
-  public onMove() {
+  // in-place layer/whole-cube turns), then persist.
+  public onMove(move?: LayerMove | Rotation) {
     this.entries.forEach((e, i) => (e.cube = this.rubiks.cubes[i]));
     this.persist();
-    this.renderCube();
+    // Our own queued animation already spun the layer before mutating the engine, and
+    // this.animating is still true at this point — so just settle. Same for reset() and
+    // whole-cube re-orientations, which carry no LayerMove. An external mutation (e.g. the
+    // solver) arrives un-animated while idle, so play the observed layer turn before settling.
+    if (this.animating || !move) {
+      this.renderCube();
+      return;
+    }
+    this.animateObservedMove(move);
+  }
+
+  // Animate a layer turn the engine has *already* applied (e.g. driven directly by the
+  // solver). The DOM still shows the pre-move state, so we reuse the normal layer spin —
+  // with method=null so animateLayer settles instead of re-applying the move to the engine.
+  private animateObservedMove(move: LayerMove | Rotation) {
+    const key = (Object.keys(this.MOVES) as MoveKey[]).find(
+      (k) => this.MOVES[k].cw === move || this.MOVES[k].ccw === move,
+    );
+    if (!key) {
+      // whole-cube rotation or anything we can't map to a layer — settle without a spin
+      this.renderCube();
+      return;
+    }
+    const m = this.MOVES[key];
+    const prime = m.ccw === move;
+    const base = this.ANIM_SIGN[m.cssAxis] * 90;
+    this.animateLayer(m, prime ? -base : base, null, {});
+  }
+
+  // One click runs the solver's whole sequence, paced by us. The solver mutates the engine
+  // directly (each move fires onMove → animateObservedMove) and awaits settled() between moves,
+  // so we present one turn at a time. Ignore clicks while a solve is already running.
+  private startSolve() {
+    if (this.solving) return;
+    this.solving = true;
+    this.solveAbort = new AbortController();
+    this.solver.run(this.solveAbort.signal).finally(() => {
+      this.solving = false;
+      this.solveAbort = undefined;
+    });
+  }
+
+  // MovePacer: the solver awaits this after each move. Resolve immediately when idle, otherwise
+  // once the in-flight animation settles (see flushSettled). This is how the "reporter" tells
+  // the "solver" it may proceed — a robot would resolve it when the physical turn completes.
+  public settled(): Promise<void> {
+    if (!this.animating) return Promise.resolve();
+    return new Promise((resolve) => this.settleWaiters.push(resolve));
+  }
+
+  // Wake every solver waiting on settled(). Called when the view goes idle.
+  private flushSettled() {
+    const waiters = this.settleWaiters;
+    this.settleWaiters = [];
+    waiters.forEach((resolve) => resolve());
   }
 
   private renderCube() {
@@ -396,6 +465,7 @@ class CubeView implements IRubiksCubeObserver {
       this.rubiks.rotateRubiksCube(c.rotation);
       this.animating = false;
       this.processQueue();
+      if (!this.animating) this.flushSettled();
     };
     // Only react to worldEl's own transform transition. transitionend bubbles, so a layer
     // turn's group event (which finishes just before this animation starts) would otherwise
@@ -410,7 +480,7 @@ class CubeView implements IRubiksCubeObserver {
   private animateLayer(
     m: MoveDef,
     angle: number,
-    method: LayerMove,
+    method: LayerMove | null,
     opts: MoveOpts,
   ) {
     this.animating = true;
@@ -433,14 +503,21 @@ class CubeView implements IRubiksCubeObserver {
       if (finished) return;
       finished = true;
       group.removeEventListener("transitionend", onEnd);
-      // Tear down the turn-group wrapper first so onMove repaints into a settled world:
-      // the engine method fires onMove, which persists and re-renders the new state.
+      // Tear down the turn-group wrapper first so the repaint lands in a settled world.
       moving.forEach((e) => this.worldEl.appendChild(e.el));
       group.remove();
-      this.rubiks[method]();
-      this.afterMove(opts);
+      if (method) {
+        // Pre-mutation path: the spin finished, now commit to the engine. That fires
+        // onMove, which (animating still true) persists and re-renders the new state.
+        this.rubiks[method]();
+        this.afterMove(opts);
+      } else {
+        // Observed path: the engine already applied the move, so just settle the repaint.
+        this.renderCube();
+      }
       this.animating = false;
       this.processQueue();
+      if (!this.animating) this.flushSettled();
     };
     // Only react to this group's own transform transition (ignore any bubbled child events).
     const onEnd = (e: TransitionEvent) => {
@@ -466,7 +543,7 @@ class CubeView implements IRubiksCubeObserver {
       this.moveCount++;
       this.updateStats();
     }
-    if (this.hasScrambled && this.rubiks.isSolved()) {
+    if (this.hasScrambled && this.rubiks.isSolved) {
       this.stopTimer();
       // Attempt is over; disarm so post-solve play stays idle. Only a new scramble re-arms timing.
       this.hasScrambled = false;
@@ -499,6 +576,7 @@ class CubeView implements IRubiksCubeObserver {
 
   // ---------- scramble / reset ----------
   private scramble() {
+    if (this.status === "scrambling") return;
     this.doReset(false, false);
     this.hasScrambled = true;
     this.status = "scrambling";
@@ -534,6 +612,9 @@ class CubeView implements IRubiksCubeObserver {
     this.running = false;
     this.queue = [];
     this.animating = false;
+    // Stop any in-flight solve and wake it so its run() loop sees the abort and unwinds.
+    this.solveAbort?.abort();
+    this.flushSettled();
     // Clean up any in-flight animation DOM first so the repaint below lands in a settled
     // world: re-parent every cubie and drop any leftover turn-group wrappers.
     if (this.entries && this.worldEl) {

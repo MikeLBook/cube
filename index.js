@@ -252,8 +252,8 @@
             new Cube({ X: 1, Y: -1, Z: 1 }, { bottom: "W", right: "G", front: "R" })
           ];
         }
-        onMove() {
-          this.observers.forEach((observer) => observer.onMove());
+        onMove(move) {
+          this.observers.forEach((observer) => observer.onMove(move));
         }
         static getInstance() {
           if (!_RubiksCube.instance) {
@@ -278,7 +278,7 @@
         removeObserver(observer) {
           return this.observers = [...this.observers].filter((o) => o !== observer);
         }
-        isSolved() {
+        get isSolved() {
           return ORIENTATION_KEYS.every((orientation) => {
             const faces = this.cubes.map((cube) => cube.orientation[orientation]).filter((face) => face !== void 0);
             return new Set(faces).size === 1;
@@ -303,7 +303,7 @@
               this.cubes.forEach((cube) => cube.rotateYCCW());
               break;
           }
-          this.onMove();
+          this.onMove(rotation);
         }
         rotateTopCW() {
           this.cubes.forEach((cube) => {
@@ -311,7 +311,7 @@
               cube.rotateXCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateTopCW");
         }
         rotateXMidCW() {
           this.cubes.forEach((cube) => {
@@ -319,7 +319,7 @@
               cube.rotateXCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateXMidCW");
         }
         rotateBottomCW() {
           this.cubes.forEach((cube) => {
@@ -327,7 +327,7 @@
               cube.rotateXCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateBottomCW");
         }
         rotateTopCCW() {
           this.cubes.forEach((cube) => {
@@ -335,7 +335,7 @@
               cube.rotateXCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateTopCCW");
         }
         rotateXMidCCW() {
           this.cubes.forEach((cube) => {
@@ -343,7 +343,7 @@
               cube.rotateXCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateXMidCCW");
         }
         rotateBottomCCW() {
           this.cubes.forEach((cube) => {
@@ -351,7 +351,7 @@
               cube.rotateXCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateBottomCCW");
         }
         rotateLeftCW() {
           this.cubes.forEach((cube) => {
@@ -359,7 +359,7 @@
               cube.rotateYCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateLeftCW");
         }
         rotateYMidCW() {
           this.cubes.forEach((cube) => {
@@ -367,7 +367,7 @@
               cube.rotateYCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateYMidCW");
         }
         rotateRightCW() {
           this.cubes.forEach((cube) => {
@@ -375,7 +375,7 @@
               cube.rotateYCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateRightCW");
         }
         rotateLeftCCW() {
           this.cubes.forEach((cube) => {
@@ -383,7 +383,7 @@
               cube.rotateYCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateLeftCCW");
         }
         rotateYMidCCW() {
           this.cubes.forEach((cube) => {
@@ -391,7 +391,7 @@
               cube.rotateYCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateYMidCCW");
         }
         rotateRightCCW() {
           this.cubes.forEach((cube) => {
@@ -399,7 +399,7 @@
               cube.rotateYCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateRightCCW");
         }
         rotateFrontCW() {
           this.cubes.forEach((cube) => {
@@ -407,7 +407,7 @@
               cube.rotateZCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateFrontCW");
         }
         rotateZMidCW() {
           this.cubes.forEach((cube) => {
@@ -415,7 +415,7 @@
               cube.rotateZCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateZMidCW");
         }
         rotateBackCW() {
           this.cubes.forEach((cube) => {
@@ -423,7 +423,7 @@
               cube.rotateZCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateBackCW");
         }
         rotateFrontCCW() {
           this.cubes.forEach((cube) => {
@@ -431,7 +431,7 @@
               cube.rotateZCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateFrontCCW");
         }
         rotateZMidCCW() {
           this.cubes.forEach((cube) => {
@@ -439,7 +439,7 @@
               cube.rotateZCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateZMidCCW");
         }
         rotateBackCCW() {
           this.cubes.forEach((cube) => {
@@ -447,7 +447,7 @@
               cube.rotateZCCW();
             }
           });
-          this.onMove();
+          this.onMove("rotateBackCCW");
         }
       };
     }

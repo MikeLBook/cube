@@ -1,11 +1,13 @@
 import Cube from "./Cube";
 import { isCubeArray } from "./helpers";
-import {
-  Face,
-  IRubiksCubeObserver,
-  ORIENTATION_KEYS,
-  Rotation,
-} from "./models";
+import { Face, LayerMove, ORIENTATION_KEYS, Rotation } from "./models";
+
+// Implemented by whatever presents the cube (3D view, 2D view, a robot)
+export interface IRubiksCubeObserver {
+  // The move that triggered the notification, so observers can present it (e.g. animate
+  // the specific layer). Whole-cube re-orientations pass a Rotation; reset passes nothing.
+  onMove: (move?: LayerMove | Rotation) => void;
+}
 
 // 3D layout of the 27 cubes in a Rubiks Cube. Coordinates are (X, Y, Z):
 //   X:  -1 = left    →   1 = right
@@ -76,8 +78,8 @@ export default class RubiksCube {
     ];
   }
 
-  private onMove() {
-    this.observers.forEach((observer) => observer.onMove());
+  private onMove(move?: LayerMove | Rotation) {
+    this.observers.forEach((observer) => observer.onMove(move));
   }
 
   public static getInstance() {
@@ -109,7 +111,7 @@ export default class RubiksCube {
     return (this.observers = [...this.observers].filter((o) => o !== observer));
   }
 
-  public isSolved(): boolean {
+  get isSolved(): boolean {
     return ORIENTATION_KEYS.every((orientation) => {
       const faces = this.cubes
         .map((cube) => cube.orientation[orientation])
@@ -138,7 +140,7 @@ export default class RubiksCube {
         this.cubes.forEach((cube) => cube.rotateYCCW());
         break;
     }
-    this.onMove();
+    this.onMove(rotation);
   }
 
   public rotateTopCW() {
@@ -147,7 +149,7 @@ export default class RubiksCube {
         cube.rotateXCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateTopCW");
   }
 
   public rotateXMidCW() {
@@ -156,7 +158,7 @@ export default class RubiksCube {
         cube.rotateXCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateXMidCW");
   }
 
   public rotateBottomCW() {
@@ -165,7 +167,7 @@ export default class RubiksCube {
         cube.rotateXCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateBottomCW");
   }
 
   public rotateTopCCW() {
@@ -174,7 +176,7 @@ export default class RubiksCube {
         cube.rotateXCCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateTopCCW");
   }
 
   public rotateXMidCCW() {
@@ -183,7 +185,7 @@ export default class RubiksCube {
         cube.rotateXCCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateXMidCCW");
   }
 
   public rotateBottomCCW() {
@@ -192,7 +194,7 @@ export default class RubiksCube {
         cube.rotateXCCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateBottomCCW");
   }
 
   public rotateLeftCW() {
@@ -201,7 +203,7 @@ export default class RubiksCube {
         cube.rotateYCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateLeftCW");
   }
 
   public rotateYMidCW() {
@@ -210,7 +212,7 @@ export default class RubiksCube {
         cube.rotateYCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateYMidCW");
   }
 
   public rotateRightCW() {
@@ -219,7 +221,7 @@ export default class RubiksCube {
         cube.rotateYCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateRightCW");
   }
 
   public rotateLeftCCW() {
@@ -228,7 +230,7 @@ export default class RubiksCube {
         cube.rotateYCCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateLeftCCW");
   }
 
   public rotateYMidCCW() {
@@ -237,7 +239,7 @@ export default class RubiksCube {
         cube.rotateYCCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateYMidCCW");
   }
 
   public rotateRightCCW() {
@@ -246,7 +248,7 @@ export default class RubiksCube {
         cube.rotateYCCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateRightCCW");
   }
 
   public rotateFrontCW() {
@@ -255,7 +257,7 @@ export default class RubiksCube {
         cube.rotateZCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateFrontCW");
   }
 
   public rotateZMidCW() {
@@ -264,7 +266,7 @@ export default class RubiksCube {
         cube.rotateZCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateZMidCW");
   }
 
   public rotateBackCW() {
@@ -273,7 +275,7 @@ export default class RubiksCube {
         cube.rotateZCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateBackCW");
   }
 
   public rotateFrontCCW() {
@@ -282,7 +284,7 @@ export default class RubiksCube {
         cube.rotateZCCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateFrontCCW");
   }
 
   public rotateZMidCCW() {
@@ -291,7 +293,7 @@ export default class RubiksCube {
         cube.rotateZCCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateZMidCCW");
   }
 
   public rotateBackCCW() {
@@ -300,6 +302,6 @@ export default class RubiksCube {
         cube.rotateZCCW();
       }
     });
-    this.onMove();
+    this.onMove("rotateBackCCW");
   }
 }
