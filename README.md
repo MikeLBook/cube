@@ -51,14 +51,20 @@ always:
 input → RubiksCube method call → onMove(move) → representation presents the change
 ```
 
-- The **2D view** (`src/index.ts` + `index.html`) is the simplest consumer: `onMove` just
+- The **2D view** (`src/presentations/2DView/`) is the simplest consumer: `onMove` just
   re-renders the net and writes the state to `localStorage` (shared with the 3D page).
-- The **3D view** (`src/cube3d.ts` + `cube3d.html`) animates. Its own manual turns (drag /
-  keyboard / buttons) are animated *before* committing to the engine; moves it observes from
-  elsewhere (the solver) are animated *after the fact* from the move in the `onMove` event.
+- The **3D view** (`src/presentations/3DView/`) animates. *Every* change is animated the
+  same way: after the fact, from the move in the `onMove` event — there is one animation path,
+  whether the move came from a drag, the keyboard, a button, a scramble, or the solver.
 
-The move identity in the event is what lets the 3D view animate the correct layer for a change
-it didn't initiate.
+The move identity in the event is what lets the 3D view animate the correct layer (or the whole
+cube, for a `Rotation`) for a change it didn't initiate.
+
+Because the engine mutates synchronously but animation takes time, the 3D view keeps the engine
+from running ahead of the animation by **pacing every source**: discrete manual turns apply only
+while the view is idle, and multi-move sources (scramble, solver) are paced "drivers" that apply
+one move then wait for it to be presented (see below). This guarantees each `onMove` animates
+exactly one fresh move.
 
 ## The solver and the pacing contract
 
@@ -98,8 +104,13 @@ Each representation implements `MovePacer.settled()` for its own medium:
 | Robot (future) | the physical turn completes (and rejects on a fault) |
 
 In the 3D view, `CubeView` implements both `IRubiksCubeObserver` (to learn what changed) and
-`MovePacer` (to pace the solver). One click runs the solver's whole paced sequence; `reset()`
-aborts an in-flight solve via the `AbortSignal`.
+`MovePacer` (to pace a driver). One click runs the solver's whole paced sequence; `reset()`
+aborts an in-flight driver via the `AbortSignal`.
+
+The same `MovePacer` mechanism paces the 3D view's own **scramble**: it's just another paced
+driver (apply a random turn → `await settled()` → repeat), so the solver isn't special — any
+multi-move source shares one pacing path. Only one driver runs at a time, and manual input is
+locked out while one is active.
 
 ### Why async (not a generator or a fixed delay)
 
@@ -120,10 +131,10 @@ src/
     helpers.ts       (de)serialization guards
   solver/
     RubiksCubeSolver.ts   the "person"; async, paced via MovePacer (placeholder logic for now)
-  index.ts           2D net view (observer)
-  cube3d.ts          3D interactive view (observer + MovePacer)
-index.html           2D page
-cube3d.html          3D page
+  presentations/
+    2DView/          2DView.ts/.html/.css   — 2D net view (observer)
+    3DView/          3DView.ts/.html/.css   — 3D interactive view (observer + MovePacer)
+build.mjs            esbuild build → build/
 ```
 
 `RubiksCubeSolver.run()` is currently a **placeholder** — it applies a fixed sequence of moves
@@ -134,12 +145,14 @@ engine or the representations.
 
 ```sh
 npm install
-npm run build      # bundles src/index.ts and src/cube3d.ts to index.js / cube3d.js
-npm run watch      # rebuild on change
+npm run build      # node build.mjs — bundles each presentation into build/
+npm run watch      # rebuild (and re-copy HTML) on change
 ```
 
-Then open `index.html` (2D net) or `cube3d.html` (3D) in a browser. Both pages share cube state
-through `localStorage`, so a scramble on one is reflected on the other.
+The build emits a flat `build/` directory (git-ignored): the 2D view as `index.{html,css,js}`
+and the 3D view as `3DView.{html,css,js}`. Open `build/index.html` (2D net) or
+`build/3DView.html` (3D) in a browser. Both pages share cube state through `localStorage`, so a
+scramble on one is reflected on the other.
 
 ### 3D view controls
 

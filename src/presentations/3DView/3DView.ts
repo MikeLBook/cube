@@ -1,8 +1,8 @@
-import RubiksCube, { IRubiksCubeObserver } from "./engine/RubiksCube";
-import Cube from "./engine/Cube";
-import { Face, Orientation, Rotation } from "./engine/models";
-import { LayerMove } from "./engine/models";
-import RubiksCubeSolver, { MovePacer } from "./solver/RubiksCubeSolver";
+import RubiksCube, { IRubiksCubeObserver } from "../../engine/RubiksCube";
+import Cube from "../../engine/Cube";
+import { Face, Orientation, Rotation } from "../../engine/models";
+import { LayerMove } from "../../engine/models";
+import RubiksCubeSolver, { MovePacer } from "../../solver/RubiksCubeSolver";
 
 type Axis = "X" | "Y" | "Z";
 type Status = "free" | "ready" | "scrambling" | "solving" | "solved";
@@ -40,28 +40,15 @@ interface CubieEntry {
   stickers: Record<keyof Orientation, HTMLElement>;
 }
 
-interface TurnItem {
-  kind: "turn";
-  face: keyof CubeView["MOVES"];
-  prime: boolean;
-  opts: MoveOpts;
-}
-
-interface CubeItem {
-  kind: "cube";
-  c: CubeMoveDef;
-}
-
-interface MoveOpts {
-  count?: boolean;
-  fast?: boolean;
-  scramble?: boolean;
-}
-
 /**
  * 3D Rubik's cube view. Pure presentation + interaction (CSS-3D transforms, drag-to-turn,
  * orbit, scramble, timer); ALL cube state lives in and mutates through our engine
  * (RubiksCube / Cube). No cube logic is duplicated here.
+ *
+ * Every change is driven the same way: a source calls a RubiksCube method, the engine fires
+ * onMove, and we animate the change *after the fact*. So that the engine never runs ahead of
+ * the animation, every source is paced: the solver and scramble are async "drivers" that
+ * mutate then await settled(); discrete manual turns only apply while the view is idle.
  */
 class CubeView implements IRubiksCubeObserver, MovePacer {
   private rubiks = RubiksCube.getInstance();
@@ -69,19 +56,19 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
   // settled() after each move, so we present one turn at a time.
   private solver = new RubiksCubeSolver(this.rubiks, this);
 
-  // A solve runs the solver's whole paced sequence; guard against a second concurrent run and
-  // give reset() a way to stop one in flight.
-  private solving = false;
-  private solveAbort: AbortController | undefined;
+  // A "driver" is a paced sequence of moves — the solver or a scramble. Only one runs at a
+  // time and manual input is locked out while one is active; sequenceAbort lets reset() stop it.
+  private driving = false;
+  private sequenceAbort: AbortController | undefined;
   // Callbacks awaiting settled() — resolved once the view goes idle (animation finished).
   private settleWaiters: Array<() => void> = [];
+  // One-shot hint consumed by the next onMove to pick its animation (e.g. scramble = fast).
+  private movePresentation: { fast?: boolean } = {};
 
   private sceneEl: HTMLElement;
   private worldEl!: HTMLElement;
   private entries: CubieEntry[] = [];
 
-  // queued moves / animation gating
-  private queue: Array<TurnItem | CubeItem> = [];
   private animating = false;
 
   // session state (mirrored into the panel DOM)
@@ -243,8 +230,8 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
     this.entries = this.rubiks.cubes.map((c) => this.createCubie(c));
     this.entries.forEach((e) => this.worldEl.appendChild(e.el));
 
-    // Every downstream effect of a move flows through onMove: an input handler only
-    // calls the engine method, the engine notifies us, and we persist + repaint.
+    // Every change flows through onMove: a source calls an engine method, the engine notifies
+    // us, and we persist + animate.
     this.rubiks.addObserver(this);
 
     this.applyView(false);
@@ -308,55 +295,69 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
     localStorage.setItem("cubeState", JSON.stringify(this.rubiks.cubes));
   }
 
-  // Observer hook fired by the engine after every state mutation. reset() rebuilds the
-  // cubes array, so re-point each rendered cubie at the current engine Cube (a no-op for
-  // in-place layer/whole-cube turns), then persist.
+  // Observer hook fired by the engine after every state mutation — the single animation entry
+  // point. reset() rebuilds the cubes array, so re-point each rendered cubie at the current
+  // engine Cube (a no-op for in-place layer/whole-cube turns), then persist and present.
   public onMove(move?: LayerMove | Rotation) {
     this.entries.forEach((e, i) => (e.cube = this.rubiks.cubes[i]));
     this.persist();
-    // Our own queued animation already spun the layer before mutating the engine, and
-    // this.animating is still true at this point — so just settle. Same for reset() and
-    // whole-cube re-orientations, which carry no LayerMove. An external mutation (e.g. the
-    // solver) arrives un-animated while idle, so play the observed layer turn before settling.
+    const fast = this.movePresentation.fast === true;
+    this.movePresentation = {};
+    // No move (reset) settles instantly. Sources only mutate the engine while idle, so a move
+    // should never arrive mid-animation; if one somehow does, settle rather than overlap.
     if (this.animating || !move) {
       this.renderCube();
       return;
     }
-    this.animateObservedMove(move);
+    this.animateMove(move, fast);
   }
 
-  // Animate a layer turn the engine has *already* applied (e.g. driven directly by the
-  // solver). The DOM still shows the pre-move state, so we reuse the normal layer spin —
-  // with method=null so animateLayer settles instead of re-applying the move to the engine.
-  private animateObservedMove(move: LayerMove | Rotation) {
+  // Animate a move the engine has *already* applied. The DOM still shows the pre-move state, so
+  // spinning the affected layer (or the whole world) by 90° lands exactly where the settling
+  // renderCube repaints it.
+  private animateMove(move: LayerMove | Rotation, fast: boolean) {
     const key = (Object.keys(this.MOVES) as MoveKey[]).find(
       (k) => this.MOVES[k].cw === move || this.MOVES[k].ccw === move,
     );
-    if (!key) {
-      // whole-cube rotation or anything we can't map to a layer — settle without a spin
-      this.renderCube();
+    if (key) {
+      const m = this.MOVES[key];
+      const prime = m.ccw === move;
+      const base = this.ANIM_SIGN[m.cssAxis] * 90;
+      this.animateLayer(m, prime ? -base : base, fast);
       return;
     }
-    const m = this.MOVES[key];
-    const prime = m.ccw === move;
-    const base = this.ANIM_SIGN[m.cssAxis] * 90;
-    this.animateLayer(m, prime ? -base : base, null, {});
+    const cubeDef = Object.values(this.CUBE_MOVES).find(
+      (c) => c.rotation === move,
+    );
+    if (cubeDef) {
+      this.animateWholeCube(cubeDef);
+      return;
+    }
+    // Unmappable change — settle without a spin.
+    this.renderCube();
   }
 
-  // One click runs the solver's whole sequence, paced by us. The solver mutates the engine
-  // directly (each move fires onMove → animateObservedMove) and awaits settled() between moves,
-  // so we present one turn at a time. Ignore clicks while a solve is already running.
+  // ---------- drivers (paced move sequences) ----------
+  // One click runs the solver's whole sequence. The solver mutates the engine directly (each
+  // move fires onMove → animateMove) and awaits settled() between moves, so we present one turn
+  // at a time.
   private startSolve() {
-    if (this.solving) return;
-    this.solving = true;
-    this.solveAbort = new AbortController();
-    this.solver.run(this.solveAbort.signal).finally(() => {
-      this.solving = false;
-      this.solveAbort = undefined;
+    this.runSequence((signal) => this.solver.run(signal));
+  }
+
+  // Run a paced sequence of engine mutations as the sole active driver. Manual input is locked
+  // out (driving) until it finishes; reset() aborts it via the signal.
+  private runSequence(fn: (signal: AbortSignal) => Promise<void>) {
+    if (this.driving || this.animating) return;
+    this.driving = true;
+    this.sequenceAbort = new AbortController();
+    fn(this.sequenceAbort.signal).finally(() => {
+      this.driving = false;
+      this.sequenceAbort = undefined;
     });
   }
 
-  // MovePacer: the solver awaits this after each move. Resolve immediately when idle, otherwise
+  // MovePacer: a driver awaits this after each move. Resolve immediately when idle, otherwise
   // once the in-flight animation settles (see flushSettled). This is how the "reporter" tells
   // the "solver" it may proceed — a robot would resolve it when the physical turn completes.
   public settled(): Promise<void> {
@@ -364,11 +365,130 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
     return new Promise((resolve) => this.settleWaiters.push(resolve));
   }
 
-  // Wake every solver waiting on settled(). Called when the view goes idle.
+  // Wake every driver waiting on settled(). Called when the view goes idle.
   private flushSettled() {
     const waiters = this.settleWaiters;
     this.settleWaiters = [];
     waiters.forEach((resolve) => resolve());
+  }
+
+  // ---------- applying moves ----------
+  // Apply a layer turn to the engine; onMove animates it. `fast` is a one-shot presentation
+  // hint (used by scramble) consumed by the resulting onMove.
+  private applyMove(face: MoveKey, prime: boolean, fast = false) {
+    const m = this.MOVES[face];
+    this.movePresentation = { fast };
+    this.rubiks[prime ? m.ccw : m.cw]();
+  }
+
+  // A discrete user turn (drag / keyboard / button). Only fires while idle so the engine never
+  // runs ahead of the animation; session bookkeeping runs here, where the intent is known.
+  private userMove(face: MoveKey, prime: boolean) {
+    if (this.animating || this.driving) return;
+    this.applyMove(face, prime);
+    this.afterUserMove();
+  }
+
+  // A discrete whole-cube re-orientation (keyboard / button). Re-orientations don't count as
+  // solve moves, so there's no bookkeeping.
+  private userCubeMove(key: string) {
+    if (this.animating || this.driving) return;
+    const c = this.CUBE_MOVES[key];
+    if (!c) return;
+    this.rubiks.rotateRubiksCube(c.rotation);
+  }
+
+  // Timing/counting only run during a scramble-initiated solve attempt; casual play on an
+  // unscrambled cube neither starts the clock nor counts moves.
+  private afterUserMove() {
+    if (!this.hasScrambled) return;
+    this.startTimer();
+    this.moveCount++;
+    this.updateStats();
+    if (this.rubiks.isSolved) {
+      this.stopTimer();
+      // Attempt is over; disarm so post-solve play stays idle. Only a new scramble re-arms timing.
+      this.hasScrambled = false;
+      this.status = "solved";
+      this.updateStatus();
+    }
+  }
+
+  // ---------- animation ----------
+  private orbitStr() {
+    return "rotateX(" + this.pitch + "deg) rotateY(" + this.yaw + "deg)";
+  }
+
+  private animateLayer(m: MoveDef, angle: number, fast: boolean) {
+    this.animating = true;
+    const group = document.createElement("div");
+    group.style.cssText =
+      "position:absolute; left:0; top:0; width:0; height:0; transform-style:preserve-3d;";
+    this.worldEl.appendChild(group);
+    // The engine already turned this layer, but a face turn keeps its cubies in the layer, so
+    // selecting by current position still gathers the right ones; their on-screen transforms
+    // still show the pre-move state.
+    const moving = this.entries.filter(
+      (e) => e.cube.position[m.posAxis] === m.layer,
+    );
+    moving.forEach((e) => group.appendChild(e.el));
+    group.getBoundingClientRect(); // reflow
+    const dur = fast ? 135 : 290;
+    group.style.transition =
+      "transform " + dur + "ms cubic-bezier(.34,.66,.24,1)";
+    group.style.transform = "rotate" + m.cssAxis + "(" + angle + "deg)";
+
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      group.removeEventListener("transitionend", onEnd);
+      // Tear down the turn-group wrapper, then settle the cubies onto the (already-applied) model.
+      moving.forEach((e) => this.worldEl.appendChild(e.el));
+      group.remove();
+      this.renderCube();
+      this.animating = false;
+      this.flushSettled();
+    };
+    // Only react to this group's own transform transition (ignore any bubbled child events).
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target === group && e.propertyName === "transform") done();
+    };
+    group.addEventListener("transitionend", onEnd);
+    setTimeout(done, dur + 140);
+  }
+
+  private animateWholeCube(c: CubeMoveDef) {
+    this.animating = true;
+    // Commit a clean resting orientation as the animation's starting point. Without the forced
+    // reflow, the reset (transition:none) and the spin (transition+transform) collapse into one
+    // style pass with no baseline to animate from, so the turn would jump instantly.
+    this.worldEl.style.transition = "none";
+    this.worldEl.style.transform = this.orbitStr();
+    this.worldEl.getBoundingClientRect(); // reflow
+    this.worldEl.style.transition =
+      "transform 320ms cubic-bezier(.34,.66,.24,1)";
+    this.worldEl.style.transform =
+      this.orbitStr() + " rotate" + c.axis + "(" + c.angle + "deg)";
+    let finished = false;
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      this.worldEl.removeEventListener("transitionend", onEnd);
+      // The engine already re-keyed every cubie; reset the world to its resting orbit and
+      // repaint so the spun look becomes the new resting state.
+      this.worldEl.style.transition = "none";
+      this.worldEl.style.transform = this.orbitStr();
+      this.renderCube();
+      this.animating = false;
+      this.flushSettled();
+    };
+    // Only react to worldEl's own transform transition (transitionend bubbles).
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target === this.worldEl && e.propertyName === "transform") done();
+    };
+    this.worldEl.addEventListener("transitionend", onEnd);
+    setTimeout(done, 470);
   }
 
   private renderCube() {
@@ -408,150 +528,6 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
       "rotateX(" + this.pitch + "deg) rotateY(" + this.yaw + "deg)";
   }
 
-  // ---------- moves / animation ----------
-  private move(face: MoveKey, prime: boolean, opts?: MoveOpts) {
-    if (!this.MOVES[face]) return;
-    this.queue.push({ kind: "turn", face, prime: !!prime, opts: opts || {} });
-    this.processQueue();
-  }
-
-  private cubeMove(key: string) {
-    const c = this.CUBE_MOVES[key];
-    if (!c) return;
-    this.queue.push({ kind: "cube", c });
-    this.processQueue();
-  }
-
-  private orbitStr() {
-    return "rotateX(" + this.pitch + "deg) rotateY(" + this.yaw + "deg)";
-  }
-
-  private processQueue() {
-    if (this.animating || !this.queue.length || !this.worldEl) return;
-    const it = this.queue.shift()!;
-    if (it.kind === "cube") {
-      this.animateCube(it.c);
-      return;
-    }
-    const m = this.MOVES[it.face];
-    const base = this.ANIM_SIGN[m.cssAxis] * 90;
-    const angle = it.prime ? -base : base;
-    const method = it.prime ? m.ccw : m.cw;
-    this.animateLayer(m, angle, method, it.opts);
-  }
-
-  private animateCube(c: CubeMoveDef) {
-    this.animating = true;
-    // Commit a clean resting orientation as the animation's starting point. Without the
-    // forced reflow, a queued rotation's reset (transition:none) and the next rotation's
-    // transition+transform collapse into one style pass with no baseline to animate from,
-    // so every turn after the first would jump instantly instead of animating.
-    this.worldEl.style.transition = "none";
-    this.worldEl.style.transform = this.orbitStr();
-    this.worldEl.getBoundingClientRect(); // reflow
-    this.worldEl.style.transition =
-      "transform 320ms cubic-bezier(.34,.66,.24,1)";
-    this.worldEl.style.transform =
-      this.orbitStr() + " rotate" + c.axis + "(" + c.angle + "deg)";
-    let finished = false;
-    const done = () => {
-      if (finished) return;
-      finished = true;
-      this.worldEl.removeEventListener("transitionend", onEnd);
-      // Settle the world back to its resting orbit, then re-key the model: rotateRubiksCube
-      // fires onMove, which persists and repaints the spun look as the new resting state.
-      this.worldEl.style.transition = "none";
-      this.worldEl.style.transform = this.orbitStr();
-      this.rubiks.rotateRubiksCube(c.rotation);
-      this.animating = false;
-      this.processQueue();
-      if (!this.animating) this.flushSettled();
-    };
-    // Only react to worldEl's own transform transition. transitionend bubbles, so a layer
-    // turn's group event (which finishes just before this animation starts) would otherwise
-    // fire this handler instantly and skip the animation.
-    const onEnd = (e: TransitionEvent) => {
-      if (e.target === this.worldEl && e.propertyName === "transform") done();
-    };
-    this.worldEl.addEventListener("transitionend", onEnd);
-    setTimeout(done, 470);
-  }
-
-  private animateLayer(
-    m: MoveDef,
-    angle: number,
-    method: LayerMove | null,
-    opts: MoveOpts,
-  ) {
-    this.animating = true;
-    const group = document.createElement("div");
-    group.style.cssText =
-      "position:absolute; left:0; top:0; width:0; height:0; transform-style:preserve-3d;";
-    this.worldEl.appendChild(group);
-    const moving = this.entries.filter(
-      (e) => e.cube.position[m.posAxis] === m.layer,
-    );
-    moving.forEach((e) => group.appendChild(e.el));
-    group.getBoundingClientRect(); // reflow
-    const dur = opts.fast ? 135 : 290;
-    group.style.transition =
-      "transform " + dur + "ms cubic-bezier(.34,.66,.24,1)";
-    group.style.transform = "rotate" + m.cssAxis + "(" + angle + "deg)";
-
-    let finished = false;
-    const done = () => {
-      if (finished) return;
-      finished = true;
-      group.removeEventListener("transitionend", onEnd);
-      // Tear down the turn-group wrapper first so the repaint lands in a settled world.
-      moving.forEach((e) => this.worldEl.appendChild(e.el));
-      group.remove();
-      if (method) {
-        // Pre-mutation path: the spin finished, now commit to the engine. That fires
-        // onMove, which (animating still true) persists and re-renders the new state.
-        this.rubiks[method]();
-        this.afterMove(opts);
-      } else {
-        // Observed path: the engine already applied the move, so just settle the repaint.
-        this.renderCube();
-      }
-      this.animating = false;
-      this.processQueue();
-      if (!this.animating) this.flushSettled();
-    };
-    // Only react to this group's own transform transition (ignore any bubbled child events).
-    const onEnd = (e: TransitionEvent) => {
-      if (e.target === group && e.propertyName === "transform") done();
-    };
-    group.addEventListener("transitionend", onEnd);
-    setTimeout(done, dur + 140);
-  }
-
-  private afterMove(opts: MoveOpts) {
-    if (opts.scramble) {
-      this.scrambleLeft--;
-      if (this.scrambleLeft <= 0) {
-        this.status = "ready";
-        this.updateStatus();
-      }
-      return;
-    }
-    // Timing/counting only run during a scramble-initiated solve attempt; casual play
-    // on an unscrambled cube neither starts the clock nor counts moves.
-    if (opts.count !== false && this.hasScrambled) {
-      this.startTimer();
-      this.moveCount++;
-      this.updateStats();
-    }
-    if (this.hasScrambled && this.rubiks.isSolved) {
-      this.stopTimer();
-      // Attempt is over; disarm so post-solve play stays idle. Only a new scramble re-arms timing.
-      this.hasScrambled = false;
-      this.status = "solved";
-      this.updateStatus();
-    }
-  }
-
   // ---------- timer ----------
   private startTimer() {
     if (this.running || this.status === "solved") return;
@@ -576,14 +552,22 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
 
   // ---------- scramble / reset ----------
   private scramble() {
-    if (this.status === "scrambling") return;
-    this.doReset(false, false);
+    if (this.animating || this.driving) return;
+    if (this.timer) clearInterval(this.timer);
+    this.running = false;
+    const seq = this.buildScramble();
+    this.scrambleLeft = seq.length;
     this.hasScrambled = true;
-    this.status = "scrambling";
     this.moveCount = 0;
     this.elapsed = 0;
+    this.status = "scrambling";
     this.updateStatus();
     this.updateStats();
+    this.runSequence((signal) => this.runScramble(seq, signal));
+  }
+
+  // A non-trivial random sequence: no two consecutive turns on the same axis.
+  private buildScramble(): Array<{ f: MoveKey; prime: boolean }> {
     const faces: MoveKey[] = ["U", "D", "L", "R", "F", "B"];
     const seq: Array<{ f: MoveKey; prime: boolean }> = [];
     let lastAxis: Axis | "" = "";
@@ -597,23 +581,32 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
       lastAxis = this.MOVES[f].posAxis;
       seq.push({ f, prime: Math.random() < 0.5 });
     }
-    this.scrambleLeft = seq.length;
-    seq.forEach((mv) =>
-      this.move(mv.f, mv.prime, { count: false, fast: true, scramble: true }),
-    );
+    return seq;
+  }
+
+  // A driver: apply each scramble turn (fast), then await its presentation before the next.
+  private async runScramble(
+    seq: Array<{ f: MoveKey; prime: boolean }>,
+    signal: AbortSignal,
+  ) {
+    for (const mv of seq) {
+      if (signal.aborted) return;
+      this.applyMove(mv.f, mv.prime, true);
+      this.scrambleLeft--;
+      if (this.scrambleLeft <= 0) {
+        this.status = "ready";
+        this.updateStatus();
+      }
+      await this.settled();
+    }
   }
 
   private reset() {
-    this.doReset(true, true);
-  }
-
-  private doReset(resetView: boolean, resetCubes: boolean) {
     if (this.timer) clearInterval(this.timer);
     this.running = false;
-    this.queue = [];
     this.animating = false;
-    // Stop any in-flight solve and wake it so its run() loop sees the abort and unwinds.
-    this.solveAbort?.abort();
+    // Stop any in-flight driver and wake it so its loop sees the abort and unwinds.
+    this.sequenceAbort?.abort();
     this.flushSettled();
     // Clean up any in-flight animation DOM first so the repaint below lands in a settled
     // world: re-parent every cubie and drop any leftover turn-group wrappers.
@@ -624,20 +617,13 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
           (ch as HTMLElement).remove();
       });
     }
-    if (resetCubes) {
-      // reset() rebuilds the engine's cubes array and fires onMove, which re-points our
-      // entries at the fresh Cube instances, persists, and repaints.
-      this.rubiks.reset();
-    } else {
-      // No model change (e.g. the pre-scramble clear) — just repaint the settled world.
-      this.renderCube();
-    }
-    if (resetView) {
-      this.hasScrambled = false;
-      this.yaw = DEFAULT_YAW;
-      this.pitch = DEFAULT_PITCH;
-      this.applyView(true);
-    }
+    // reset() rebuilds the engine's cubes array and fires onMove, which re-points our entries at
+    // the fresh Cube instances, persists, and repaints.
+    this.rubiks.reset();
+    this.hasScrambled = false;
+    this.yaw = DEFAULT_YAW;
+    this.pitch = DEFAULT_PITCH;
+    this.applyView(true);
     this.status = "free";
     this.moveCount = 0;
     this.elapsed = 0;
@@ -677,7 +663,7 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
       if (!this.turnCommitted && Math.hypot(dx, dy) > 14) {
         this.turnCommitted = true;
         const mv = this.pickTurn(this.dragFace, dx, dy);
-        if (mv) this.move(mv.face, mv.prime);
+        if (mv) this.userMove(mv.face, mv.prime);
       }
     } else {
       this.yaw = this.yaw0 + dx * 0.42;
@@ -757,22 +743,22 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
     if (this.dragging) return; // ignore keypresses while the pointer is held down
     const k = e.key;
     if (k === "a") {
-      this.cubeMove("spinLeft");
+      this.userCubeMove("spinLeft");
       e.preventDefault();
       return;
     }
     if (k === "d") {
-      this.cubeMove("spinRight");
+      this.userCubeMove("spinRight");
       e.preventDefault();
       return;
     }
     if (k === "w") {
-      this.cubeMove("rollUp");
+      this.userCubeMove("rollUp");
       e.preventDefault();
       return;
     }
     if (k === "s") {
-      this.cubeMove("rollDown");
+      this.userCubeMove("rollDown");
       e.preventDefault();
       return;
     }
@@ -794,7 +780,7 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
     };
     const face = map[k.toLowerCase()];
     if (face) {
-      this.move(face, e.shiftKey);
+      this.userMove(face, e.shiftKey);
       e.preventDefault();
     }
   }
@@ -846,10 +832,10 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
     bind("btn-scramble", () => this.scramble());
     bind("btn-reset", () => this.reset());
     bind("btn-recenter", () => this.resetView());
-    bind("btn-roll-up", () => this.cubeMove("rollUp"));
-    bind("btn-roll-down", () => this.cubeMove("rollDown"));
-    bind("btn-spin-left", () => this.cubeMove("spinLeft"));
-    bind("btn-spin-right", () => this.cubeMove("spinRight"));
+    bind("btn-roll-up", () => this.userCubeMove("rollUp"));
+    bind("btn-roll-down", () => this.userCubeMove("rollDown"));
+    bind("btn-spin-left", () => this.userCubeMove("spinLeft"));
+    bind("btn-spin-right", () => this.userCubeMove("spinRight"));
   }
 }
 

@@ -5,10 +5,10 @@
   "license": "ISC",
   "author": "mbook",
   "type": "commonjs",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
-    "build": "esbuild src/index.ts src/cube3d.ts --bundle --outdir=.",
-    "watch": "esbuild src/index.ts src/cube3d.ts --bundle --outdir=. --watch"
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch"
   },
   "dependencies": {
     "typescript": "^6.0.3"
