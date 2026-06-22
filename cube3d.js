@@ -583,13 +583,14 @@
           if (saved) this.rubiks.setState(saved);
           this.entries = this.rubiks.cubes.map((c) => this.createCubie(c));
           this.entries.forEach((e) => this.worldEl.appendChild(e.el));
+          this.rubiks.addObserver(this);
           this.applyView(false);
           this.renderCube();
           this.updateStats();
           this.updateStatus();
           const sc = this.sceneEl;
           sc.addEventListener("pointerdown", (e) => this.onDown(e));
-          sc.addEventListener("pointermove", (e) => this.onMove(e));
+          sc.addEventListener("pointermove", (e) => this.onPointerMove(e));
           sc.addEventListener("pointerup", (e) => this.onUp(e));
           sc.addEventListener("pointercancel", (e) => this.onUp(e));
         }
@@ -625,6 +626,14 @@
         // Write engine state to the localStorage key shared with the 2D page.
         persist() {
           localStorage.setItem("cubeState", JSON.stringify(this.rubiks.cubes));
+        }
+        // Observer hook fired by the engine after every state mutation. reset() rebuilds the
+        // cubes array, so re-point each rendered cubie at the current engine Cube (a no-op for
+        // in-place layer/whole-cube turns), then persist and repaint.
+        onMove() {
+          this.entries.forEach((e, i) => e.cube = this.rubiks.cubes[i]);
+          this.persist();
+          this.renderCube();
         }
         renderCube() {
           const U = this.UNIT, H = this.HALF;
@@ -689,11 +698,9 @@
             if (finished) return;
             finished = true;
             this.worldEl.removeEventListener("transitionend", onEnd);
-            this.rubiks.rotateRubiksCube(c.rotation);
-            this.persist();
             this.worldEl.style.transition = "none";
             this.worldEl.style.transform = this.orbitStr();
-            this.renderCube();
+            this.rubiks.rotateRubiksCube(c.rotation);
             this.animating = false;
             this.processQueue();
           };
@@ -721,11 +728,9 @@
             if (finished) return;
             finished = true;
             group.removeEventListener("transitionend", onEnd);
-            this.rubiks[method]();
-            this.persist();
             moving.forEach((e) => this.worldEl.appendChild(e.el));
             group.remove();
-            this.renderCube();
+            this.rubiks[method]();
             this.afterMove(opts);
             this.animating = false;
             this.processQueue();
@@ -812,19 +817,16 @@
           this.running = false;
           this.queue = [];
           this.animating = false;
-          if (resetCubes) {
-            this.rubiks.reset();
-            this.persist();
-          }
-          this.entries.forEach((e, i) => {
-            e.cube = this.rubiks.cubes[i];
-          });
           if (this.entries && this.worldEl) {
             this.entries.forEach((e) => this.worldEl.appendChild(e.el));
             Array.prototype.slice.call(this.worldEl.children).forEach((ch) => {
               if (!this.entries.some((e) => e.el === ch))
                 ch.remove();
             });
+          }
+          if (resetCubes) {
+            this.rubiks.reset();
+          } else {
             this.renderCube();
           }
           if (resetView) {
@@ -859,7 +861,7 @@
           this.dragFace = faceEl && !this.animating ? faceEl : null;
           this.sceneEl.style.cursor = "grabbing";
         }
-        onMove(e) {
+        onPointerMove(e) {
           if (!this.dragging) return;
           const dx = e.clientX - this.px, dy = e.clientY - this.py;
           if (this.dragFace) {

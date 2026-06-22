@@ -1,6 +1,6 @@
 import RubiksCube from "./engine/RubiksCube";
 import Cube from "./engine/Cube";
-import { Face, Orientation, Rotation } from "./engine/models";
+import { Face, IRubiksCubeObserver, Orientation, Rotation } from "./engine/models";
 import { LayerMove } from "./engine/models";
 
 type Axis = "X" | "Y" | "Z";
@@ -62,7 +62,7 @@ interface MoveOpts {
  * orbit, scramble, timer); ALL cube state lives in and mutates through our engine
  * (RubiksCube / Cube). No cube logic is duplicated here.
  */
-class CubeView {
+class CubeView implements IRubiksCubeObserver {
   private rubiks = RubiksCube.getInstance();
 
   private sceneEl: HTMLElement;
@@ -228,6 +228,10 @@ class CubeView {
     this.entries = this.rubiks.cubes.map((c) => this.createCubie(c));
     this.entries.forEach((e) => this.worldEl.appendChild(e.el));
 
+    // Every downstream effect of a move flows through onMove: an input handler only
+    // calls the engine method, the engine notifies us, and we persist + repaint.
+    this.rubiks.addObserver(this);
+
     this.applyView(false);
     this.renderCube();
     this.updateStats();
@@ -235,7 +239,7 @@ class CubeView {
 
     const sc = this.sceneEl;
     sc.addEventListener("pointerdown", (e) => this.onDown(e));
-    sc.addEventListener("pointermove", (e) => this.onMove(e));
+    sc.addEventListener("pointermove", (e) => this.onPointerMove(e));
     sc.addEventListener("pointerup", (e) => this.onUp(e));
     sc.addEventListener("pointercancel", (e) => this.onUp(e));
   }
@@ -287,6 +291,15 @@ class CubeView {
   // Write engine state to the localStorage key shared with the 2D page.
   private persist() {
     localStorage.setItem("cubeState", JSON.stringify(this.rubiks.cubes));
+  }
+
+  // Observer hook fired by the engine after every state mutation. reset() rebuilds the
+  // cubes array, so re-point each rendered cubie at the current engine Cube (a no-op for
+  // in-place layer/whole-cube turns), then persist and repaint.
+  public onMove() {
+    this.entries.forEach((e, i) => (e.cube = this.rubiks.cubes[i]));
+    this.persist();
+    this.renderCube();
   }
 
   private renderCube() {
@@ -376,11 +389,11 @@ class CubeView {
       if (finished) return;
       finished = true;
       this.worldEl.removeEventListener("transitionend", onEnd);
-      this.rubiks.rotateRubiksCube(c.rotation); // re-key model so the spun look becomes the new resting state
-      this.persist();
+      // Settle the world back to its resting orbit, then re-key the model: rotateRubiksCube
+      // fires onMove, which persists and repaints the spun look as the new resting state.
       this.worldEl.style.transition = "none";
       this.worldEl.style.transform = this.orbitStr();
-      this.renderCube();
+      this.rubiks.rotateRubiksCube(c.rotation);
       this.animating = false;
       this.processQueue();
     };
@@ -420,11 +433,11 @@ class CubeView {
       if (finished) return;
       finished = true;
       group.removeEventListener("transitionend", onEnd);
-      this.rubiks[method]();
-      this.persist();
+      // Tear down the turn-group wrapper first so onMove repaints into a settled world:
+      // the engine method fires onMove, which persists and re-renders the new state.
       moving.forEach((e) => this.worldEl.appendChild(e.el));
       group.remove();
-      this.renderCube();
+      this.rubiks[method]();
       this.afterMove(opts);
       this.animating = false;
       this.processQueue();
@@ -521,21 +534,21 @@ class CubeView {
     this.running = false;
     this.queue = [];
     this.animating = false;
-    if (resetCubes) {
-      this.rubiks.reset();
-      this.persist();
-    }
-    // our engine rebuilds its cubes array on reset, so re-point each rendered entry at the fresh Cube
-    this.entries.forEach((e, i) => {
-      e.cube = this.rubiks.cubes[i];
-    });
+    // Clean up any in-flight animation DOM first so the repaint below lands in a settled
+    // world: re-parent every cubie and drop any leftover turn-group wrappers.
     if (this.entries && this.worldEl) {
-      // re-parent every cubie to world and drop any leftover turn-group wrappers
       this.entries.forEach((e) => this.worldEl.appendChild(e.el));
       Array.prototype.slice.call(this.worldEl.children).forEach((ch) => {
         if (!this.entries.some((e) => e.el === ch))
           (ch as HTMLElement).remove();
       });
+    }
+    if (resetCubes) {
+      // reset() rebuilds the engine's cubes array and fires onMove, which re-points our
+      // entries at the fresh Cube instances, persists, and repaints.
+      this.rubiks.reset();
+    } else {
+      // No model change (e.g. the pre-scramble clear) — just repaint the settled world.
       this.renderCube();
     }
     if (resetView) {
@@ -575,7 +588,7 @@ class CubeView {
     this.sceneEl.style.cursor = "grabbing";
   }
 
-  private onMove(e: PointerEvent) {
+  private onPointerMove(e: PointerEvent) {
     if (!this.dragging) return;
     const dx = e.clientX - this.px,
       dy = e.clientY - this.py;
