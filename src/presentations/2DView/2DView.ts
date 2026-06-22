@@ -1,4 +1,4 @@
-import { JSONEquals } from "../../engine/helpers";
+import { JSONEquals } from "../../utils";
 import { FACES, LAYER_MOVES, Orientation } from "../../engine/models";
 import RubiksCube, { IRubiksCubeObserver } from "../../engine/RubiksCube";
 

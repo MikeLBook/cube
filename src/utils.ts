@@ -1,4 +1,4 @@
-import Cube from "./Cube";
+import Cube from "./engine/Cube";
 import {
   AXES,
   Face,
@@ -6,7 +6,7 @@ import {
   Orientation,
   ORIENTATION_KEYS,
   Position,
-} from "./models";
+} from "./engine/models";
 
 export function JSONEquals(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);

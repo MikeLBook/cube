@@ -1,5 +1,5 @@
 import Cube from "./Cube";
-import { isCubeArray } from "./helpers";
+import { isCubeArray } from "../utils";
 import { Face, LayerMove, ORIENTATION_KEYS, Rotation } from "./models";
 
 // Implemented by whatever presents the cube (3D view, 2D view, a robot)
