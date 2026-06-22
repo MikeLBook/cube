@@ -1,27 +1,7 @@
 import RubiksCube from "./engine/RubiksCube";
 import Cube from "./engine/Cube";
 import { Face, Orientation, Rotation } from "./engine/models";
-
-// The no-argument layer-rotation methods on RubiksCube that a single face turn maps to.
-type LayerMethod =
-  | "rotateTopCW"
-  | "rotateTopCCW"
-  | "rotateXMidCW"
-  | "rotateXMidCCW"
-  | "rotateBottomCW"
-  | "rotateBottomCCW"
-  | "rotateLeftCW"
-  | "rotateLeftCCW"
-  | "rotateYMidCW"
-  | "rotateYMidCCW"
-  | "rotateRightCW"
-  | "rotateRightCCW"
-  | "rotateFrontCW"
-  | "rotateFrontCCW"
-  | "rotateZMidCW"
-  | "rotateZMidCCW"
-  | "rotateBackCW"
-  | "rotateBackCCW";
+import { LayerMove } from "./engine/models";
 
 type Axis = "X" | "Y" | "Z";
 type Status = "free" | "ready" | "scrambling" | "solving" | "solved";
@@ -35,8 +15,8 @@ const DEFAULT_PITCH = -19.5;
 interface MoveDef {
   posAxis: Axis;
   layer: number;
-  cw: LayerMethod;
-  ccw: LayerMethod;
+  cw: LayerMove;
+  ccw: LayerMove;
   cssAxis: Axis;
 }
 
@@ -417,7 +397,7 @@ class CubeView {
   private animateLayer(
     m: MoveDef,
     angle: number,
-    method: LayerMethod,
+    method: LayerMove,
     opts: MoveOpts,
   ) {
     this.animating = true;

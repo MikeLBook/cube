@@ -135,19 +135,12 @@
   });
 
   // src/engine/models.ts
-  var Faces, AXES, ORIENTATION_KEYS;
+  var AXES, FACES, ORIENTATION_KEYS;
   var init_models = __esm({
     "src/engine/models.ts"() {
       "use strict";
-      Faces = {
-        Y: "YELLOW",
-        B: "BLUE",
-        R: "RED",
-        G: "GREEN",
-        O: "ORANGE",
-        W: "WHITE"
-      };
       AXES = ["X", "Y", "Z"];
+      FACES = ["Y", "B", "R", "G", "O", "W"];
       ORIENTATION_KEYS = [
         "top",
         "bottom",
@@ -161,7 +154,7 @@
 
   // src/engine/helpers.ts
   function isFace(value) {
-    return typeof value === "string" && value in Faces;
+    return FACES.includes(value);
   }
   function isPosition(value) {
     if (!value || typeof value !== "object") return false;
@@ -933,12 +926,12 @@
             return;
           }
           const map = {
-            u: "U",
-            d: "D",
+            t: "U",
+            b: "D",
             l: "L",
             r: "R",
             f: "F",
-            b: "B",
+            q: "B",
             y: "M",
             x: "E",
             z: "S"

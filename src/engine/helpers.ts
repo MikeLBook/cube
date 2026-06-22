@@ -2,7 +2,7 @@ import Cube from "./Cube";
 import {
   AXES,
   Face,
-  Faces,
+  FACES,
   Orientation,
   ORIENTATION_KEYS,
   Position,
@@ -13,7 +13,7 @@ export function JSONEquals(a: unknown, b: unknown): boolean {
 }
 
 export function isFace(value: unknown): value is Face {
-  return typeof value === "string" && value in Faces;
+  return (FACES as readonly string[]).includes(value as string);
 }
 
 export function isPosition(value: unknown): value is Position {

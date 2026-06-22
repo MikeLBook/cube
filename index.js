@@ -18,19 +18,12 @@
   };
 
   // src/engine/models.ts
-  var Faces, AXES, ORIENTATION_KEYS;
+  var AXES, FACES, ORIENTATION_KEYS, LAYER_MOVES;
   var init_models = __esm({
     "src/engine/models.ts"() {
       "use strict";
-      Faces = {
-        Y: "YELLOW",
-        B: "BLUE",
-        R: "RED",
-        G: "GREEN",
-        O: "ORANGE",
-        W: "WHITE"
-      };
       AXES = ["X", "Y", "Z"];
+      FACES = ["Y", "B", "R", "G", "O", "W"];
       ORIENTATION_KEYS = [
         "top",
         "bottom",
@@ -38,6 +31,26 @@
         "right",
         "front",
         "back"
+      ];
+      LAYER_MOVES = [
+        "rotateTopCW",
+        "rotateTopCCW",
+        "rotateXMidCW",
+        "rotateXMidCCW",
+        "rotateBottomCW",
+        "rotateBottomCCW",
+        "rotateLeftCW",
+        "rotateLeftCCW",
+        "rotateYMidCW",
+        "rotateYMidCCW",
+        "rotateRightCW",
+        "rotateRightCCW",
+        "rotateFrontCW",
+        "rotateFrontCCW",
+        "rotateZMidCW",
+        "rotateZMidCCW",
+        "rotateBackCW",
+        "rotateBackCCW"
       ];
     }
   });
@@ -47,7 +60,7 @@
     return JSON.stringify(a) === JSON.stringify(b);
   }
   function isFace(value) {
-    return typeof value === "string" && value in Faces;
+    return FACES.includes(value);
   }
   function isPosition(value) {
     if (!value || typeof value !== "object") return false;
@@ -418,78 +431,11 @@
       var rubiksCube = RubiksCube.getInstance();
       var cubeState = localStorage.getItem("cubeState");
       if (cubeState) rubiksCube.setState(cubeState);
-      var FACE_CLASSES = Object.keys(Faces);
-      document.querySelector("#rotateTopCW")?.addEventListener("click", () => {
-        rubiksCube.rotateTopCW();
-        updateClient();
-      });
-      document.querySelector("#rotateXMidCW")?.addEventListener("click", () => {
-        rubiksCube.rotateXMidCW();
-        updateClient();
-      });
-      document.querySelector("#rotateBottomCW")?.addEventListener("click", () => {
-        rubiksCube.rotateBottomCW();
-        updateClient();
-      });
-      document.querySelector("#rotateTopCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateTopCCW();
-        updateClient();
-      });
-      document.querySelector("#rotateXMidCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateXMidCCW();
-        updateClient();
-      });
-      document.querySelector("#rotateBottomCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateBottomCCW();
-        updateClient();
-      });
-      document.querySelector("#rotateLeftCW")?.addEventListener("click", () => {
-        rubiksCube.rotateLeftCW();
-        updateClient();
-      });
-      document.querySelector("#rotateYMidCW")?.addEventListener("click", () => {
-        rubiksCube.rotateYMidCW();
-        updateClient();
-      });
-      document.querySelector("#rotateRightCW")?.addEventListener("click", () => {
-        rubiksCube.rotateRightCW();
-        updateClient();
-      });
-      document.querySelector("#rotateLeftCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateLeftCCW();
-        updateClient();
-      });
-      document.querySelector("#rotateYMidCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateYMidCCW();
-        updateClient();
-      });
-      document.querySelector("#rotateRightCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateRightCCW();
-        updateClient();
-      });
-      document.querySelector("#rotateFrontCW")?.addEventListener("click", () => {
-        rubiksCube.rotateFrontCW();
-        updateClient();
-      });
-      document.querySelector("#rotateZMidCW")?.addEventListener("click", () => {
-        rubiksCube.rotateZMidCW();
-        updateClient();
-      });
-      document.querySelector("#rotateBackCW")?.addEventListener("click", () => {
-        rubiksCube.rotateBackCW();
-        updateClient();
-      });
-      document.querySelector("#rotateFrontCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateFrontCCW();
-        updateClient();
-      });
-      document.querySelector("#rotateZMidCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateZMidCCW();
-        updateClient();
-      });
-      document.querySelector("#rotateBackCCW")?.addEventListener("click", () => {
-        rubiksCube.rotateBackCCW();
-        updateClient();
+      LAYER_MOVES.forEach((move) => {
+        document.getElementById(move)?.addEventListener("click", () => {
+          rubiksCube[move]();
+          updateClient();
+        });
       });
       document.querySelector("#rotateCubeXCW")?.addEventListener("click", () => {
         rubiksCube.rotateRubiksCube("XCW");
@@ -529,7 +475,7 @@
           };
           const cube = rubiksCube.cubes.find((c) => JSONEquals(c.position, position));
           if (!cube) return;
-          cubeElement.classList.remove(...FACE_CLASSES);
+          cubeElement.classList.remove(...FACES);
           const faceColor = cube.orientation[orientationKey];
           if (faceColor) {
             cubeElement.classList.add(faceColor);

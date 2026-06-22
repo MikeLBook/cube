@@ -1,102 +1,16 @@
 import { JSONEquals } from "./engine/helpers";
-import { Face, Faces, Orientation } from "./engine/models";
+import { FACES, LAYER_MOVES, Orientation } from "./engine/models";
 import RubiksCube from "./engine/RubiksCube";
 
 const rubiksCube = RubiksCube.getInstance();
 const cubeState = localStorage.getItem("cubeState");
-
 if (cubeState) rubiksCube.setState(cubeState);
 
-const FACE_CLASSES = Object.keys(Faces) as Face[];
-
-document.querySelector("#rotateTopCW")?.addEventListener("click", () => {
-  rubiksCube.rotateTopCW();
-  updateClient();
-});
-
-document.querySelector("#rotateXMidCW")?.addEventListener("click", () => {
-  rubiksCube.rotateXMidCW();
-  updateClient();
-});
-
-document.querySelector("#rotateBottomCW")?.addEventListener("click", () => {
-  rubiksCube.rotateBottomCW();
-  updateClient();
-});
-
-document.querySelector("#rotateTopCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateTopCCW();
-  updateClient();
-});
-
-document.querySelector("#rotateXMidCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateXMidCCW();
-  updateClient();
-});
-
-document.querySelector("#rotateBottomCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateBottomCCW();
-  updateClient();
-});
-
-document.querySelector("#rotateLeftCW")?.addEventListener("click", () => {
-  rubiksCube.rotateLeftCW();
-  updateClient();
-});
-
-document.querySelector("#rotateYMidCW")?.addEventListener("click", () => {
-  rubiksCube.rotateYMidCW();
-  updateClient();
-});
-
-document.querySelector("#rotateRightCW")?.addEventListener("click", () => {
-  rubiksCube.rotateRightCW();
-  updateClient();
-});
-
-document.querySelector("#rotateLeftCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateLeftCCW();
-  updateClient();
-});
-
-document.querySelector("#rotateYMidCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateYMidCCW();
-  updateClient();
-});
-
-document.querySelector("#rotateRightCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateRightCCW();
-  updateClient();
-});
-
-document.querySelector("#rotateFrontCW")?.addEventListener("click", () => {
-  rubiksCube.rotateFrontCW();
-  updateClient();
-});
-
-document.querySelector("#rotateZMidCW")?.addEventListener("click", () => {
-  rubiksCube.rotateZMidCW();
-  updateClient();
-});
-
-document.querySelector("#rotateBackCW")?.addEventListener("click", () => {
-  rubiksCube.rotateBackCW();
-  updateClient();
-});
-
-document.querySelector("#rotateFrontCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateFrontCCW();
-  updateClient();
-});
-
-document.querySelector("#rotateZMidCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateZMidCCW();
-  updateClient();
-});
-
-document.querySelector("#rotateBackCCW")?.addEventListener("click", () => {
-  rubiksCube.rotateBackCCW();
-  updateClient();
+LAYER_MOVES.forEach((move) => {
+  document.getElementById(move)?.addEventListener("click", () => {
+    rubiksCube[move]();
+    updateClient();
+  });
 });
 
 document.querySelector("#rotateCubeXCW")?.addEventListener("click", () => {
@@ -151,7 +65,7 @@ function renderCube() {
     const cube = rubiksCube.cubes.find((c) => JSONEquals(c.position, position));
     if (!cube) return;
 
-    cubeElement.classList.remove(...FACE_CLASSES);
+    cubeElement.classList.remove(...FACES);
 
     const faceColor = cube.orientation[orientationKey as keyof Orientation];
     if (faceColor) {
