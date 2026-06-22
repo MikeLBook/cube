@@ -23,8 +23,7 @@ export default class RubiksCubeSolver {
   // before continuing. The finished solver will loop until the cube is solved;
   // This placeholder is under active development
   public async run(signal?: AbortSignal) {
-    for (let i = 0; i < 10; i++) {
-      if (signal?.aborted) return;
+    while (!this.rubiks.isSolved && !signal?.aborted) {
       this.rubiks.rotateBackCCW();
       await this.pacer.settled();
     }

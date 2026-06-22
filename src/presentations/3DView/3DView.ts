@@ -213,10 +213,6 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
   }
 
   private init() {
-    document.querySelector("#solve")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      this.startSolve();
-    });
     this.worldEl = document.createElement("div");
     this.worldEl.style.cssText =
       "position:absolute; left:50%; top:50%; width:0; height:0; transform-style:preserve-3d; will-change:transform;";
@@ -343,6 +339,13 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
   // at a time.
   private startSolve() {
     this.runSequence((signal) => this.solver.run(signal));
+  }
+
+  // Abort a running solve (or scramble). Aborting the signal is enough: the driver's loop
+  // checks signal.aborted after the in-flight move settles and unwinds. We don't flushSettled
+  // here — that would wake the waiter mid-animation and let the engine outrun the view.
+  private abortSolve() {
+    this.sequenceAbort?.abort();
   }
 
   // Run a paced sequence of engine mutations as the sole active driver. Manual input is locked
@@ -831,6 +834,8 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
       document.getElementById(id)?.addEventListener("click", fn);
     bind("btn-scramble", () => this.scramble());
     bind("btn-reset", () => this.reset());
+    bind("solve", () => this.startSolve());
+    bind("abort-solve", () => this.abortSolve());
     bind("btn-recenter", () => this.resetView());
     bind("btn-roll-up", () => this.userCubeMove("rollUp"));
     bind("btn-roll-down", () => this.userCubeMove("rollDown"));
