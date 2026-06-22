@@ -33,14 +33,14 @@ export interface IRubiksCubeObserver {
 //            25──26──27
 
 export default class RubiksCube {
-  cubes: Cube[];
-  observers: IRubiksCubeObserver[];
+  private _cubes: Cube[];
+  private _observers: IRubiksCubeObserver[];
 
   private static instance: RubiksCube;
 
   private constructor() {
-    this.cubes = RubiksCube.initCubes();
-    this.observers = [];
+    this._cubes = RubiksCube.initCubes();
+    this._observers = [];
   }
 
   private static initCubes(): Cube[] {
@@ -79,7 +79,7 @@ export default class RubiksCube {
   }
 
   private onMove(move?: LayerMove | Rotation) {
-    this.observers.forEach((observer) => observer.onMove(move));
+    this._observers.forEach((observer) => observer.onMove(move));
   }
 
   public static getInstance() {
@@ -100,20 +100,26 @@ export default class RubiksCube {
     if (!isCubeArray(parsed)) return;
     // Rehydrate into real Cube instances — JSON.parse yields plain objects with
     // no prototype, so the rotation methods/getters would be missing otherwise.
-    this.cubes = parsed.map((c) => new Cube(c.position, c.orientation));
+    this._cubes = parsed.map((c) => new Cube(c.position, c.orientation));
   }
 
   public addObserver(observer: IRubiksCubeObserver) {
-    this.observers.push(observer);
+    this._observers.push(observer);
   }
 
   public removeObserver(observer: IRubiksCubeObserver) {
-    return (this.observers = [...this.observers].filter((o) => o !== observer));
+    return (this._observers = [...this._observers].filter(
+      (o) => o !== observer,
+    ));
+  }
+
+  get cubes(): Cube[] {
+    return structuredClone(this._cubes);
   }
 
   get isSolved(): boolean {
     return ORIENTATION_KEYS.every((orientation) => {
-      const faces = this.cubes
+      const faces = this._cubes
         .map((cube) => cube.orientation[orientation])
         .filter((face): face is Face => face !== undefined);
       return new Set(faces).size === 1;
@@ -121,30 +127,30 @@ export default class RubiksCube {
   }
 
   public reset() {
-    this.cubes = RubiksCube.initCubes();
+    this._cubes = RubiksCube.initCubes();
     this.onMove();
   }
 
   public rotateRubiksCube(rotation: Rotation) {
     switch (rotation) {
       case "XCW":
-        this.cubes.forEach((cube) => cube.rotateXCW());
+        this._cubes.forEach((cube) => cube.rotateXCW());
         break;
       case "XCCW":
-        this.cubes.forEach((cube) => cube.rotateXCCW());
+        this._cubes.forEach((cube) => cube.rotateXCCW());
         break;
       case "YCW":
-        this.cubes.forEach((cube) => cube.rotateYCW());
+        this._cubes.forEach((cube) => cube.rotateYCW());
         break;
       case "YCCW":
-        this.cubes.forEach((cube) => cube.rotateYCCW());
+        this._cubes.forEach((cube) => cube.rotateYCCW());
         break;
     }
     this.onMove(rotation);
   }
 
   public rotateTopCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInTopLayer) {
         cube.rotateXCW();
       }
@@ -153,7 +159,7 @@ export default class RubiksCube {
   }
 
   public rotateXMidCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInXMidLayer) {
         cube.rotateXCW();
       }
@@ -162,7 +168,7 @@ export default class RubiksCube {
   }
 
   public rotateBottomCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInBottomLayer) {
         cube.rotateXCW();
       }
@@ -171,7 +177,7 @@ export default class RubiksCube {
   }
 
   public rotateTopCCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInTopLayer) {
         cube.rotateXCCW();
       }
@@ -180,7 +186,7 @@ export default class RubiksCube {
   }
 
   public rotateXMidCCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInXMidLayer) {
         cube.rotateXCCW();
       }
@@ -189,7 +195,7 @@ export default class RubiksCube {
   }
 
   public rotateBottomCCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInBottomLayer) {
         cube.rotateXCCW();
       }
@@ -198,7 +204,7 @@ export default class RubiksCube {
   }
 
   public rotateLeftCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInLeftLayer) {
         cube.rotateYCW();
       }
@@ -207,7 +213,7 @@ export default class RubiksCube {
   }
 
   public rotateYMidCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInYMidLayer) {
         cube.rotateYCW();
       }
@@ -216,7 +222,7 @@ export default class RubiksCube {
   }
 
   public rotateRightCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInRightLayer) {
         cube.rotateYCW();
       }
@@ -225,7 +231,7 @@ export default class RubiksCube {
   }
 
   public rotateLeftCCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInLeftLayer) {
         cube.rotateYCCW();
       }
@@ -234,7 +240,7 @@ export default class RubiksCube {
   }
 
   public rotateYMidCCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInYMidLayer) {
         cube.rotateYCCW();
       }
@@ -243,7 +249,7 @@ export default class RubiksCube {
   }
 
   public rotateRightCCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInRightLayer) {
         cube.rotateYCCW();
       }
@@ -252,7 +258,7 @@ export default class RubiksCube {
   }
 
   public rotateFrontCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInFrontLayer) {
         cube.rotateZCW();
       }
@@ -261,7 +267,7 @@ export default class RubiksCube {
   }
 
   public rotateZMidCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInZMidLayer) {
         cube.rotateZCW();
       }
@@ -270,7 +276,7 @@ export default class RubiksCube {
   }
 
   public rotateBackCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInBackLayer) {
         cube.rotateZCW();
       }
@@ -279,7 +285,7 @@ export default class RubiksCube {
   }
 
   public rotateFrontCCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInFrontLayer) {
         cube.rotateZCCW();
       }
@@ -288,7 +294,7 @@ export default class RubiksCube {
   }
 
   public rotateZMidCCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInZMidLayer) {
         cube.rotateZCCW();
       }
@@ -297,7 +303,7 @@ export default class RubiksCube {
   }
 
   public rotateBackCCW() {
-    this.cubes.forEach((cube) => {
+    this._cubes.forEach((cube) => {
       if (cube.isInBackLayer) {
         cube.rotateZCCW();
       }
