@@ -51,3 +51,7 @@ export const LAYER_MOVES = [
   "rotateBackCCW",
 ] as const;
 export type LayerMove = (typeof LAYER_MOVES)[number];
+
+export interface IRubiksCubeObserver {
+  onMove: () => void;
+}

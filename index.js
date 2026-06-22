@@ -212,9 +212,11 @@
       init_models();
       RubiksCube = class _RubiksCube {
         cubes;
+        observers;
         static instance;
         constructor() {
           this.cubes = _RubiksCube.initCubes();
+          this.observers = [];
         }
         static initCubes() {
           return [
@@ -250,6 +252,9 @@
             new Cube({ X: 1, Y: -1, Z: 1 }, { bottom: "W", right: "G", front: "R" })
           ];
         }
+        onMove() {
+          this.observers.forEach((observer) => observer.onMove());
+        }
         static getInstance() {
           if (!_RubiksCube.instance) {
             _RubiksCube.instance = new _RubiksCube();
@@ -267,6 +272,12 @@
           if (!isCubeArray(parsed)) return;
           this.cubes = parsed.map((c) => new Cube(c.position, c.orientation));
         }
+        addObserver(observer) {
+          this.observers.push(observer);
+        }
+        removeObserver(observer) {
+          return this.observers = [...this.observers].filter((o) => o !== observer);
+        }
         isSolved() {
           return ORIENTATION_KEYS.every((orientation) => {
             const faces = this.cubes.map((cube) => cube.orientation[orientation]).filter((face) => face !== void 0);
@@ -275,6 +286,7 @@
         }
         reset() {
           this.cubes = _RubiksCube.initCubes();
+          this.onMove();
         }
         rotateRubiksCube(rotation) {
           switch (rotation) {
@@ -291,6 +303,7 @@
               this.cubes.forEach((cube) => cube.rotateYCCW());
               break;
           }
+          this.onMove();
         }
         rotateTopCW() {
           this.cubes.forEach((cube) => {
@@ -298,6 +311,7 @@
               cube.rotateXCW();
             }
           });
+          this.onMove();
         }
         rotateXMidCW() {
           this.cubes.forEach((cube) => {
@@ -305,6 +319,7 @@
               cube.rotateXCW();
             }
           });
+          this.onMove();
         }
         rotateBottomCW() {
           this.cubes.forEach((cube) => {
@@ -312,6 +327,7 @@
               cube.rotateXCW();
             }
           });
+          this.onMove();
         }
         rotateTopCCW() {
           this.cubes.forEach((cube) => {
@@ -319,6 +335,7 @@
               cube.rotateXCCW();
             }
           });
+          this.onMove();
         }
         rotateXMidCCW() {
           this.cubes.forEach((cube) => {
@@ -326,6 +343,7 @@
               cube.rotateXCCW();
             }
           });
+          this.onMove();
         }
         rotateBottomCCW() {
           this.cubes.forEach((cube) => {
@@ -333,6 +351,7 @@
               cube.rotateXCCW();
             }
           });
+          this.onMove();
         }
         rotateLeftCW() {
           this.cubes.forEach((cube) => {
@@ -340,6 +359,7 @@
               cube.rotateYCW();
             }
           });
+          this.onMove();
         }
         rotateYMidCW() {
           this.cubes.forEach((cube) => {
@@ -347,6 +367,7 @@
               cube.rotateYCW();
             }
           });
+          this.onMove();
         }
         rotateRightCW() {
           this.cubes.forEach((cube) => {
@@ -354,6 +375,7 @@
               cube.rotateYCW();
             }
           });
+          this.onMove();
         }
         rotateLeftCCW() {
           this.cubes.forEach((cube) => {
@@ -361,6 +383,7 @@
               cube.rotateYCCW();
             }
           });
+          this.onMove();
         }
         rotateYMidCCW() {
           this.cubes.forEach((cube) => {
@@ -368,6 +391,7 @@
               cube.rotateYCCW();
             }
           });
+          this.onMove();
         }
         rotateRightCCW() {
           this.cubes.forEach((cube) => {
@@ -375,6 +399,7 @@
               cube.rotateYCCW();
             }
           });
+          this.onMove();
         }
         rotateFrontCW() {
           this.cubes.forEach((cube) => {
@@ -382,6 +407,7 @@
               cube.rotateZCW();
             }
           });
+          this.onMove();
         }
         rotateZMidCW() {
           this.cubes.forEach((cube) => {
@@ -389,6 +415,7 @@
               cube.rotateZCW();
             }
           });
+          this.onMove();
         }
         rotateBackCW() {
           this.cubes.forEach((cube) => {
@@ -396,6 +423,7 @@
               cube.rotateZCW();
             }
           });
+          this.onMove();
         }
         rotateFrontCCW() {
           this.cubes.forEach((cube) => {
@@ -403,6 +431,7 @@
               cube.rotateZCCW();
             }
           });
+          this.onMove();
         }
         rotateZMidCCW() {
           this.cubes.forEach((cube) => {
@@ -410,6 +439,7 @@
               cube.rotateZCCW();
             }
           });
+          this.onMove();
         }
         rotateBackCCW() {
           this.cubes.forEach((cube) => {
@@ -417,6 +447,7 @@
               cube.rotateZCCW();
             }
           });
+          this.onMove();
         }
       };
     }
@@ -432,35 +463,30 @@
       var cubeState = localStorage.getItem("cubeState");
       if (cubeState) rubiksCube.setState(cubeState);
       LAYER_MOVES.forEach((move) => {
-        document.getElementById(move)?.addEventListener("click", () => {
-          rubiksCube[move]();
-          updateClient();
-        });
+        document.getElementById(move)?.addEventListener("click", () => rubiksCube[move]());
       });
       document.querySelector("#rotateCubeXCW")?.addEventListener("click", () => {
         rubiksCube.rotateRubiksCube("XCW");
-        updateClient();
       });
       document.querySelector("#rotateCubeXCCW")?.addEventListener("click", () => {
         rubiksCube.rotateRubiksCube("XCCW");
-        updateClient();
       });
       document.querySelector("#rotateCubeYCW")?.addEventListener("click", () => {
         rubiksCube.rotateRubiksCube("YCW");
-        updateClient();
       });
       document.querySelector("#rotateCubeYCCW")?.addEventListener("click", () => {
         rubiksCube.rotateRubiksCube("YCCW");
-        updateClient();
       });
       document.querySelector("#reset")?.addEventListener("click", () => {
         rubiksCube.reset();
-        updateClient();
       });
-      function updateClient() {
-        localStorage.setItem("cubeState", JSON.stringify(rubiksCube.cubes));
-        renderCube();
-      }
+      var observer = {
+        onMove: () => {
+          localStorage.setItem("cubeState", JSON.stringify(rubiksCube.cubes));
+          renderCube();
+        }
+      };
+      rubiksCube.addObserver(observer);
       function renderCube() {
         document.querySelectorAll(".cube").forEach((el) => {
           const cubeElement = el;
