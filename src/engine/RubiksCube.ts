@@ -14,7 +14,7 @@ export interface IRubiksCubeObserver {
 //   Y:  -1 = bottom  →   1 = top
 //   Z:   1 = front   →  -1 = back
 //
-//               Center cube at (0, 0)
+//              Center cube, 14, at (0, 0, 0)
 //
 //                       1 ──2 ──3
 //                      ╱   ╱   ╱ BACK (Z: -1)

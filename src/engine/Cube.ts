@@ -1,4 +1,4 @@
-import { Position, Orientation, Face } from "./models";
+import { Position, Orientation, Face, OrientationKey } from "./models";
 
 export default class Cube {
   position: Position;
@@ -77,6 +77,12 @@ export default class Cube {
 
   public hasFace(face: Face): boolean {
     return Object.values(this.orientation).includes(face);
+  }
+
+  public getFaceOrientation(face: Face): OrientationKey | undefined {
+    for (const [key, value] of Object.entries(this.orientation)) {
+      if (value === face) return key as OrientationKey;
+    }
   }
 
   private rotate(newOrientation: Orientation) {
