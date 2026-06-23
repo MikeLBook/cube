@@ -16,6 +16,8 @@ export interface MovePacer {
 export default class RubiksCubeSolver {
   private rubiks: RubiksCube;
   private pacer: MovePacer;
+  private yellowLayerSolved: boolean | undefined;
+  private middleLayerSolved: boolean | undefined;
 
   constructor(rubiks: RubiksCube, pacer: MovePacer) {
     this.rubiks = rubiks;
@@ -34,24 +36,45 @@ export default class RubiksCubeSolver {
   }
 
   private determineNextMove(): () => void {
-    const yellowFaceCube = this.rubiks.cubes.find(
-      (cube) => cube.isFace && cube.hasFace("Y"),
-    );
-    if (!yellowFaceCube) throw new Error("Unable to locate Yellow Face Cube");
+    if (this.yellowLayerSolved !== true || this.middleLayerSolved !== true) {
+      const yellowFaceCube = this.rubiks.cubes.find(
+        (cube) => cube.isFace && cube.hasFace("Y"),
+      );
+      if (!yellowFaceCube) throw new Error("Unable to locate Yellow Face Cube");
 
-    const orientation = yellowFaceCube.getFaceOrientation("Y");
-    if (!orientation)
-      throw new Error("Unable to determine Yellow Face Cube Orientation");
+      const orientation = yellowFaceCube.getFaceOrientation("Y");
+      if (!orientation)
+        throw new Error("Unable to determine Yellow Face Cube Orientation");
 
-    const isYellowLayerSolved = this.isOutsideLayerSolved(orientation);
-
-    if (!isYellowLayerSolved) {
-      if (!yellowFaceCube.isInTopLayer) {
-        return this.rotateYellowFaceToTop(yellowFaceCube);
+      if (this.yellowLayerSolved === undefined) {
+        this.yellowLayerSolved = this.isOutsideLayerSolved(orientation);
       }
-    }
 
-    return () => {};
+      if (!this.yellowLayerSolved) {
+        if (!yellowFaceCube.isInTopLayer) {
+          return this.rotateYellowFaceToTop(yellowFaceCube);
+        }
+        // Solution Top Layer
+        return () => {};
+      }
+
+      if (this.middleLayerSolved === undefined) {
+        this.middleLayerSolved = this.isMiddleLayerSolved(yellowFaceCube);
+      }
+
+      if (!this.middleLayerSolved) {
+        if (!yellowFaceCube.isInTopLayer) {
+          return this.rotateYellowFaceToTop(yellowFaceCube);
+        }
+        // Solution Middle Layer
+        return () => {};
+      }
+      // Solution Bottom Layer
+      return () => {};
+    } else {
+      // Solution Bottom Layer
+      return () => {};
+    }
   }
 
   // CHECKS
@@ -89,6 +112,11 @@ export default class RubiksCubeSolver {
         ),
       );
     });
+  }
+
+  private isMiddleLayerSolved(yellowCube: Cube): boolean {
+    // TODO: Implement Me
+    return false;
   }
 
   // MOVES
