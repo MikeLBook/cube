@@ -1,4 +1,4 @@
-import { Position, Orientation } from "./models";
+import { Position, Orientation, Face } from "./models";
 
 export default class Cube {
   position: Position;
@@ -66,6 +66,17 @@ export default class Cube {
       Object.values(this.orientation).filter((o) => o !== undefined).length ===
       2
     );
+  }
+
+  get isFace(): boolean {
+    return (
+      Object.values(this.orientation).filter((o) => o !== undefined).length ===
+      1
+    );
+  }
+
+  public hasFace(face: Face): boolean {
+    return Object.values(this.orientation).includes(face);
   }
 
   private rotate(newOrientation: Orientation) {

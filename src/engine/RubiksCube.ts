@@ -114,7 +114,7 @@ export default class RubiksCube {
   }
 
   get cubes(): Cube[] {
-    return structuredClone(this._cubes);
+    return this._cubes;
   }
 
   get isSolved(): boolean {
