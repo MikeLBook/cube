@@ -28,6 +28,14 @@ document.querySelector("#rotateCubeYCCW")?.addEventListener("click", () => {
   rubiksCube.rotateRubiksCube("YCCW");
 });
 
+document.querySelector("#rotateCubeZCW")?.addEventListener("click", () => {
+  rubiksCube.rotateRubiksCube("ZCW");
+});
+
+document.querySelector("#rotateCubeZCCW")?.addEventListener("click", () => {
+  rubiksCube.rotateRubiksCube("ZCCW");
+});
+
 document.querySelector("#reset")?.addEventListener("click", () => {
   rubiksCube.reset();
 });

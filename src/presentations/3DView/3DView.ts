@@ -843,6 +843,8 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
     bind("btn-roll-down", () => this.userCubeMove("rollDown"));
     bind("btn-spin-left", () => this.userCubeMove("spinLeft"));
     bind("btn-spin-right", () => this.userCubeMove("spinRight"));
+    bind("btn-tilt-left", () => this.userCubeMove("tiltLeft"));
+    bind("btn-tilt-right", () => this.userCubeMove("tiltRight"));
   }
 }
 
