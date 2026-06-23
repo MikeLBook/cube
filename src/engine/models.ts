@@ -27,7 +27,7 @@ export const ORIENTATION_KEYS = [
   "back",
 ] as const;
 
-export const ROTATIONS = ["XCW", "XCCW", "YCW", "YCCW"] as const;
+export const ROTATIONS = ["XCW", "XCCW", "YCW", "YCCW", "ZCW", "ZCCW"] as const;
 export type Rotation = (typeof ROTATIONS)[number];
 
 export const LAYER_MOVES = [

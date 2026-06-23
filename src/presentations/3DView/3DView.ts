@@ -203,6 +203,8 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
     spinRight: { rotation: "XCCW", axis: "Y", angle: 90 },
     rollUp: { rotation: "YCW", axis: "X", angle: 90 },
     rollDown: { rotation: "YCCW", axis: "X", angle: -90 },
+    tiltRight: { rotation: "ZCW", axis: "Z", angle: 90 },
+    tiltLeft: { rotation: "ZCCW", axis: "Z", angle: -90 },
   };
 
   constructor(sceneEl: HTMLElement) {

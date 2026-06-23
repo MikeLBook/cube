@@ -77,9 +77,9 @@ export default class RubiksCubeSolver {
     } else if (JSONEquals(yellowFaceCube.position, positionMap[11])) {
       return () => this.rubiks.rotateRubiksCube("YCCW");
     } else if (JSONEquals(yellowFaceCube.position, positionMap[13])) {
-      return () => this.rubiks.rotateRubiksCube("XCCW");
+      return () => this.rubiks.rotateRubiksCube("ZCW");
     } else if (JSONEquals(yellowFaceCube.position, positionMap[15])) {
-      return () => this.rubiks.rotateRubiksCube("XCW");
+      return () => this.rubiks.rotateRubiksCube("ZCCW");
     } else {
       return () => {};
     }

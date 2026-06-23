@@ -145,6 +145,12 @@ export default class RubiksCube {
       case "YCCW":
         this._cubes.forEach((cube) => cube.rotateYCCW());
         break;
+      case "ZCW":
+        this._cubes.forEach((cube) => cube.rotateZCW());
+        break;
+      case "ZCCW":
+        this._cubes.forEach((cube) => cube.rotateZCCW());
+        break;
     }
     this.onMove(rotation);
   }
