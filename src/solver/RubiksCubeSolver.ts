@@ -36,7 +36,8 @@ export default class RubiksCubeSolver {
   }
 
   private determineNextMove(): () => void {
-    if (this.yellowLayerSolved !== true || this.middleLayerSolved !== true) {
+    // Initial Inspection
+    if (this.yellowLayerSolved === undefined) {
       const yellowFaceCube = this.rubiks.cubes.find(
         (cube) => cube.isFace && cube.hasFace("Y"),
       );
@@ -46,34 +47,28 @@ export default class RubiksCubeSolver {
       if (!orientation)
         throw new Error("Unable to determine Yellow Face Cube Orientation");
 
-      // if (this.yellowLayerSolved === undefined) {
-      //   this.yellowLayerSolved = this.isOutsideLayerSolved(orientation);
-      // }
+      this.yellowLayerSolved = this.isOutsideLayerSolved(orientation);
+      this.middleLayerSolved = this.yellowLayerSolved
+        ? this.isMiddleLayerSolved(orientation)
+        : false;
 
-      // if (!this.yellowLayerSolved) {
-      //   if (!yellowFaceCube.isInTopLayer) {
-      //     return this.rotateYellowFaceToTop(yellowFaceCube);
-      //   }
-      //   // Solution Top Layer
-      //   return () => {};
-      // }
-
-      if (this.middleLayerSolved === undefined) {
-        // this.middleLayerSolved = this.isMiddleLayerSolved(orientation);
-        this.isMiddleLayerSolved(orientation);
+      if (
+        !(
+          this.yellowLayerSolved &&
+          this.middleLayerSolved &&
+          yellowFaceCube.isInTopLayer
+        )
+      ) {
+        return this.rotateYellowFaceToTop(yellowFaceCube);
       }
+    }
 
-      if (!this.middleLayerSolved) {
-        if (!yellowFaceCube.isInTopLayer) {
-          return this.rotateYellowFaceToTop(yellowFaceCube);
-        }
-        // Solution Middle Layer
-        return () => {};
-      }
-      // Solution Bottom Layer
+    // TODO
+    if (!this.yellowLayerSolved) {
+      return () => {};
+    } else if (!this.middleLayerSolved) {
       return () => {};
     } else {
-      // Solution Bottom Layer
       return () => {};
     }
   }
@@ -132,7 +127,9 @@ export default class RubiksCubeSolver {
 
     let orientationKeys: OrientationKey[] = [];
     cubesInLayer
-      .filter((cube) => JSONEquals(cube.position, { X: 0, Y: 0, Z: 0 }))
+      .filter((cube) => {
+        return !JSONEquals(cube.position, { X: 0, Y: 0, Z: 0 });
+      })
       .forEach((cube) => {
         for (const [key, value] of Object.entries(cube.orientation)) {
           if (value !== undefined) {
@@ -141,10 +138,9 @@ export default class RubiksCubeSolver {
         }
       });
     const dedupedKeys = [...new Set(orientationKeys)];
-
     return dedupedKeys.every((orientation: OrientationKey) => {
       const row = cubesInLayer
-        .filter((cube) => JSONEquals(cube.position, { X: 0, Y: 0, Z: 0 }))
+        .filter((cube) => !JSONEquals(cube.position, { X: 0, Y: 0, Z: 0 }))
         .filter((cube) => cube.orientation[orientation] !== undefined);
       return row.every((cube) =>
         JSONEquals(
@@ -158,7 +154,11 @@ export default class RubiksCubeSolver {
   // MOVES
   private rotateYellowFaceToTop(yellowCube: Cube): () => void {
     if (JSONEquals(yellowCube.position, positionMap[23])) {
-      return () => this.rubiks.rotateRubiksCube("YCW");
+      return async () => {
+        this.rubiks.rotateRubiksCube("YCW");
+        await this.pacer.settled();
+        this.rubiks.rotateRubiksCube("YCW");
+      };
     } else if (JSONEquals(yellowCube.position, positionMap[17])) {
       return () => this.rubiks.rotateRubiksCube("YCW");
     } else if (JSONEquals(yellowCube.position, positionMap[11])) {
