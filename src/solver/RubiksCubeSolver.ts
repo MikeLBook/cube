@@ -13,11 +13,21 @@ export interface MovePacer {
   settled(): Promise<void>;
 }
 
+const SOLUTION_PHASES = [
+  "YellowEdges",
+  "YellowCorners",
+  "MiddleEdges",
+  "WhiteFaceEdges",
+  "WhiteFaceCorners",
+] as const;
+type SolutionPhase = (typeof SOLUTION_PHASES)[number];
+
 export default class RubiksCubeSolver {
   private rubiks: RubiksCube;
   private pacer: MovePacer;
   private yellowLayerSolved: boolean | undefined;
   private middleLayerSolved: boolean | undefined;
+  private solutionPhase: SolutionPhase = "YellowEdges";
 
   constructor(rubiks: RubiksCube, pacer: MovePacer) {
     this.rubiks = rubiks;
@@ -27,6 +37,7 @@ export default class RubiksCubeSolver {
   public reset() {
     this.yellowLayerSolved = undefined;
     this.middleLayerSolved = undefined;
+    this.solutionPhase = "YellowEdges";
   }
 
   // Mutate the engine one move at a time and wait for the presentation to settle
@@ -35,47 +46,122 @@ export default class RubiksCubeSolver {
   public async run(signal?: AbortSignal) {
     // switch to while loop
     if (this.rubiks.isSolved || signal?.aborted) return;
-    const move = this.determineNextMove();
-    move();
-    await this.pacer.settled();
+    this.determineNextMove();
   }
 
-  private determineNextMove(): () => void {
-    // Initial Inspection
+  private async determineNextMove() {
     if (this.yellowLayerSolved === undefined) {
-      const yellowFaceCube = this.rubiks.cubes.find(
-        (cube) => cube.isFace && cube.hasFace("Y"),
-      );
-      if (!yellowFaceCube) throw new Error("Unable to locate Yellow Face Cube");
-
-      const orientation = yellowFaceCube.getFaceOrientation("Y");
-      if (!orientation)
-        throw new Error("Unable to determine Yellow Face Cube Orientation");
-
-      this.yellowLayerSolved = this.isOutsideLayerSolved(orientation);
-      this.middleLayerSolved = this.yellowLayerSolved
-        ? this.isMiddleLayerSolved(orientation)
-        : false;
-
-      if (
-        !(
-          this.yellowLayerSolved &&
-          this.middleLayerSolved &&
-          yellowFaceCube.isInTopLayer
-        )
-      ) {
-        return this.rotateYellowFaceToTop(yellowFaceCube);
-      }
-    }
-
-    // TODO
-    if (!this.yellowLayerSolved) {
-      return () => {};
-    } else if (!this.middleLayerSolved) {
-      return () => {};
+      this.performInitialInspection();
     } else {
-      return () => {};
+      this.updateSolveStatus();
     }
+  }
+
+  private async performInitialInspection() {
+    const yellowFaceCube = this.rubiks.cubes.find(
+      (cube) => cube.isFace && cube.hasFace("Y"),
+    );
+    if (!yellowFaceCube) throw new Error("Unable to locate Yellow Face Cube");
+
+    const orientation = yellowFaceCube.getFaceOrientation("Y");
+    if (!orientation)
+      throw new Error("Unable to determine Yellow Face Cube Orientation");
+
+    this.yellowLayerSolved = this.isOutsideLayerSolved(orientation);
+    this.middleLayerSolved = this.yellowLayerSolved
+      ? this.isMiddleLayerSolved(orientation)
+      : false;
+
+    if (this.middleLayerSolved) {
+      this.solutionPhase = "WhiteFaceEdges";
+    } else if (this.yellowLayerSolved) {
+      this.solutionPhase = "MiddleEdges";
+    }
+
+    if (
+      !(
+        this.yellowLayerSolved &&
+        this.middleLayerSolved &&
+        yellowFaceCube.isInTopLayer
+      )
+    ) {
+      this.rotateYellowFaceToTop(yellowFaceCube);
+      await this.pacer.settled();
+    }
+  }
+
+  private async updateSolveStatus() {
+    switch (this.solutionPhase) {
+      case "YellowEdges":
+        if (this.hasSolvedYellowEdges()) {
+          this.solutionPhase = "YellowCorners";
+          this.updateSolveStatus();
+        } else {
+          this.solveYellowEdges();
+        }
+        break;
+      case "YellowCorners":
+        if (this.hasSolvedYellowCorners()) {
+          this.solutionPhase = "MiddleEdges";
+          this.updateSolveStatus();
+        } else {
+          this.solveYellowCorners();
+        }
+        break;
+      case "MiddleEdges":
+        if (this.hasSolvedMiddleEdges()) {
+          this.solutionPhase = "WhiteFaceEdges";
+          this.updateSolveStatus();
+        } else {
+          this.solveMiddleEdges();
+        }
+        break;
+      case "WhiteFaceEdges":
+        if (this.hasSolvedWhiteFaceEdges()) {
+          this.solutionPhase = "WhiteFaceCorners";
+          this.updateSolveStatus();
+        } else {
+          this.solveWhiteFaceEdges();
+        }
+        break;
+      case "WhiteFaceCorners":
+        if (this.hasSolvedWhiteFaceCorners()) {
+          console.log("what now");
+        } else {
+          this.solveWhiteFaceCorners();
+        }
+        break;
+    }
+  }
+  hasSolvedYellowEdges(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  solveYellowEdges(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  hasSolvedYellowCorners(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  solveYellowCorners(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  hasSolvedMiddleEdges(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  solveMiddleEdges(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  hasSolvedWhiteFaceEdges(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  solveWhiteFaceEdges(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  hasSolvedWhiteFaceCorners(): boolean {
+    throw new Error("Method not implemented.");
+  }
+  solveWhiteFaceCorners(): boolean {
+    throw new Error("Method not implemented.");
   }
 
   // CHECKS
@@ -176,4 +262,6 @@ export default class RubiksCubeSolver {
       return () => {};
     }
   }
+
+  // IDK
 }
