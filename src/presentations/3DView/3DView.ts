@@ -348,6 +348,7 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
   // here — that would wake the waiter mid-animation and let the engine outrun the view.
   private abortSolve() {
     this.sequenceAbort?.abort();
+    this.solver.reset();
   }
 
   // Run a paced sequence of engine mutations as the sole active driver. Manual input is locked

@@ -24,6 +24,11 @@ export default class RubiksCubeSolver {
     this.pacer = pacer;
   }
 
+  public reset() {
+    this.yellowLayerSolved = undefined;
+    this.middleLayerSolved = undefined;
+  }
+
   // Mutate the engine one move at a time and wait for the presentation to settle
   // before continuing. The finished solver will loop until the cube is solved;
   // This placeholder is under active development
