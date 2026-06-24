@@ -449,7 +449,12 @@ class CubeView implements IRubiksCubeObserver, MovePacer {
       finished = true;
       group.removeEventListener("transitionend", onEnd);
       // Tear down the turn-group wrapper, then settle the cubies onto the (already-applied) model.
-      moving.forEach((e) => this.worldEl.appendChild(e.el));
+      // Re-append *every* cubie in canonical (entries) order — not just the moving ones — so the
+      // worldEl child order stays the stable, known-good order init() built. Appending only the
+      // moving cubies would shove them to the end of the list; since CSS-3D face hit-testing
+      // follows DOM order, that lets a just-turned layer steal pointerdowns from cubies it
+      // overlaps on screen, making them undraggable until they're themselves moved.
+      this.entries.forEach((e) => this.worldEl.appendChild(e.el));
       group.remove();
       this.renderCube();
       this.animating = false;
