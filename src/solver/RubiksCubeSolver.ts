@@ -46,20 +46,21 @@ export default class RubiksCubeSolver {
       if (!orientation)
         throw new Error("Unable to determine Yellow Face Cube Orientation");
 
-      if (this.yellowLayerSolved === undefined) {
-        this.yellowLayerSolved = this.isOutsideLayerSolved(orientation);
-      }
+      // if (this.yellowLayerSolved === undefined) {
+      //   this.yellowLayerSolved = this.isOutsideLayerSolved(orientation);
+      // }
 
-      if (!this.yellowLayerSolved) {
-        if (!yellowFaceCube.isInTopLayer) {
-          return this.rotateYellowFaceToTop(yellowFaceCube);
-        }
-        // Solution Top Layer
-        return () => {};
-      }
+      // if (!this.yellowLayerSolved) {
+      //   if (!yellowFaceCube.isInTopLayer) {
+      //     return this.rotateYellowFaceToTop(yellowFaceCube);
+      //   }
+      //   // Solution Top Layer
+      //   return () => {};
+      // }
 
       if (this.middleLayerSolved === undefined) {
-        this.middleLayerSolved = this.isMiddleLayerSolved(yellowFaceCube);
+        // this.middleLayerSolved = this.isMiddleLayerSolved(orientation);
+        this.isMiddleLayerSolved(orientation);
       }
 
       if (!this.middleLayerSolved) {
@@ -114,9 +115,44 @@ export default class RubiksCubeSolver {
     });
   }
 
-  private isMiddleLayerSolved(yellowCube: Cube): boolean {
-    // TODO: Implement Me
-    return false;
+  private isMiddleLayerSolved(yellowOrientation: OrientationKey): boolean {
+    const cubesInLayer = ((o: OrientationKey): Cube[] => {
+      switch (o) {
+        case "top":
+        case "bottom":
+          return this.rubiks.cubes.filter((cube) => cube.isInXMidLayer);
+        case "left":
+        case "right":
+          return this.rubiks.cubes.filter((cube) => cube.isInYMidLayer);
+        case "front":
+        case "back":
+          return this.rubiks.cubes.filter((cube) => cube.isInZMidLayer);
+      }
+    })(yellowOrientation);
+
+    let orientationKeys: OrientationKey[] = [];
+    cubesInLayer
+      .filter((cube) => JSONEquals(cube.position, { X: 0, Y: 0, Z: 0 }))
+      .forEach((cube) => {
+        for (const [key, value] of Object.entries(cube.orientation)) {
+          if (value !== undefined) {
+            orientationKeys.push(key as OrientationKey);
+          }
+        }
+      });
+    const dedupedKeys = [...new Set(orientationKeys)];
+
+    return dedupedKeys.every((orientation: OrientationKey) => {
+      const row = cubesInLayer
+        .filter((cube) => JSONEquals(cube.position, { X: 0, Y: 0, Z: 0 }))
+        .filter((cube) => cube.orientation[orientation] !== undefined);
+      return row.every((cube) =>
+        JSONEquals(
+          cube.orientation[orientation],
+          row[0].orientation[orientation],
+        ),
+      );
+    });
   }
 
   // MOVES
