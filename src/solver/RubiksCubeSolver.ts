@@ -77,7 +77,6 @@ export default class RubiksCubeSolver {
     } else if (this.yellowLayerSolved) {
       this.solutionPhase = "MiddleEdges";
     }
-
     if (
       !(
         this.yellowLayerSolved &&
@@ -86,7 +85,6 @@ export default class RubiksCubeSolver {
       )
     ) {
       this.rotateYellowFaceToTop(yellowFaceCube);
-      await this.pacer.settled();
     }
   }
 
@@ -109,7 +107,7 @@ export default class RubiksCubeSolver {
         }
         break;
       case "MiddleEdges":
-        if (this.hasSolvedMiddleEdges()) {
+        if (this.isMiddleLayerSolved("top")) {
           this.solutionPhase = "WhiteFaceEdges";
           this.updateSolveStatus();
         } else {
@@ -133,34 +131,26 @@ export default class RubiksCubeSolver {
         break;
     }
   }
-  hasSolvedYellowEdges(): boolean {
-    throw new Error("Method not implemented.");
-  }
-  solveYellowEdges(): boolean {
-    throw new Error("Method not implemented.");
-  }
+
   hasSolvedYellowCorners(): boolean {
     throw new Error("Method not implemented.");
   }
-  solveYellowCorners(): boolean {
+  solveYellowCorners() {
     throw new Error("Method not implemented.");
   }
-  hasSolvedMiddleEdges(): boolean {
-    throw new Error("Method not implemented.");
-  }
-  solveMiddleEdges(): boolean {
+  solveMiddleEdges() {
     throw new Error("Method not implemented.");
   }
   hasSolvedWhiteFaceEdges(): boolean {
     throw new Error("Method not implemented.");
   }
-  solveWhiteFaceEdges(): boolean {
+  solveWhiteFaceEdges() {
     throw new Error("Method not implemented.");
   }
   hasSolvedWhiteFaceCorners(): boolean {
     throw new Error("Method not implemented.");
   }
-  solveWhiteFaceCorners(): boolean {
+  solveWhiteFaceCorners() {
     throw new Error("Method not implemented.");
   }
 
@@ -242,26 +232,65 @@ export default class RubiksCubeSolver {
     });
   }
 
+  hasSolvedYellowEdges(): boolean {
+    const topEdges = this.rubiks.cubes.filter(
+      (cube) => cube.isEdge && cube.orientation.top !== undefined,
+    );
+    if (!topEdges.every((cube) => cube.orientation.top === "Y")) return false;
+
+    const frontEdge = topEdges.find((cube) => cube.isInFrontLayer);
+    const leftEdge = topEdges.find((cube) => cube.isInLeftLayer);
+    const rightEdge = topEdges.find((cube) => cube.isInRightLayer);
+    const backEdge = topEdges.find((cube) => cube.isInBackLayer);
+
+    const frontFace = this.rubiks.cubes.find(
+      (cube) => cube.isFace && cube.isInFrontLayer,
+    );
+    const leftFace = this.rubiks.cubes.find(
+      (cube) => cube.isFace && cube.isInLeftLayer,
+    );
+    const rightFace = this.rubiks.cubes.find(
+      (cube) => cube.isFace && cube.isInRightLayer,
+    );
+    const backFace = this.rubiks.cubes.find(
+      (cube) => cube.isFace && cube.isInBackLayer,
+    );
+
+    if (frontEdge?.orientation.front !== frontFace?.orientation.front)
+      return false;
+    if (leftEdge?.orientation.left !== leftFace?.orientation.left) return false;
+    if (backEdge?.orientation.back !== backFace?.orientation.back) return false;
+    if (rightEdge?.orientation.right !== rightFace?.orientation.right)
+      return false;
+    return true;
+  }
+
   // MOVES
-  private rotateYellowFaceToTop(yellowCube: Cube): () => void {
+  private async rotateYellowFaceToTop(yellowCube: Cube) {
     if (JSONEquals(yellowCube.position, positionMap[23])) {
-      return async () => {
-        this.rubiks.rotateRubiksCube("YCW");
-        await this.pacer.settled();
-        this.rubiks.rotateRubiksCube("YCW");
-      };
+      this.rubiks.rotateRubiksCube("YCW");
+      await this.pacer.settled();
+      this.rubiks.rotateRubiksCube("YCW");
+      await this.pacer.settled();
     } else if (JSONEquals(yellowCube.position, positionMap[17])) {
-      return () => this.rubiks.rotateRubiksCube("YCW");
+      this.rubiks.rotateRubiksCube("YCW");
+      await this.pacer.settled();
     } else if (JSONEquals(yellowCube.position, positionMap[11])) {
-      return () => this.rubiks.rotateRubiksCube("YCCW");
+      this.rubiks.rotateRubiksCube("YCCW");
+      await this.pacer.settled();
     } else if (JSONEquals(yellowCube.position, positionMap[13])) {
-      return () => this.rubiks.rotateRubiksCube("ZCW");
+      this.rubiks.rotateRubiksCube("ZCW");
+      await this.pacer.settled();
     } else if (JSONEquals(yellowCube.position, positionMap[15])) {
-      return () => this.rubiks.rotateRubiksCube("ZCCW");
-    } else {
-      return () => {};
+      this.rubiks.rotateRubiksCube("ZCCW");
+      await this.pacer.settled();
     }
   }
 
-  // IDK
+  private async solveYellowEdges() {
+    // If there's any bottom facing yellows, rotate to line up with outer face then rotate outer edge twice.
+    // Rotate cube to locate any front facing yellows. Rotate appropriate side down, bottom layer left, then back up. Repeat above
+    // If no bottom facing yellows and no outside facing yellows, need to shuffle top.
+    return;
+  }
 }
