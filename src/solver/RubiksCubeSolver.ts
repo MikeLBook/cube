@@ -34,6 +34,14 @@ export default class RubiksCubeSolver {
     this.pacer = pacer;
   }
 
+  get cubeMap(): Map<string, Cube> {
+    const cubeMap = new Map<string, Cube>();
+    this.rubiks.cubes.forEach((cube) =>
+      cubeMap.set(JSON.stringify(cube.position), cube),
+    );
+    return cubeMap;
+  }
+
   public reset() {
     this.yellowLayerSolved = undefined;
     this.middleLayerSolved = undefined;
@@ -243,18 +251,10 @@ export default class RubiksCubeSolver {
     const rightEdge = topEdges.find((cube) => cube.isInRightLayer);
     const backEdge = topEdges.find((cube) => cube.isInBackLayer);
 
-    const frontFace = this.rubiks.cubes.find(
-      (cube) => cube.isFace && cube.isInFrontLayer,
-    );
-    const leftFace = this.rubiks.cubes.find(
-      (cube) => cube.isFace && cube.isInLeftLayer,
-    );
-    const rightFace = this.rubiks.cubes.find(
-      (cube) => cube.isFace && cube.isInRightLayer,
-    );
-    const backFace = this.rubiks.cubes.find(
-      (cube) => cube.isFace && cube.isInBackLayer,
-    );
+    const frontFace = this.cubeMap.get(positionMap[17]);
+    const leftFace = this.cubeMap.get(positionMap[13]);
+    const rightFace = this.cubeMap.get(positionMap[15]);
+    const backFace = this.cubeMap.get(positionMap[11]);
 
     if (frontEdge?.orientation.front !== frontFace?.orientation.front)
       return false;
@@ -267,27 +267,28 @@ export default class RubiksCubeSolver {
 
   // MOVES
   private async rotateYellowFaceToTop(yellowCube: Cube) {
-    if (JSONEquals(yellowCube.position, positionMap[23])) {
+    if (yellowCube === this.cubeMap.get(positionMap[23])) {
       this.rubiks.rotateRubiksCube("YCW");
       await this.pacer.settled();
       this.rubiks.rotateRubiksCube("YCW");
       await this.pacer.settled();
-    } else if (JSONEquals(yellowCube.position, positionMap[17])) {
+    } else if (yellowCube === this.cubeMap.get(positionMap[17])) {
       this.rubiks.rotateRubiksCube("YCW");
       await this.pacer.settled();
-    } else if (JSONEquals(yellowCube.position, positionMap[11])) {
+    } else if (yellowCube === this.cubeMap.get(positionMap[11])) {
       this.rubiks.rotateRubiksCube("YCCW");
       await this.pacer.settled();
-    } else if (JSONEquals(yellowCube.position, positionMap[13])) {
+    } else if (yellowCube === this.cubeMap.get(positionMap[13])) {
       this.rubiks.rotateRubiksCube("ZCW");
       await this.pacer.settled();
-    } else if (JSONEquals(yellowCube.position, positionMap[15])) {
+    } else if (yellowCube === this.cubeMap.get(positionMap[15])) {
       this.rubiks.rotateRubiksCube("ZCCW");
       await this.pacer.settled();
     }
   }
 
   private async solveYellowEdges() {
+    console.log("here");
     // If there's any bottom facing yellows, rotate to line up with outer face then rotate outer edge twice.
     // Rotate cube to locate any front facing yellows. Rotate appropriate side down, bottom layer left, then back up. Repeat above
     // If no bottom facing yellows and no outside facing yellows, need to shuffle top.
