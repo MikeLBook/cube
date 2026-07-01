@@ -52,9 +52,9 @@ export default class RubiksCubeSolver {
   // before continuing. The finished solver will loop until the cube is solved;
   // This placeholder is under active development
   public async run(signal?: AbortSignal) {
-    // switch to while loop
-    if (this.rubiks.isSolved || signal?.aborted) return;
-    this.determineNextMove();
+    if (!this.rubiks.isSolved && !signal?.aborted) {
+      this.determineNextMove();
+    }
   }
 
   private async determineNextMove() {
@@ -288,8 +288,54 @@ export default class RubiksCubeSolver {
   }
 
   private async solveYellowEdges() {
-    console.log("here");
-    // If there's any bottom facing yellows, rotate to line up with outer face then rotate outer edge twice.
+    // Solve top facing yellow edge cubes
+    const yellowTops = this.rubiks.cubes.filter(
+      (cube) => cube.orientation.top === "Y" && cube.isEdge,
+    );
+
+    for (const yellowTop of yellowTops) {
+      if (yellowTop.isInLeftLayer) {
+        this.rubiks.rotateRubiksCube("XCCW");
+        await this.pacer.settled();
+      } else if (yellowTop.isInBackLayer) {
+        this.rubiks.rotateRubiksCube("XCCW");
+        await this.pacer.settled();
+        this.rubiks.rotateRubiksCube("XCCW");
+        await this.pacer.settled();
+      } else if (yellowTop.isInRightLayer) {
+        this.rubiks.rotateRubiksCube("XCW");
+        await this.pacer.settled();
+      }
+
+      if (
+        this.cubeMap.get(positionMap[17])?.orientation.front !==
+        yellowTop.orientation.front
+      ) {
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+
+        do {
+          this.rubiks.rotateBottomCW();
+          await this.pacer.settled();
+          this.rubiks.rotateRubiksCube("XCCW");
+          await this.pacer.settled();
+        } while (
+          this.cubeMap.get(positionMap[17])?.orientation.front !==
+          yellowTop.orientation.front
+        );
+
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+        break;
+      }
+    }
+
+    // Solve bottom facing yellow edge cubes
+    debugger;
     // Rotate cube to locate any front facing yellows. Rotate appropriate side down, bottom layer left, then back up. Repeat above
     // If no bottom facing yellows and no outside facing yellows, need to shuffle top.
     return;
