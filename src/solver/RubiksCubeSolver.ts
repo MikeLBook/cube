@@ -330,14 +330,159 @@ export default class RubiksCubeSolver {
         await this.pacer.settled();
         this.rubiks.rotateFrontCW();
         await this.pacer.settled();
-        break;
+        return;
       }
     }
 
     // Solve bottom facing yellow edge cubes
+    const yellowBottoms = this.rubiks.cubes.filter(
+      (cube) => cube.orientation.bottom === "Y" && cube.isEdge,
+    );
+
+    for (const yellowBottom of yellowBottoms) {
+      if (yellowBottom.isInLeftLayer) {
+        this.rubiks.rotateRubiksCube("XCCW");
+        await this.pacer.settled();
+      } else if (yellowBottom.isInBackLayer) {
+        this.rubiks.rotateRubiksCube("XCCW");
+        await this.pacer.settled();
+        this.rubiks.rotateRubiksCube("XCCW");
+        await this.pacer.settled();
+      } else if (yellowBottom.isInRightLayer) {
+        this.rubiks.rotateRubiksCube("XCW");
+        await this.pacer.settled();
+      }
+
+      if (
+        this.cubeMap.get(positionMap[17])?.orientation.front !==
+        yellowBottom.orientation.front
+      ) {
+        do {
+          this.rubiks.rotateBottomCW();
+          await this.pacer.settled();
+          this.rubiks.rotateRubiksCube("XCCW");
+          await this.pacer.settled();
+        } while (
+          this.cubeMap.get(positionMap[17])?.orientation.front !==
+          yellowBottom.orientation.front
+        );
+
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+        return;
+      }
+    }
+
+    // solve outward facing yellow edge cubes (one at a time)
+    const yellowEdge = this.rubiks.cubes.find(
+      (cube) =>
+        cube.isEdge &&
+        cube.hasFace("Y") &&
+        cube.orientation.top !== "Y" &&
+        cube.orientation.bottom !== "Y",
+    );
+
+    if (yellowEdge) {
+      if (yellowEdge.orientation.left === "Y") {
+        this.rubiks.rotateRubiksCube("XCCW");
+        await this.pacer.settled();
+      } else if (yellowEdge.orientation.back === "Y") {
+        this.rubiks.rotateRubiksCube("XCCW");
+        await this.pacer.settled();
+        this.rubiks.rotateRubiksCube("XCCW");
+        await this.pacer.settled();
+      } else if (yellowEdge.orientation.right === "Y") {
+        this.rubiks.rotateRubiksCube("XCW");
+        await this.pacer.settled();
+      }
+
+      if (yellowEdge.isInBottomLayer) {
+        while (
+          this.cubeMap.get(positionMap[17])?.orientation.front !==
+          yellowEdge.orientation.bottom
+        ) {
+          this.rubiks.rotateBottomCW();
+          await this.pacer.settled();
+          this.rubiks.rotateRubiksCube("XCCW");
+          await this.pacer.settled();
+        }
+        this.rubiks.rotateBottomCW();
+        await this.pacer.settled();
+        this.rubiks.rotateYMidCCW();
+        await this.pacer.settled();
+        this.rubiks.rotateBottomCCW();
+        await this.pacer.settled();
+        this.rubiks.rotateYMidCW();
+        await this.pacer.settled();
+      } else if (yellowEdge.isInLeftLayer) {
+        this.rubiks.rotateLeftCCW();
+        await this.pacer.settled();
+        this.rubiks.rotateBottomCCW();
+        await this.pacer.settled();
+        this.rubiks.rotateLeftCW();
+        await this.pacer.settled();
+        while (
+          this.cubeMap.get(positionMap[17])?.orientation.front !==
+          yellowEdge.orientation.front
+        ) {
+          this.rubiks.rotateBottomCW();
+          await this.pacer.settled();
+          this.rubiks.rotateRubiksCube("XCCW");
+          await this.pacer.settled();
+        }
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+      } else if (yellowEdge.isInRightLayer) {
+        this.rubiks.rotateRightCCW();
+        await this.pacer.settled();
+        this.rubiks.rotateBottomCW();
+        await this.pacer.settled();
+        this.rubiks.rotateRightCW();
+        await this.pacer.settled();
+        while (
+          this.cubeMap.get(positionMap[17])?.orientation.front !==
+          yellowEdge.orientation.front
+        ) {
+          this.rubiks.rotateBottomCW();
+          await this.pacer.settled();
+          this.rubiks.rotateRubiksCube("XCCW");
+          await this.pacer.settled();
+        }
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+      } else if (yellowEdge.isInTopLayer) {
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+        this.rubiks.rotateFrontCW();
+        await this.pacer.settled();
+        while (
+          this.cubeMap.get(positionMap[17])?.orientation.front !==
+          yellowEdge.orientation.bottom
+        ) {
+          this.rubiks.rotateBottomCW();
+          await this.pacer.settled();
+          this.rubiks.rotateRubiksCube("XCCW");
+          await this.pacer.settled();
+        }
+        this.rubiks.rotateBottomCW();
+        await this.pacer.settled();
+        this.rubiks.rotateYMidCCW();
+        await this.pacer.settled();
+        this.rubiks.rotateBottomCCW();
+        await this.pacer.settled();
+        this.rubiks.rotateYMidCW();
+        await this.pacer.settled();
+      }
+      return;
+    }
     debugger;
-    // Rotate cube to locate any front facing yellows. Rotate appropriate side down, bottom layer left, then back up. Repeat above
-    // If no bottom facing yellows and no outside facing yellows, need to shuffle top.
+    // not sure how I got here
     return;
   }
 }
