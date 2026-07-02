@@ -1,7 +1,12 @@
 import Cube from "../engine/Cube";
-import { OrientationKey } from "../engine/models";
 import RubiksCube from "../engine/RubiksCube";
-import { JSONEquals, positionMap } from "../utils";
+import { positionMap } from "../utils";
+import {
+  hasSolvedYellowEdges,
+  isMiddleLayerSolved,
+  isOutsideLayerSolved,
+} from "./StatusChecks";
+import solveYellowEdges from "./subroutines/solveYellowEdges";
 
 // Implemented by whatever presents the cube (3D view, 2D view, a robot). After the solver
 // makes a move on the engine it awaits settled(), giving the representation time to present
@@ -23,8 +28,8 @@ const SOLUTION_PHASES = [
 type SolutionPhase = (typeof SOLUTION_PHASES)[number];
 
 export default class RubiksCubeSolver {
-  private rubiks: RubiksCube;
-  private pacer: MovePacer;
+  rubiks: RubiksCube;
+  pacer: MovePacer;
   private yellowLayerSolved: boolean | undefined;
   private middleLayerSolved: boolean | undefined;
   private solutionPhase: SolutionPhase = "YellowEdges";
@@ -75,9 +80,9 @@ export default class RubiksCubeSolver {
     if (!orientation)
       throw new Error("Unable to determine Yellow Face Cube Orientation");
 
-    this.yellowLayerSolved = this.isOutsideLayerSolved(orientation);
+    this.yellowLayerSolved = isOutsideLayerSolved(orientation, this.rubiks);
     this.middleLayerSolved = this.yellowLayerSolved
-      ? this.isMiddleLayerSolved(orientation)
+      ? isMiddleLayerSolved(orientation, this.rubiks)
       : false;
 
     if (this.middleLayerSolved) {
@@ -92,18 +97,36 @@ export default class RubiksCubeSolver {
         yellowFaceCube.isInTopLayer
       )
     ) {
-      this.rotateYellowFaceToTop(yellowFaceCube);
+      // Set Yellow as the Top
+      if (yellowFaceCube === this.cubeMap.get(positionMap[23])) {
+        this.rubiks.rotateRubiksCube("YCW");
+        await this.pacer.settled();
+        this.rubiks.rotateRubiksCube("YCW");
+        await this.pacer.settled();
+      } else if (yellowFaceCube === this.cubeMap.get(positionMap[17])) {
+        this.rubiks.rotateRubiksCube("YCW");
+        await this.pacer.settled();
+      } else if (yellowFaceCube === this.cubeMap.get(positionMap[11])) {
+        this.rubiks.rotateRubiksCube("YCCW");
+        await this.pacer.settled();
+      } else if (yellowFaceCube === this.cubeMap.get(positionMap[13])) {
+        this.rubiks.rotateRubiksCube("ZCW");
+        await this.pacer.settled();
+      } else if (yellowFaceCube === this.cubeMap.get(positionMap[15])) {
+        this.rubiks.rotateRubiksCube("ZCCW");
+        await this.pacer.settled();
+      }
     }
   }
 
   private async updateSolveStatus() {
     switch (this.solutionPhase) {
       case "YellowEdges":
-        if (this.hasSolvedYellowEdges()) {
+        if (hasSolvedYellowEdges(this)) {
           this.solutionPhase = "YellowCorners";
           this.updateSolveStatus();
         } else {
-          this.solveYellowEdges();
+          solveYellowEdges(this);
         }
         break;
       case "YellowCorners":
@@ -115,7 +138,7 @@ export default class RubiksCubeSolver {
         }
         break;
       case "MiddleEdges":
-        if (this.isMiddleLayerSolved("top")) {
+        if (isMiddleLayerSolved("top", this.rubiks)) {
           this.solutionPhase = "WhiteFaceEdges";
           this.updateSolveStatus();
         } else {
@@ -160,329 +183,5 @@ export default class RubiksCubeSolver {
   }
   solveWhiteFaceCorners() {
     throw new Error("Method not implemented.");
-  }
-
-  // CHECKS
-  private isOutsideLayerSolved(orientation: OrientationKey): boolean {
-    const cubesInLayer = this.rubiks.cubes.filter(
-      (cube) => cube.orientation[orientation] !== undefined,
-    );
-
-    const allFacesMatch = cubesInLayer.every(
-      (cube, _, cubes) =>
-        cube.orientation[orientation] === cubes[0].orientation[orientation],
-    );
-    if (!allFacesMatch) return false;
-
-    const otherOrientationKeys: OrientationKey[] = [];
-    cubesInLayer
-      .filter((cube) => !cube.isFace)
-      .forEach((cube) => {
-        for (const [key, value] of Object.entries(cube.orientation)) {
-          if (value !== cube.orientation[orientation] && value !== undefined) {
-            otherOrientationKeys.push(key as OrientationKey);
-          }
-        }
-      });
-    const dedupedKeys = [...new Set(otherOrientationKeys)];
-
-    return dedupedKeys.every((orientation: OrientationKey) => {
-      const row = cubesInLayer
-        .filter((cube) => !cube.isFace)
-        .filter((cube) => cube.orientation[orientation] !== undefined);
-      return row.every((cube) =>
-        JSONEquals(
-          cube.orientation[orientation],
-          row[0].orientation[orientation],
-        ),
-      );
-    });
-  }
-
-  private isMiddleLayerSolved(yellowOrientation: OrientationKey): boolean {
-    const cubesInLayer = ((o: OrientationKey): Cube[] => {
-      switch (o) {
-        case "top":
-        case "bottom":
-          return this.rubiks.cubes.filter((cube) => cube.isInXMidLayer);
-        case "left":
-        case "right":
-          return this.rubiks.cubes.filter((cube) => cube.isInYMidLayer);
-        case "front":
-        case "back":
-          return this.rubiks.cubes.filter((cube) => cube.isInZMidLayer);
-      }
-    })(yellowOrientation);
-
-    let orientationKeys: OrientationKey[] = [];
-    cubesInLayer
-      .filter((cube) => {
-        return !JSONEquals(cube.position, { X: 0, Y: 0, Z: 0 });
-      })
-      .forEach((cube) => {
-        for (const [key, value] of Object.entries(cube.orientation)) {
-          if (value !== undefined) {
-            orientationKeys.push(key as OrientationKey);
-          }
-        }
-      });
-    const dedupedKeys = [...new Set(orientationKeys)];
-    return dedupedKeys.every((orientation: OrientationKey) => {
-      const row = cubesInLayer
-        .filter((cube) => !JSONEquals(cube.position, { X: 0, Y: 0, Z: 0 }))
-        .filter((cube) => cube.orientation[orientation] !== undefined);
-      return row.every((cube) =>
-        JSONEquals(
-          cube.orientation[orientation],
-          row[0].orientation[orientation],
-        ),
-      );
-    });
-  }
-
-  hasSolvedYellowEdges(): boolean {
-    const topEdges = this.rubiks.cubes.filter(
-      (cube) => cube.isEdge && cube.orientation.top !== undefined,
-    );
-    if (!topEdges.every((cube) => cube.orientation.top === "Y")) return false;
-
-    const frontEdge = topEdges.find((cube) => cube.isInFrontLayer);
-    const leftEdge = topEdges.find((cube) => cube.isInLeftLayer);
-    const rightEdge = topEdges.find((cube) => cube.isInRightLayer);
-    const backEdge = topEdges.find((cube) => cube.isInBackLayer);
-
-    const frontFace = this.cubeMap.get(positionMap[17]);
-    const leftFace = this.cubeMap.get(positionMap[13]);
-    const rightFace = this.cubeMap.get(positionMap[15]);
-    const backFace = this.cubeMap.get(positionMap[11]);
-
-    if (frontEdge?.orientation.front !== frontFace?.orientation.front)
-      return false;
-    if (leftEdge?.orientation.left !== leftFace?.orientation.left) return false;
-    if (backEdge?.orientation.back !== backFace?.orientation.back) return false;
-    if (rightEdge?.orientation.right !== rightFace?.orientation.right)
-      return false;
-    return true;
-  }
-
-  // MOVES
-  private async rotateYellowFaceToTop(yellowCube: Cube) {
-    if (yellowCube === this.cubeMap.get(positionMap[23])) {
-      this.rubiks.rotateRubiksCube("YCW");
-      await this.pacer.settled();
-      this.rubiks.rotateRubiksCube("YCW");
-      await this.pacer.settled();
-    } else if (yellowCube === this.cubeMap.get(positionMap[17])) {
-      this.rubiks.rotateRubiksCube("YCW");
-      await this.pacer.settled();
-    } else if (yellowCube === this.cubeMap.get(positionMap[11])) {
-      this.rubiks.rotateRubiksCube("YCCW");
-      await this.pacer.settled();
-    } else if (yellowCube === this.cubeMap.get(positionMap[13])) {
-      this.rubiks.rotateRubiksCube("ZCW");
-      await this.pacer.settled();
-    } else if (yellowCube === this.cubeMap.get(positionMap[15])) {
-      this.rubiks.rotateRubiksCube("ZCCW");
-      await this.pacer.settled();
-    }
-  }
-
-  private async solveYellowEdges() {
-    // Solve top facing yellow edge cubes
-    const yellowTops = this.rubiks.cubes.filter(
-      (cube) => cube.orientation.top === "Y" && cube.isEdge,
-    );
-
-    for (const yellowTop of yellowTops) {
-      if (yellowTop.isInLeftLayer) {
-        this.rubiks.rotateRubiksCube("XCCW");
-        await this.pacer.settled();
-      } else if (yellowTop.isInBackLayer) {
-        this.rubiks.rotateRubiksCube("XCCW");
-        await this.pacer.settled();
-        this.rubiks.rotateRubiksCube("XCCW");
-        await this.pacer.settled();
-      } else if (yellowTop.isInRightLayer) {
-        this.rubiks.rotateRubiksCube("XCW");
-        await this.pacer.settled();
-      }
-
-      if (
-        this.cubeMap.get(positionMap[17])?.orientation.front !==
-        yellowTop.orientation.front
-      ) {
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-
-        do {
-          this.rubiks.rotateBottomCW();
-          await this.pacer.settled();
-          this.rubiks.rotateRubiksCube("XCCW");
-          await this.pacer.settled();
-        } while (
-          this.cubeMap.get(positionMap[17])?.orientation.front !==
-          yellowTop.orientation.front
-        );
-
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-        return;
-      }
-    }
-
-    // Solve bottom facing yellow edge cubes
-    const yellowBottoms = this.rubiks.cubes.filter(
-      (cube) => cube.orientation.bottom === "Y" && cube.isEdge,
-    );
-
-    for (const yellowBottom of yellowBottoms) {
-      if (yellowBottom.isInLeftLayer) {
-        this.rubiks.rotateRubiksCube("XCCW");
-        await this.pacer.settled();
-      } else if (yellowBottom.isInBackLayer) {
-        this.rubiks.rotateRubiksCube("XCCW");
-        await this.pacer.settled();
-        this.rubiks.rotateRubiksCube("XCCW");
-        await this.pacer.settled();
-      } else if (yellowBottom.isInRightLayer) {
-        this.rubiks.rotateRubiksCube("XCW");
-        await this.pacer.settled();
-      }
-
-      if (
-        this.cubeMap.get(positionMap[17])?.orientation.front !==
-        yellowBottom.orientation.front
-      ) {
-        do {
-          this.rubiks.rotateBottomCW();
-          await this.pacer.settled();
-          this.rubiks.rotateRubiksCube("XCCW");
-          await this.pacer.settled();
-        } while (
-          this.cubeMap.get(positionMap[17])?.orientation.front !==
-          yellowBottom.orientation.front
-        );
-
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-        return;
-      }
-    }
-
-    // solve outward facing yellow edge cubes (one at a time)
-    const yellowEdge = this.rubiks.cubes.find(
-      (cube) =>
-        cube.isEdge &&
-        cube.hasFace("Y") &&
-        cube.orientation.top !== "Y" &&
-        cube.orientation.bottom !== "Y",
-    );
-
-    if (yellowEdge) {
-      if (yellowEdge.orientation.left === "Y") {
-        this.rubiks.rotateRubiksCube("XCCW");
-        await this.pacer.settled();
-      } else if (yellowEdge.orientation.back === "Y") {
-        this.rubiks.rotateRubiksCube("XCCW");
-        await this.pacer.settled();
-        this.rubiks.rotateRubiksCube("XCCW");
-        await this.pacer.settled();
-      } else if (yellowEdge.orientation.right === "Y") {
-        this.rubiks.rotateRubiksCube("XCW");
-        await this.pacer.settled();
-      }
-
-      if (yellowEdge.isInBottomLayer) {
-        while (
-          this.cubeMap.get(positionMap[17])?.orientation.front !==
-          yellowEdge.orientation.bottom
-        ) {
-          this.rubiks.rotateBottomCW();
-          await this.pacer.settled();
-          this.rubiks.rotateRubiksCube("XCCW");
-          await this.pacer.settled();
-        }
-        this.rubiks.rotateBottomCW();
-        await this.pacer.settled();
-        this.rubiks.rotateYMidCCW();
-        await this.pacer.settled();
-        this.rubiks.rotateBottomCCW();
-        await this.pacer.settled();
-        this.rubiks.rotateYMidCW();
-        await this.pacer.settled();
-      } else if (yellowEdge.isInLeftLayer) {
-        this.rubiks.rotateLeftCCW();
-        await this.pacer.settled();
-        this.rubiks.rotateBottomCCW();
-        await this.pacer.settled();
-        this.rubiks.rotateLeftCW();
-        await this.pacer.settled();
-        while (
-          this.cubeMap.get(positionMap[17])?.orientation.front !==
-          yellowEdge.orientation.front
-        ) {
-          this.rubiks.rotateBottomCW();
-          await this.pacer.settled();
-          this.rubiks.rotateRubiksCube("XCCW");
-          await this.pacer.settled();
-        }
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-      } else if (yellowEdge.isInRightLayer) {
-        this.rubiks.rotateRightCCW();
-        await this.pacer.settled();
-        this.rubiks.rotateBottomCW();
-        await this.pacer.settled();
-        this.rubiks.rotateRightCW();
-        await this.pacer.settled();
-        while (
-          this.cubeMap.get(positionMap[17])?.orientation.front !==
-          yellowEdge.orientation.front
-        ) {
-          this.rubiks.rotateBottomCW();
-          await this.pacer.settled();
-          this.rubiks.rotateRubiksCube("XCCW");
-          await this.pacer.settled();
-        }
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-      } else if (yellowEdge.isInTopLayer) {
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-        this.rubiks.rotateFrontCW();
-        await this.pacer.settled();
-        while (
-          this.cubeMap.get(positionMap[17])?.orientation.front !==
-          yellowEdge.orientation.bottom
-        ) {
-          this.rubiks.rotateBottomCW();
-          await this.pacer.settled();
-          this.rubiks.rotateRubiksCube("XCCW");
-          await this.pacer.settled();
-        }
-        this.rubiks.rotateBottomCW();
-        await this.pacer.settled();
-        this.rubiks.rotateYMidCCW();
-        await this.pacer.settled();
-        this.rubiks.rotateBottomCCW();
-        await this.pacer.settled();
-        this.rubiks.rotateYMidCW();
-        await this.pacer.settled();
-      }
-      return;
-    }
-    debugger;
-    // not sure how I got here
-    return;
   }
 }
