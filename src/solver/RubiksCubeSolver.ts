@@ -2,10 +2,12 @@ import Cube from "../engine/Cube";
 import RubiksCube from "../engine/RubiksCube";
 import { positionMap } from "../utils";
 import {
+  hasSolvedYellowCorners,
   hasSolvedYellowEdges,
   isMiddleLayerSolved,
   isOutsideLayerSolved,
-} from "./StatusChecks";
+} from "./solutionStatusChecks";
+import solveYellowCorners from "./subroutines/solveYellowCorners";
 import solveYellowEdges from "./subroutines/solveYellowEdges";
 
 // Implemented by whatever presents the cube (3D view, 2D view, a robot). After the solver
@@ -66,7 +68,7 @@ export default class RubiksCubeSolver {
     if (this.yellowLayerSolved === undefined) {
       this.performInitialInspection();
     } else {
-      this.updateSolveStatus();
+      this.updateSolutionStatus();
     }
   }
 
@@ -119,28 +121,28 @@ export default class RubiksCubeSolver {
     }
   }
 
-  private async updateSolveStatus() {
+  private async updateSolutionStatus() {
     switch (this.solutionPhase) {
       case "YellowEdges":
         if (hasSolvedYellowEdges(this)) {
           this.solutionPhase = "YellowCorners";
-          this.updateSolveStatus();
+          this.updateSolutionStatus();
         } else {
           solveYellowEdges(this);
         }
         break;
       case "YellowCorners":
-        if (this.hasSolvedYellowCorners()) {
+        if (hasSolvedYellowCorners(this)) {
           this.solutionPhase = "MiddleEdges";
-          this.updateSolveStatus();
+          this.updateSolutionStatus();
         } else {
-          this.solveYellowCorners();
+          solveYellowCorners(this);
         }
         break;
       case "MiddleEdges":
         if (isMiddleLayerSolved("top", this.rubiks)) {
           this.solutionPhase = "WhiteFaceEdges";
-          this.updateSolveStatus();
+          this.updateSolutionStatus();
         } else {
           this.solveMiddleEdges();
         }
@@ -148,7 +150,7 @@ export default class RubiksCubeSolver {
       case "WhiteFaceEdges":
         if (this.hasSolvedWhiteFaceEdges()) {
           this.solutionPhase = "WhiteFaceCorners";
-          this.updateSolveStatus();
+          this.updateSolutionStatus();
         } else {
           this.solveWhiteFaceEdges();
         }
@@ -163,12 +165,6 @@ export default class RubiksCubeSolver {
     }
   }
 
-  hasSolvedYellowCorners(): boolean {
-    throw new Error("Method not implemented.");
-  }
-  solveYellowCorners() {
-    throw new Error("Method not implemented.");
-  }
   solveMiddleEdges() {
     throw new Error("Method not implemented.");
   }

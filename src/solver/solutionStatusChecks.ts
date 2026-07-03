@@ -111,3 +111,48 @@ export function hasSolvedYellowEdges(solver: RubiksCubeSolver): boolean {
     return false;
   return true;
 }
+
+export function hasSolvedYellowCorners(solver: RubiksCubeSolver): boolean {
+  const backLeft = solver.cubeMap.get(positionMap[1]);
+  const backRight = solver.cubeMap.get(positionMap[3]);
+  const frontLeft = solver.cubeMap.get(positionMap[7]);
+  const frontRight = solver.cubeMap.get(positionMap[9]);
+
+  if (
+    [backLeft, backRight, frontLeft, frontRight].every(
+      (cube) => cube?.orientation.top !== "Y",
+    )
+  )
+    return false;
+
+  const backEdge = solver.cubeMap.get(positionMap[2]);
+  const leftEdge = solver.cubeMap.get(positionMap[4]);
+  const rightEdge = solver.cubeMap.get(positionMap[6]);
+  const frontEdge = solver.cubeMap.get(positionMap[8]);
+
+  if (
+    backLeft?.orientation.left !== leftEdge?.orientation.left &&
+    backLeft?.orientation.back !== backEdge?.orientation.back
+  )
+    return false;
+
+  if (
+    backRight?.orientation.right !== rightEdge?.orientation.right &&
+    backRight?.orientation.back !== backEdge?.orientation.back
+  )
+    return false;
+
+  if (
+    frontLeft?.orientation.left !== leftEdge?.orientation.left &&
+    frontLeft?.orientation.front !== frontEdge?.orientation.front
+  )
+    return false;
+
+  if (
+    frontRight?.orientation.right !== rightEdge?.orientation.right &&
+    frontRight?.orientation.front !== frontEdge?.orientation.front
+  )
+    return false;
+
+  return true;
+}
