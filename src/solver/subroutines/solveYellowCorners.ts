@@ -269,11 +269,11 @@ async function solveBottomRightFaceDown(solver: RubiksCubeSolver) {
 
   solver.rubiks.rotateBottomCW();
   await solver.pacer.settled();
-  solver.rubiks.rotateLeftCW();
+  solver.rubiks.rotateRightCCW();
   await solver.pacer.settled();
   solver.rubiks.rotateBottomCCW();
   await solver.pacer.settled();
-  solver.rubiks.rotateLeftCCW();
+  solver.rubiks.rotateRightCW();
   await solver.pacer.settled();
   solver.rubiks.rotateFrontCW();
   await solver.pacer.settled();
@@ -321,11 +321,11 @@ async function solveBottomRight(solver: RubiksCubeSolver) {
   }
   solver.rubiks.rotateBottomCW();
   await solver.pacer.settled();
-  solver.rubiks.rotateLeftCW();
+  solver.rubiks.rotateRightCCW();
   await solver.pacer.settled();
   solver.rubiks.rotateBottomCCW();
   await solver.pacer.settled();
-  solver.rubiks.rotateLeftCCW();
+  solver.rubiks.rotateRightCW();
   await solver.pacer.settled();
   return;
 }

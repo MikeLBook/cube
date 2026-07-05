@@ -67,26 +67,23 @@ export default async function solveYellowEdges(solver: RubiksCubeSolver) {
       await solver.pacer.settled();
     }
 
-    if (
+    // Align the bottom edge under its matching front center (0+ turns; it may
+    // already be aligned), then F2 to lift it into the top layer with Y on top.
+    while (
       solver.cubeMap.get(positionMap[17])?.orientation.front !==
       yellowBottom.orientation.front
     ) {
-      do {
-        solver.rubiks.rotateBottomCW();
-        await solver.pacer.settled();
-        solver.rubiks.rotateRubiksCube("XCCW");
-        await solver.pacer.settled();
-      } while (
-        solver.cubeMap.get(positionMap[17])?.orientation.front !==
-        yellowBottom.orientation.front
-      );
-
-      solver.rubiks.rotateFrontCW();
+      solver.rubiks.rotateBottomCW();
       await solver.pacer.settled();
-      solver.rubiks.rotateFrontCW();
+      solver.rubiks.rotateRubiksCube("XCCW");
       await solver.pacer.settled();
-      return;
     }
+
+    solver.rubiks.rotateFrontCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateFrontCW();
+    await solver.pacer.settled();
+    return;
   }
 
   // Solve outward facing yellow edge cubes (one at a time)
