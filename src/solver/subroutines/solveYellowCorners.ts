@@ -1,8 +1,10 @@
 import { positionMap } from "../../utils";
 import RubiksCubeSolver from "../RubiksCubeSolver";
 
-export default function solveYellowCorners(solver: RubiksCubeSolver) {
+export default async function solveYellowCorners(solver: RubiksCubeSolver) {
+  /////////////////////////////////
   // Solve yellow top corner cubes
+  /////////////////////////////////
   const backLeft = solver.cubeMap.get(positionMap[1]);
   const backEdge = solver.cubeMap.get(positionMap[2]);
   const leftEdge = solver.cubeMap.get(positionMap[4]);
@@ -14,7 +16,9 @@ export default function solveYellowCorners(solver: RubiksCubeSolver) {
       backLeft?.orientation.back === backEdge?.orientation.back
     )
   ) {
-    // Solve Back Left Corner
+    solver.rubiks.rotateRubiksCube("XCCW");
+    await solver.pacer.settled();
+    await solveFrontLeftCorner(solver);
     return;
   }
 
@@ -28,7 +32,9 @@ export default function solveYellowCorners(solver: RubiksCubeSolver) {
       backRight?.orientation.back === backEdge?.orientation.back
     )
   ) {
-    // Solve Back Right Corner
+    solver.rubiks.rotateRubiksCube("XCW");
+    await solver.pacer.settled();
+    await solveFrontRightCorner(solver);
     return;
   }
 
@@ -42,7 +48,7 @@ export default function solveYellowCorners(solver: RubiksCubeSolver) {
       frontLeft?.orientation.front === frontEdge?.orientation.front
     )
   ) {
-    // Solve Front Left Corner
+    await solveFrontLeftCorner(solver);
     return;
   }
 
@@ -55,32 +61,152 @@ export default function solveYellowCorners(solver: RubiksCubeSolver) {
       frontRight?.orientation.front === frontEdge?.orientation.front
     )
   ) {
-    // Solve Front Right Corner
+    await solveFrontRightCorner(solver);
     return;
   }
 
+  ////////////////////////////////////
   // Solve yellow bottom corner cubes
+  ////////////////////////////////////
   const bottomBackLeft = solver.cubeMap.get(positionMap[19]);
   if (bottomBackLeft?.hasFace("Y")) {
-    // Solve Bottom Back Left Corner
+    if (bottomBackLeft.orientation.bottom === "Y") {
+      // fuuuuck
+    } else if (bottomBackLeft.orientation.left === "Y") {
+      solver.rubiks.rotateBottomCW();
+      await solver.pacer.settled();
+      await solveBottomLeft(solver);
+    } else {
+      solver.rubiks.rotateBottomCW();
+      await solver.pacer.settled();
+      solver.rubiks.rotateBottomCW();
+      await solver.pacer.settled();
+      await solveBottomRight(solver);
+    }
     return;
   }
 
   const bottomBackRight = solver.cubeMap.get(positionMap[21]);
   if (bottomBackRight?.hasFace("Y")) {
-    // Solve Bottom Back Right Corner
+    if (bottomBackRight.orientation.bottom === "Y") {
+      // fuuuuck
+    } else if (bottomBackRight.orientation.right === "Y") {
+      solver.rubiks.rotateBottomCCW();
+      await solver.pacer.settled();
+      await solveBottomRight(solver);
+    } else {
+      solver.rubiks.rotateBottomCCW();
+      await solver.pacer.settled();
+      solver.rubiks.rotateBottomCCW();
+      await solver.pacer.settled();
+      await solveBottomLeft(solver);
+    }
     return;
   }
 
   const bottomFrontLeft = solver.cubeMap.get(positionMap[25]);
   if (bottomFrontLeft?.hasFace("Y")) {
-    // Solve Bottom Front Left Corner
+    if (bottomFrontLeft.orientation.bottom === "Y") {
+      // fuuuuuck
+    } else if (bottomFrontLeft.orientation.left === "Y") {
+      solver.rubiks.rotateBottomCW();
+      await solver.pacer.settled();
+      await solveBottomRight(solver);
+    } else {
+      await solveBottomLeft(solver);
+    }
     return;
   }
 
   const bottomFrontRight = solver.cubeMap.get(positionMap[27]);
   if (bottomFrontRight?.hasFace("Y")) {
-    // Solve Bottom Front Right Corner
+    if (bottomFrontRight.orientation.bottom === "Y") {
+      // fuuuuuuck
+    } else if (bottomFrontRight.orientation.right === "Y") {
+      solver.rubiks.rotateBottomCCW();
+      await solver.pacer.settled();
+      await solveBottomLeft(solver);
+    } else {
+      await solveBottomRight(solver);
+    }
     return;
   }
+}
+
+async function solveFrontRightCorner(solver: RubiksCubeSolver) {
+  const unsolvedCube = solver.cubeMap.get(positionMap[9]);
+  if (unsolvedCube?.orientation.front === "Y") {
+    solver.rubiks.rotateFrontCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateBottomCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateFrontCCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateRubiksCube("XCW");
+    await solver.pacer.settled();
+    await solveBottomRight(solver);
+  } else if (unsolvedCube?.orientation.top === "Y") {
+    solver.rubiks.rotateLeftCCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateBottomCCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateLeftCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateRubiksCube("XCCW");
+    await solver.pacer.settled();
+    await solveBottomRight(solver);
+  } else {
+    solver.rubiks.rotateLeftCCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateBottomCCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateLeftCW();
+    await solver.pacer.settled();
+    await solveBottomLeft(solver);
+  }
+  return;
+}
+
+async function solveFrontLeftCorner(solver: RubiksCubeSolver) {
+  const unsolvedCube = solver.cubeMap.get(positionMap[7]);
+  if (unsolvedCube?.orientation.front === "Y") {
+    solver.rubiks.rotateFrontCCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateBottomCCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateFrontCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateRubiksCube("XCCW");
+    await solver.pacer.settled();
+    await solveBottomLeft(solver);
+  } else if (unsolvedCube?.orientation.top === "Y") {
+    solver.rubiks.rotateLeftCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateBottomCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateLeftCCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateRubiksCube("XCW");
+    await solver.pacer.settled();
+    await solveBottomLeft(solver);
+  } else {
+    solver.rubiks.rotateLeftCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateBottomCW();
+    await solver.pacer.settled();
+    solver.rubiks.rotateLeftCCW();
+    await solver.pacer.settled();
+    await solveBottomRight(solver);
+  }
+  return;
+}
+
+async function solveBottomLeft(solver: RubiksCubeSolver) {
+  // TODO: Implement Happy Path
+  return;
+}
+
+async function solveBottomRight(solver: RubiksCubeSolver) {
+  // TODO: Implement Happy Path
+  return;
 }
