@@ -41,8 +41,10 @@ depends on nothing.
 
 ## Layers (inner → outer)
 
-- `src/engine/models.ts` — pure types/constants: `Position`, `Orientation`, `Face`, `Rotation`,
-  `LayerMove`, `ORIENTATION_KEYS`, etc.
+- `src/engine/models.ts` — pure types/constants: `Position`, `Orientation`, `Face`,
+  `ORIENTATION_KEYS`, `AXES`, `FACES`, etc.
+- `src/engine/IRubiksCubeObserver.ts` — the `IRubiksCubeObserver` interface plus the move-name
+  constants/types `LayerMove` and `Rotation` (the engine's move vocabulary).
 - `src/engine/Cube.ts` — one cubie. Holds `position` + `orientation` and the six axis rotations
   (`rotateXCW`…`rotateZCCW`). **Layer membership is derived from orientation, not position**
   (`isInTopLayer = orientation.top !== undefined`), and `rotate()` recomputes `position` from the
@@ -51,7 +53,11 @@ depends on nothing.
   Exposes the moves, `isSolved` (a getter), `setState`/serialization, and the observer registry.
   **Pure and synchronous** — no DOM, timing, animation, or async. Each move method mutates the
   cubies in place and then calls the private `onMove(move)` to notify observers.
-- `src/solver/RubiksCubeSolver.ts` — the solver + the `MovePacer` interface it depends on.
+- `src/solver/RubiksCubeSolver.ts` — the solver + the `MovePacer` interface it depends on. Its
+  `do(...moves)` helper applies a sequence of moves, `await`ing the pacer between each.
+- `src/solver/solutionStatusChecks.ts` — pure predicates ("is this layer/phase solved?").
+- `src/solver/subroutines/` — one module per solve phase (e.g. `solveYellowEdges`,
+  `solveYellowCorners`); each takes the solver and drives moves through `solver.do(...)`.
 - `src/presentations/2DView/` / `src/presentations/3DView/` — the two representations. Each
   folder holds its `.ts` (logic), `.html`, and `.css`; the build flattens them into `build/`.
 
@@ -63,7 +69,8 @@ State changes propagate one way:
 source → RubiksCube method → onMove(move) → representation presents the change
 ```
 
-- `IRubiksCubeObserver.onMove(move?: LayerMove | Rotation)` is defined in `RubiksCube.ts`. The
+- `IRubiksCubeObserver.onMove(move?: LayerMove | Rotation)` is defined in
+  `IRubiksCubeObserver.ts`. The
   engine passes the move's identity so a representation can present the specific change (animate
   the right layer, or the whole cube for a `Rotation`). `reset()` passes no move.
 - Representations register via `rubiks.addObserver(this)`.
@@ -138,7 +145,14 @@ These are load-bearing. Breaking them brings back the "animate then teleport" bu
 
 ## Status
 
-`RubiksCubeSolver.run()` is a **placeholder**: it applies a fixed sequence of `rotateBackCCW`
-turns to exercise the pacing, not a real solve. Replacing it with real solving logic should
-require **no changes** to the engine or the representations — that's the test of whether the
-decoupling held.
+`RubiksCubeSolver.run()` is a real **layer-by-layer solve** (yellow face first), **under active
+development**. It inspects the cube, orients yellow to the top, then advances through solve phases
+(`SOLUTION_PHASES`). The yellow-edge and yellow-corner phases are implemented in
+`subroutines/`; the middle-layer and white-face phases are still stubbed (they throw
+"not implemented"), and `run()` currently takes one phase step per call rather than looping to a
+finished cube. Fleshing this out should require **no changes** to the engine or the
+representations — that's the test of whether the decoupling held.
+
+When adding solve logic, drive every move through `solver.do(...)` (one move per `await settled()`)
+rather than calling engine methods directly — that's what keeps the solver paced against the
+representation.

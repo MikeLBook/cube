@@ -125,21 +125,32 @@ solver to animation timing.
 ```
 src/
   engine/
-    models.ts        types + constants
-    Cube.ts          one cubie
-    RubiksCube.ts    the cube; source of truth; emits onMove
-    helpers.ts       (de)serialization guards
+    models.ts               types + constants
+    Cube.ts                 one cubie
+    RubiksCube.ts           the cube; source of truth; emits onMove
+    IRubiksCubeObserver.ts  observer interface + LayerMove/Rotation move names
+  utils.ts                  (de)serialization guards, position map, isRotation
   solver/
-    RubiksCubeSolver.ts   the "person"; async, paced via MovePacer (placeholder logic for now)
+    RubiksCubeSolver.ts     the "person"; async, paced via MovePacer
+    solutionStatusChecks.ts predicates: is a given layer/phase solved?
+    subroutines/            per-phase solving routines (solveYellowEdges, solveYellowCorners, …)
   presentations/
-    2DView/          2DView.ts/.html/.css   — 2D net view (observer)
-    3DView/          3DView.ts/.html/.css   — 3D interactive view (observer + MovePacer)
-build.mjs            esbuild build → build/
+    2DView/                 2DView.ts/.html/.css   — 2D net view (observer)
+    3DView/                 3DView.ts/.html/.css   — 3D interactive view (observer + MovePacer)
+build.mjs                   esbuild build → build/
 ```
 
-`RubiksCubeSolver.run()` is currently a **placeholder** — it applies a fixed sequence of moves
-so we can exercise the pacing. Replacing it with real solving logic requires no changes to the
-engine or the representations.
+`RubiksCubeSolver.run()` implements a **layer-by-layer solve** (yellow face first). It's
+**under active development**: the yellow-edge and yellow-corner phases are implemented, while the
+middle-layer and white-face phases are still stubbed. Fleshing it out requires no changes to the
+engine or the representations — the decoupling is the point.
+
+Solver routines never call an engine move directly; they apply moves through `solver.do(...)`,
+which runs each move and `await`s the pacer between them, so a whole algorithm is one paced call:
+
+```ts
+await solver.do("rotateFrontCW", "rotateFrontCW", "rotateBottomCW");
+```
 
 ## Build & run
 
@@ -158,4 +169,4 @@ scramble on one is reflected on the other.
 
 - Drag a face to turn that layer; drag the background to orbit.
 - `w`/`a`/`s`/`d` roll & spin the whole cube; keys map to face turns (see `onKey`).
-- **Solve** runs the (placeholder) solver as a paced animation.
+- **Solve** runs the solver as a paced animation.
