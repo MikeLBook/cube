@@ -16,8 +16,7 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
       backLeft?.orientation.back === backEdge?.orientation.back
     )
   ) {
-    solver.rubiks.rotateRubiksCube("XCCW");
-    await solver.pacer.settled();
+    await solver.do("XCCW");
     await solveFrontLeftCorner(solver);
     return;
   }
@@ -32,8 +31,7 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
       backRight?.orientation.back === backEdge?.orientation.back
     )
   ) {
-    solver.rubiks.rotateRubiksCube("XCW");
-    await solver.pacer.settled();
+    await solver.do("XCW");
     await solveFrontRightCorner(solver);
     return;
   }
@@ -71,18 +69,13 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
   const bottomBackLeft = solver.cubeMap.get(positionMap[19]);
   if (bottomBackLeft?.hasFace("Y")) {
     if (bottomBackLeft.orientation.bottom === "Y") {
-      solver.rubiks.rotateRubiksCube("XCCW");
-      await solver.pacer.settled();
+      await solver.do("XCCW");
       await solveBottomLeftFaceDown(solver);
     } else if (bottomBackLeft.orientation.left === "Y") {
-      solver.rubiks.rotateBottomCCW();
-      await solver.pacer.settled();
+      await solver.do("rotateBottomCCW");
       await solveBottomLeft(solver);
     } else {
-      solver.rubiks.rotateBottomCCW();
-      await solver.pacer.settled();
-      solver.rubiks.rotateBottomCCW();
-      await solver.pacer.settled();
+      await solver.do("rotateBottomCCW", "rotateBottomCCW");
       await solveBottomRight(solver);
     }
     return;
@@ -91,18 +84,13 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
   const bottomBackRight = solver.cubeMap.get(positionMap[21]);
   if (bottomBackRight?.hasFace("Y")) {
     if (bottomBackRight.orientation.bottom === "Y") {
-      solver.rubiks.rotateRubiksCube("XCW");
-      await solver.pacer.settled();
+      await solver.do("XCW");
       await solveBottomRightFaceDown(solver);
     } else if (bottomBackRight.orientation.right === "Y") {
-      solver.rubiks.rotateBottomCW();
-      await solver.pacer.settled();
+      await solver.do("rotateBottomCW");
       await solveBottomRight(solver);
     } else {
-      solver.rubiks.rotateBottomCW();
-      await solver.pacer.settled();
-      solver.rubiks.rotateBottomCW();
-      await solver.pacer.settled();
+      await solver.do("rotateBottomCW", "rotateBottomCW");
       await solveBottomLeft(solver);
     }
     return;
@@ -113,8 +101,7 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     if (bottomFrontLeft.orientation.bottom === "Y") {
       await solveBottomLeftFaceDown(solver);
     } else if (bottomFrontLeft.orientation.left === "Y") {
-      solver.rubiks.rotateBottomCCW();
-      await solver.pacer.settled();
+      await solver.do("rotateBottomCCW");
       await solveBottomRight(solver);
     } else {
       await solveBottomLeft(solver);
@@ -127,8 +114,7 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     if (bottomFrontRight.orientation.bottom === "Y") {
       await solveBottomRightFaceDown(solver);
     } else if (bottomFrontRight.orientation.right === "Y") {
-      solver.rubiks.rotateBottomCW();
-      await solver.pacer.settled();
+      await solver.do("rotateBottomCW");
       await solveBottomLeft(solver);
     } else {
       await solveBottomRight(solver);
@@ -143,32 +129,23 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
 async function solveFrontRightCorner(solver: RubiksCubeSolver) {
   const unsolvedCube = solver.cubeMap.get(positionMap[9]);
   if (unsolvedCube?.orientation.front === "Y") {
-    solver.rubiks.rotateFrontCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateBottomCCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateFrontCCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateRubiksCube("XCW");
-    await solver.pacer.settled();
+    await solver.do(
+      "rotateFrontCW",
+      "rotateBottomCCW",
+      "rotateFrontCCW",
+      "XCW",
+    );
     await solveBottomRight(solver);
   } else if (unsolvedCube?.orientation.top === "Y") {
-    solver.rubiks.rotateRightCCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateBottomCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateRightCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateRubiksCube("XCCW");
-    await solver.pacer.settled();
+    await solver.do(
+      "rotateRightCCW",
+      "rotateBottomCW",
+      "rotateRightCW",
+      "XCCW",
+    );
     await solveBottomRight(solver);
   } else {
-    solver.rubiks.rotateRightCCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateBottomCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateRightCW();
-    await solver.pacer.settled();
+    await solver.do("rotateRightCCW", "rotateBottomCW", "rotateRightCW");
     await solveBottomLeft(solver);
   }
   return;
@@ -177,32 +154,23 @@ async function solveFrontRightCorner(solver: RubiksCubeSolver) {
 async function solveFrontLeftCorner(solver: RubiksCubeSolver) {
   const unsolvedCube = solver.cubeMap.get(positionMap[7]);
   if (unsolvedCube?.orientation.front === "Y") {
-    solver.rubiks.rotateFrontCCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateBottomCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateFrontCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateRubiksCube("XCCW");
-    await solver.pacer.settled();
+    await solver.do(
+      "rotateFrontCCW",
+      "rotateBottomCW",
+      "rotateFrontCW",
+      "XCCW",
+    );
     await solveBottomLeft(solver);
   } else if (unsolvedCube?.orientation.top === "Y") {
-    solver.rubiks.rotateLeftCCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateBottomCCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateLeftCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateRubiksCube("XCW");
-    await solver.pacer.settled();
+    await solver.do(
+      "rotateLeftCCW",
+      "rotateBottomCCW",
+      "rotateLeftCW",
+      "XCW",
+    );
     await solveBottomLeft(solver);
   } else {
-    solver.rubiks.rotateLeftCCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateBottomCCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateLeftCW();
-    await solver.pacer.settled();
+    await solver.do("rotateLeftCCW", "rotateBottomCCW", "rotateLeftCW");
     await solveBottomRight(solver);
   }
   return;
@@ -221,28 +189,20 @@ async function solveBottomLeftFaceDown(solver: RubiksCubeSolver) {
     ) {
       unsolvedWorkingCube = true;
     } else {
-      solver.rubiks.rotateBottomCW();
-      await solver.pacer.settled();
-      solver.rubiks.rotateRubiksCube("XCCW");
-      await solver.pacer.settled();
+      await solver.do("rotateBottomCW", "XCCW");
     }
   } while (!unsolvedWorkingCube);
 
-  solver.rubiks.rotateBottomCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateLeftCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateBottomCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateLeftCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateFrontCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateBottomCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateFrontCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateBottomCCW();
+  await solver.do(
+    "rotateBottomCCW",
+    "rotateLeftCCW",
+    "rotateBottomCW",
+    "rotateLeftCW",
+    "rotateFrontCCW",
+    "rotateBottomCW",
+    "rotateFrontCW",
+    "rotateBottomCCW",
+  );
   await solveBottomLeft(solver);
   return;
 }
@@ -260,28 +220,20 @@ async function solveBottomRightFaceDown(solver: RubiksCubeSolver) {
     ) {
       unsolvedWorkingCube = true;
     } else {
-      solver.rubiks.rotateBottomCCW();
-      await solver.pacer.settled();
-      solver.rubiks.rotateRubiksCube("XCW");
-      await solver.pacer.settled();
+      await solver.do("rotateBottomCCW", "XCW");
     }
   } while (!unsolvedWorkingCube);
 
-  solver.rubiks.rotateBottomCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateRightCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateBottomCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateRightCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateFrontCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateBottomCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateFrontCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateBottomCW();
+  await solver.do(
+    "rotateBottomCW",
+    "rotateRightCCW",
+    "rotateBottomCCW",
+    "rotateRightCW",
+    "rotateFrontCW",
+    "rotateBottomCCW",
+    "rotateFrontCCW",
+    "rotateBottomCW",
+  );
   await solveBottomRight(solver);
   return;
 }
@@ -292,19 +244,14 @@ async function solveBottomLeft(solver: RubiksCubeSolver) {
     cube?.orientation.left !==
     solver.cubeMap.get(positionMap[13])?.orientation.left
   ) {
-    solver.rubiks.rotateBottomCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateRubiksCube("XCCW");
-    await solver.pacer.settled();
+    await solver.do("rotateBottomCW", "XCCW");
   }
-  solver.rubiks.rotateBottomCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateLeftCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateBottomCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateLeftCW();
-  await solver.pacer.settled();
+  await solver.do(
+    "rotateBottomCCW",
+    "rotateLeftCCW",
+    "rotateBottomCW",
+    "rotateLeftCW",
+  );
   return;
 }
 
@@ -314,18 +261,13 @@ async function solveBottomRight(solver: RubiksCubeSolver) {
     cube?.orientation.right !==
     solver.cubeMap.get(positionMap[15])?.orientation.right
   ) {
-    solver.rubiks.rotateBottomCCW();
-    await solver.pacer.settled();
-    solver.rubiks.rotateRubiksCube("XCW");
-    await solver.pacer.settled();
+    await solver.do("rotateBottomCCW", "XCW");
   }
-  solver.rubiks.rotateBottomCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateRightCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateBottomCCW();
-  await solver.pacer.settled();
-  solver.rubiks.rotateRightCW();
-  await solver.pacer.settled();
+  await solver.do(
+    "rotateBottomCW",
+    "rotateRightCCW",
+    "rotateBottomCCW",
+    "rotateRightCW",
+  );
   return;
 }

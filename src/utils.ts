@@ -1,5 +1,10 @@
 import Cube from "./engine/Cube";
 import {
+  LayerMove,
+  Rotation,
+  ROTATIONS,
+} from "./engine/IRubiksCubeObserver";
+import {
   AXES,
   Face,
   FACES,
@@ -14,6 +19,10 @@ export function JSONEquals(a: unknown, b: unknown): boolean {
 
 export function isFace(value: unknown): value is Face {
   return (FACES as readonly string[]).includes(value as string);
+}
+
+export function isRotation(move: LayerMove | Rotation): move is Rotation {
+  return (ROTATIONS as readonly string[]).includes(move);
 }
 
 export function isPosition(value: unknown): value is Position {

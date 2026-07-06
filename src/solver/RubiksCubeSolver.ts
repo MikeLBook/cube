@@ -1,6 +1,7 @@
 import Cube from "../engine/Cube";
 import RubiksCube from "../engine/RubiksCube";
-import { positionMap } from "../utils";
+import { LayerMove, Rotation } from "../engine/IRubiksCubeObserver";
+import { isRotation, positionMap } from "../utils";
 import {
   hasSolvedYellowCorners,
   hasSolvedYellowEdges,
@@ -47,6 +48,19 @@ export default class RubiksCubeSolver {
       cubeMap.set(JSON.stringify(cube.position), cube),
     );
     return cubeMap;
+  }
+
+  // Apply a sequence of moves to the engine, one per settled() so the representation
+  // paces the solver. Rotations reorient the whole cube; everything else is a layer move.
+  public async do(...moves: (LayerMove | Rotation)[]) {
+    for (const move of moves) {
+      if (isRotation(move)) {
+        this.rubiks.rotateRubiksCube(move);
+      } else {
+        this.rubiks[move]();
+      }
+      await this.pacer.settled();
+    }
   }
 
   public reset() {
@@ -101,22 +115,15 @@ export default class RubiksCubeSolver {
     ) {
       // Set Yellow as the Top
       if (yellowFaceCube === this.cubeMap.get(positionMap[23])) {
-        this.rubiks.rotateRubiksCube("YCW");
-        await this.pacer.settled();
-        this.rubiks.rotateRubiksCube("YCW");
-        await this.pacer.settled();
+        await this.do("YCW", "YCW");
       } else if (yellowFaceCube === this.cubeMap.get(positionMap[17])) {
-        this.rubiks.rotateRubiksCube("YCW");
-        await this.pacer.settled();
+        await this.do("YCW");
       } else if (yellowFaceCube === this.cubeMap.get(positionMap[11])) {
-        this.rubiks.rotateRubiksCube("YCCW");
-        await this.pacer.settled();
+        await this.do("YCCW");
       } else if (yellowFaceCube === this.cubeMap.get(positionMap[13])) {
-        this.rubiks.rotateRubiksCube("ZCW");
-        await this.pacer.settled();
+        await this.do("ZCW");
       } else if (yellowFaceCube === this.cubeMap.get(positionMap[15])) {
-        this.rubiks.rotateRubiksCube("ZCCW");
-        await this.pacer.settled();
+        await this.do("ZCCW");
       }
     }
   }
