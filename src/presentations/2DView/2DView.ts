@@ -1,6 +1,9 @@
 import { JSONEquals } from "../../utils";
-import { FACES, LAYER_MOVES, Orientation } from "../../engine/models";
-import RubiksCube, { IRubiksCubeObserver } from "../../engine/RubiksCube";
+import { FACES, Orientation } from "../../engine/models";
+import RubiksCube from "../../engine/RubiksCube";
+import IRubiksCubeObserver, {
+  LAYER_MOVES,
+} from "../../engine/IRubiksCubeObserver";
 
 const rubiksCube = RubiksCube.getInstance();
 const cubeState = localStorage.getItem("cubeState");

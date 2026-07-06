@@ -1,13 +1,10 @@
 import Cube from "./Cube";
 import { isCubeArray } from "../utils";
-import { Face, LayerMove, ORIENTATION_KEYS, Rotation } from "./models";
-
-// Implemented by whatever presents the cube (3D view, 2D view, a robot)
-export interface IRubiksCubeObserver {
-  // The move that triggered the notification, so observers can present it (e.g. animate
-  // the specific layer). Whole-cube re-orientations pass a Rotation; reset passes nothing.
-  onMove: (move?: LayerMove | Rotation) => void;
-}
+import { Face, ORIENTATION_KEYS } from "./models";
+import IRubiksCubeObserver, {
+  LayerMove,
+  Rotation,
+} from "./IRubiksCubeObserver";
 
 // 3D layout of the 27 cubes in a Rubiks Cube. Coordinates are (X, Y, Z):
 //   X:  -1 = left    →   1 = right

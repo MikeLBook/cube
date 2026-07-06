@@ -47,6 +47,7 @@ export function isCubeArray(value: unknown): value is Cube[] {
 }
 
 export const positionMap = {
+  // Top Layer
   1: JSON.stringify({ X: -1, Y: 1, Z: -1 }),
   2: JSON.stringify({ X: 0, Y: 1, Z: -1 }),
   3: JSON.stringify({ X: 1, Y: 1, Z: -1 }),

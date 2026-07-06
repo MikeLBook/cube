@@ -1,8 +1,11 @@
-import RubiksCube, { IRubiksCubeObserver } from "../../engine/RubiksCube";
+import RubiksCube from "../../engine/RubiksCube";
 import Cube from "../../engine/Cube";
-import { Face, Orientation, Rotation } from "../../engine/models";
-import { LayerMove } from "../../engine/models";
+import { Face, Orientation } from "../../engine/models";
 import RubiksCubeSolver, { MovePacer } from "../../solver/RubiksCubeSolver";
+import IRubiksCubeObserver, {
+  LayerMove,
+  Rotation,
+} from "../../engine/IRubiksCubeObserver";
 
 type Axis = "X" | "Y" | "Z";
 type Status = "free" | "ready" | "scrambling" | "solving" | "solved";
