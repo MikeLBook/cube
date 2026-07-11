@@ -22,9 +22,11 @@ import RubiksCube from "../src/engine/RubiksCube";
 import RubiksCubeSolver from "../src/solver/RubiksCubeSolver";
 import solveYellowEdges from "../src/solver/subroutines/solveYellowEdges";
 import solveYellowCorners from "../src/solver/subroutines/solveYellowCorners";
+import { solveMiddleEdges } from "../src/solver/subroutines/solveMiddleEdges";
 import {
   hasSolvedYellowEdges,
   hasSolvedYellowCorners,
+  isMiddleLayerSolved,
 } from "../src/solver/solutionStatusChecks";
 import { positionMap } from "../src/utils";
 
@@ -85,6 +87,18 @@ function cornersSolved(): boolean {
     c9?.orientation.top === "Y" && c9?.orientation.right === c.right && c9?.orientation.front === c.front
   );
 }
+// Independent ground truth: the 4 equator edges (no top/bottom sticker) each match
+// both adjacent centers. Positions 10/12/16/18 are the X-mid-layer edges.
+function middleEdgesSolved(): boolean {
+  const c = centers();
+  const e10 = get(10), e12 = get(12), e16 = get(16), e18 = get(18);
+  return !!(
+    e10?.orientation.left === c.left && e10?.orientation.back === c.back &&
+    e12?.orientation.right === c.right && e12?.orientation.back === c.back &&
+    e16?.orientation.left === c.left && e16?.orientation.front === c.front &&
+    e18?.orientation.right === c.right && e18?.orientation.front === c.front
+  );
+}
 
 const MOVES = [
   "rotateTopCW", "rotateTopCCW", "rotateBottomCW", "rotateBottomCCW",
@@ -103,8 +117,10 @@ type Outcome =
   | "ok"
   | "edges-stuck"          // edge phase made no progress for many iterations (dead-end path)
   | "corners-stuck"        // corner phase made no progress
+  | "middle-stuck"         // middle-edge phase made no progress
   | "edge-check-early"     // hasSolvedYellowEdges said done while edges NOT actually solved
   | "corner-check-early"   // hasSolvedYellowCorners said done while corners NOT actually solved
+  | "middle-check-early"   // isMiddleLayerSolved said done while equator NOT actually solved
   | "checks-disagree"      // solved per ground truth but a completion check disagrees
   | "budget";              // a subroutine ran away (infinite loop)
 
@@ -128,7 +144,14 @@ async function runSeq(seq: string[]): Promise<Outcome> {
       await solveYellowCorners(solver);
       if (++g > 80) return "corners-stuck";
     }
+    g = 0;
+    while (!middleEdgesSolved()) {
+      if (isMiddleLayerSolved("top", rubiks)) return "middle-check-early";
+      await solveMiddleEdges(solver);
+      if (++g > 80) return "middle-stuck";
+    }
     if (!hasSolvedYellowEdges(solver) || !hasSolvedYellowCorners(solver)) return "checks-disagree";
+    if (!isMiddleLayerSolved("top", rubiks)) return "checks-disagree";
     return "ok";
   } catch (e: any) {
     if (e.message === "BUDGET") return "budget";
@@ -175,6 +198,7 @@ async function trace(seq: string[]) {
       "  centers " + JSON.stringify(c),
       "  top corners  " + [1, 3, 7, 9].map(fmt).join("  "),
       "  top edges    " + [2, 4, 6, 8].map(fmt).join("  "),
+      "  middle edges " + [10, 12, 16, 18].map(fmt).join("  "),
       "  bottom corn. " + [19, 21, 25, 27].map(fmt).join("  "),
       "  bottom edges " + [20, 22, 24, 26].map(fmt).join("  "),
     ].join("\n");
@@ -187,14 +211,19 @@ async function trace(seq: string[]) {
   await (solver as any).performInitialInspection();
   logging = true;
 
-  for (let i = 0; i < 20 && (!edgesSolved() || !cornersSolved()); i++) {
-    const phase = !edgesSolved() ? "edges" : "corners";
+  for (
+    let i = 0;
+    i < 40 && (!edgesSolved() || !cornersSolved() || !middleEdgesSolved());
+    i++
+  ) {
+    const phase = !edgesSolved() ? "edges" : !cornersSolved() ? "corners" : "middle";
     moveLog.length = 0;
     console.log(`\n--- ${phase} call #${i + 1} ---`);
     console.log(snap());
     try {
       if (phase === "edges") await solveYellowEdges(solver);
-      else await solveYellowCorners(solver);
+      else if (phase === "corners") await solveYellowCorners(solver);
+      else await solveMiddleEdges(solver);
     } catch (e: any) {
       console.log("  THREW:", e.message, "(infinite loop — see the repeating tail below)");
       console.log("  moves:", moveLog.slice(0, 40).join(" "), "...");
@@ -202,7 +231,9 @@ async function trace(seq: string[]) {
     }
     console.log("  moves:", moveLog.join(" ") || "(NONE — no progress; likely the bug)");
   }
-  console.log(`\nFinal: edgesSolved=${edgesSolved()} cornersSolved=${cornersSolved()}`);
+  console.log(
+    `\nFinal: edgesSolved=${edgesSolved()} cornersSolved=${cornersSolved()} middleEdgesSolved=${middleEdgesSolved()}`,
+  );
 }
 
 async function main() {

@@ -20,19 +20,26 @@ is outside `tsconfig`'s `src/**` scope, so it never affects `tsc --noEmit`.
 
 ## Latest verification result
 
-The full yellow layer (edges → corners) solves on **every** scramble:
+The yellow layer (edges → corners) **and** the middle-layer edges solve on **every**
+scramble:
 
 ```
-edge phase alone:            3000 / 3000  ok
-full pipeline (edges+corners): 5000 / 5000  ok
+full pipeline (edges + corners + middle edges): 20000 / 20000  ok
 ```
 
 Re-run `node verify/run.mjs count` after any change to `src/solver/**` and expect
 `✅ all N scrambles solved`. Anything else is a regression.
 
-> Scope note: the solver currently solves the **yellow layer only** (phases
-> `YellowEdges`, `YellowCorners`). `MiddleEdges` onward in `RubiksCubeSolver` are
-> stubs that `throw`. The harness verifies exactly the two implemented phases.
+> Scope note: the solver currently solves the **yellow layer + middle edges** (phases
+> `YellowEdges`, `YellowCorners`, `MiddleEdges`). `WhiteFaceEdges` onward in
+> `RubiksCubeSolver` are stubs that `throw`. The harness verifies exactly the three
+> implemented phases.
+>
+> Middle-edge coverage note: the harder branch — all four bottom edges carry white, so
+> a misplaced equator edge must first be *extracted* to the bottom before re-inserting —
+> fires in ~38% of solves, so it is genuinely exercised, not skipped. The equator
+> extraction's two `if` blocks (`isInLeftLayer` / `isInRightLayer`) never both fire in a
+> single call, so the missing `else` is safe (verified: 0 double-fires / 20000).
 
 ## The debugging playbook (how the current bugs were found)
 
@@ -43,8 +50,8 @@ three tools in order:
    | outcome | meaning |
    |---|---|
    | `ok` | solved (only success) |
-   | `edges-stuck` / `corners-stuck` | subroutine returned making **no progress**, solver spun in place |
-   | `edge-check-early` / `corner-check-early` | a `hasSolved*` check reported "done" while the layer was **not** actually solved → phase advanced too early |
+   | `edges-stuck` / `corners-stuck` / `middle-stuck` | subroutine returned making **no progress**, solver spun in place |
+   | `edge-check-early` / `corner-check-early` / `middle-check-early` | a completion check reported "done" while the layer was **not** actually solved → phase advanced too early |
    | `checks-disagree` | ground truth says solved but a completion check disagrees |
    | `budget` | a subroutine **infinite-looped** (a `while`/`do-while` whose exit condition can never be met) |
 
