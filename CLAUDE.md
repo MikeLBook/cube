@@ -4,6 +4,24 @@ Guidance for working in this repo. For a narrative overview see `README.md`; thi
 on the architectural decisions, the invariants that keep the design honest, and the gotchas that
 aren't obvious from the code.
 
+## Scope of AI involvement (read first)
+
+This project is a **coding puzzle/challenge**: engineering the cube and its solver by hand is the
+whole point. Using AI to design the cube representation or to write the solver would defeat that
+purpose, so AI assistance is **restricted** to a narrow perimeter:
+
+- **`src/presentations/3DView/`** — the 3D view (`3DView.ts`/`.html`/`.css`).
+- **The verification harness** — everything under `verify/`.
+- **Miscellaneous tooling** — build/config plumbing such as `package.json` scripts and
+  `build.mjs`.
+
+**Every other TypeScript file is human-authored and off-limits to AI.** Concretely, `3DView.ts`
+is the *only* `.ts` file AI may edit — the engine (`src/engine/`), the solver (`src/solver/`,
+including all subroutines and status checks), the 2D view (`src/presentations/2DView/`), and
+`src/utils.ts` must stay hand-written. Do not add solver logic, cube-modeling logic, or any other
+core code with AI, even if asked to "just fix" something there; flag it and let the human author
+it. (Editing this doc, `README.md`, and other Markdown is fine.)
+
 ## Commands
 
 ```sh
@@ -13,8 +31,21 @@ npm run watch     # same, rebuilding (and re-copying HTML) on change
 npx tsc --noEmit -p tsconfig.json   # type-check only (no emit; esbuild does the emit)
 ```
 
-There is **no test runner** and **no lint script** yet. Verify changes with `tsc --noEmit`,
-`npm run build`, and by opening the built pages.
+There is **no browser test runner** and **no lint script** yet. Verify changes with
+`tsc --noEmit`, `npm run build`, and by opening the built pages.
+
+The solver, however, has a headless verification harness (`verify/`, see its README):
+
+```sh
+npm run verify                       # node verify/run.mjs count — tally outcomes over random scrambles
+node verify/run.mjs repro <outcome>  # shortest scramble producing an outcome
+node verify/run.mjs trace '<json>'   # step through one scramble
+```
+
+It bundles the *real* engine + solver with esbuild and drives them over thousands of scrambles
+with an instant mock `MovePacer`. It bundles to `verify/dist/` (git-ignored), doesn't touch the
+site build, and is outside `tsconfig`'s `src/**` scope. Re-run it after any change to
+`src/solver/**`.
 
 **Build output.** `build.mjs` (driven by esbuild) emits a flat `build/` directory: the 2D view
 ships as `index.{html,css,js}` (the site entry point) and the 3D view as `3DView.{html,css,js}`.
@@ -57,7 +88,8 @@ depends on nothing.
   `do(...moves)` helper applies a sequence of moves, `await`ing the pacer between each.
 - `src/solver/solutionStatusChecks.ts` — pure predicates ("is this layer/phase solved?").
 - `src/solver/subroutines/` — one module per solve phase (e.g. `solveYellowEdges`,
-  `solveYellowCorners`); each takes the solver and drives moves through `solver.do(...)`.
+  `solveYellowCorners`, `solveMiddleEdges`); each takes the solver and drives moves through
+  `solver.do(...)`.
 - `src/presentations/2DView/` / `src/presentations/3DView/` — the two representations. Each
   folder holds its `.ts` (logic), `.html`, and `.css`; the build flattens them into `build/`.
 
@@ -147,10 +179,10 @@ These are load-bearing. Breaking them brings back the "animate then teleport" bu
 
 `RubiksCubeSolver.run()` is a real **layer-by-layer solve** (yellow face first), **under active
 development**. It inspects the cube, orients yellow to the top, then advances through solve phases
-(`SOLUTION_PHASES`). The yellow-edge and yellow-corner phases are implemented in
-`subroutines/`; the middle-layer and white-face phases are still stubbed (they throw
-"not implemented"), and `run()` currently takes one phase step per call rather than looping to a
-finished cube. Fleshing this out should require **no changes** to the engine or the
+(`SOLUTION_PHASES`). The yellow-edge, yellow-corner, and middle-edge phases are implemented in
+`subroutines/`; the white-face phases (`WhiteFaceEdges`, `WhiteFaceCorners`) are still stubbed
+(they throw "not implemented"), and `run()` currently takes one phase step per call rather than
+looping to a finished cube. Fleshing this out should require **no changes** to the engine or the
 representations — that's the test of whether the decoupling held.
 
 When adding solve logic, drive every move through `solver.do(...)` (one move per `await settled()`)

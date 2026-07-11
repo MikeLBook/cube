@@ -5,13 +5,20 @@ view — and a pluggable solver. The long-term goal is a machine that holds a ph
 scrambles/solves it in a loop; the web views are how we prove out the architecture before
 there's hardware.
 
+> **A note on AI.** This project is a coding puzzle/challenge — modeling the cube and writing the
+> solver by hand is the point, and using AI to represent or solve the cube would be antithetical
+> to its spirit. AI involvement is therefore restricted to the **3D view**
+> (`src/presentations/3DView/`), the **verification harness** (`verify/`), and **miscellaneous
+> tooling** (e.g. `package.json` scripts). Every TypeScript file except `3DView.ts` — the engine,
+> the solver, the 2D view, and `utils.ts` — is human-authored.
+
 ## Layers
 
 The codebase is built in deliberate layers, inner to outer. Each layer knows only about the
 ones beneath it.
 
 ```
-                 models  (types: Position, Orientation, Face, Rotation, LayerMove)
+                 models  (types: Position, Orientation, Face; move names live in IRubiksCubeObserver)
                    │
                   Cube  (one cubie: position + sticker orientation, rotation methods)
                    │
@@ -133,7 +140,7 @@ src/
   solver/
     RubiksCubeSolver.ts     the "person"; async, paced via MovePacer
     solutionStatusChecks.ts predicates: is a given layer/phase solved?
-    subroutines/            per-phase solving routines (solveYellowEdges, solveYellowCorners, …)
+    subroutines/            per-phase solving routines (solveYellowEdges, solveYellowCorners, solveMiddleEdges, …)
   presentations/
     2DView/                 2DView.ts/.html/.css   — 2D net view (observer)
     3DView/                 3DView.ts/.html/.css   — 3D interactive view (observer + MovePacer)
@@ -141,9 +148,10 @@ build.mjs                   esbuild build → build/
 ```
 
 `RubiksCubeSolver.run()` implements a **layer-by-layer solve** (yellow face first). It's
-**under active development**: the yellow-edge and yellow-corner phases are implemented, while the
-middle-layer and white-face phases are still stubbed. Fleshing it out requires no changes to the
-engine or the representations — the decoupling is the point.
+**under active development**: the yellow-edge, yellow-corner, and middle-edge phases are
+implemented, while the white-face phases (`WhiteFaceEdges`, `WhiteFaceCorners`) are still stubbed
+and `throw`. Fleshing it out requires no changes to the engine or the representations — the
+decoupling is the point.
 
 Solver routines never call an engine move directly; they apply moves through `solver.do(...)`,
 which runs each move and `await`s the pacer between them, so a whole algorithm is one paced call:
@@ -164,6 +172,16 @@ The build emits a flat `build/` directory (git-ignored): the 2D view as `index.{
 and the 3D view as `3DView.{html,css,js}`. Open `build/index.html` (2D net) or
 `build/3DView.html` (3D) in a browser. Both pages share cube state through `localStorage`, so a
 scramble on one is reflected on the other.
+
+There is no browser test runner, but the solver has a headless verification harness that bundles
+the real engine + solver and drives them over thousands of random scrambles with an instant
+`MovePacer` (see `verify/README.md`):
+
+```sh
+npm run verify                       # tally outcomes over random scrambles
+node verify/run.mjs repro <outcome>  # find the shortest scramble producing an outcome
+node verify/run.mjs trace '<json>'   # step through one scramble
+```
 
 ### 3D view controls
 
