@@ -10,6 +10,7 @@ import {
 } from "./solutionStatusChecks";
 import solveYellowCorners from "./subroutines/solveYellowCorners";
 import solveYellowEdges from "./subroutines/solveYellowEdges";
+import { solveMiddleEdges } from "./subroutines/solveMiddleEdges";
 
 // Implemented by whatever presents the cube (3D view, 2D view, a robot). After the solver
 // makes a move on the engine it awaits settled(), giving the representation time to present
@@ -151,7 +152,7 @@ export default class RubiksCubeSolver {
           this.solutionPhase = "WhiteFaceEdges";
           this.updateSolutionStatus();
         } else {
-          this.solveMiddleEdges();
+          solveMiddleEdges(this);
         }
         break;
       case "WhiteFaceEdges":
@@ -172,9 +173,6 @@ export default class RubiksCubeSolver {
     }
   }
 
-  solveMiddleEdges() {
-    throw new Error("Method not implemented.");
-  }
   hasSolvedWhiteFaceEdges(): boolean {
     throw new Error("Method not implemented.");
   }
