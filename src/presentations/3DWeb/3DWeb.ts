@@ -193,8 +193,8 @@ class CubeView implements IRubiksCubeObserver, IPacer {
 
   // whole-cube re-orientation -> engine rotateCube + matching world animation
   private readonly CUBE_MOVES: Record<string, CubeMoveDef> = {
-    spinLeft: { rotation: 'XCW', axis: 'Y', angle: -90 },
-    spinRight: { rotation: 'XCCW', axis: 'Y', angle: 90 },
+    spinRight: { rotation: 'XCW', axis: 'Y', angle: -90 },
+    spinLeft: { rotation: 'XCCW', axis: 'Y', angle: 90 },
     rollUp: { rotation: 'YCW', axis: 'X', angle: 90 },
     rollDown: { rotation: 'YCCW', axis: 'X', angle: -90 },
     tiltRight: { rotation: 'ZCW', axis: 'Z', angle: 90 },
