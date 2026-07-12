@@ -6,8 +6,9 @@
 //   node verify/run.mjs repro <outcome>  # shortest scramble producing <outcome>
 //   node verify/run.mjs trace '<json>'   # step through one scramble
 //
-// Outcomes: ok, edges-stuck, corners-stuck, middle-stuck, edge-check-early,
-//           corner-check-early, middle-check-early, checks-disagree, budget
+// Outcomes: ok, edges-stuck, corners-stuck, middle-stuck, white-edges-stuck,
+//           edge-check-early, corner-check-early, middle-check-early,
+//           white-edge-check-early, checks-disagree, budget
 //           (see solverVerification.ts for what each means).
 import * as esbuild from "esbuild";
 import { mkdir } from "node:fs/promises";

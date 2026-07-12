@@ -23,9 +23,11 @@ import RubiksCubeSolver from '../src/solver/RubiksCubeSolver'
 import solveYellowEdges from '../src/solver/subroutines/solveYellowEdges'
 import solveYellowCorners from '../src/solver/subroutines/solveYellowCorners'
 import solveMiddleEdges from '../src/solver/subroutines/solveMiddleEdges'
+import solveWhiteFaceEdges from '../src/solver/subroutines/solveWhiteFaceEdges'
 import {
   hasSolvedYellowEdges,
   hasSolvedYellowCorners,
+  hasSolvedWhiteFaceEdges,
   isMiddleLayerSolved
 } from '../src/solver/solutionStatusChecks'
 import { positionMap } from '../src/utils'
@@ -125,6 +127,15 @@ function middleEdgesSolved(): boolean {
     e18?.orientation.front === c.front
   )
 }
+// Independent ground truth for the white-cross phase, which runs after the cube is
+// flipped white-on-top. Its goal is orientation only — form the cross — not permutation:
+// each of the 4 top edges shows white up. (This is deliberately the same condition the
+// phase targets; there is no stricter honest definition of "cross formed". Its value here
+// is as the loop's exit condition, independent of the solver's own hasSolvedWhiteFaceEdges,
+// so a check that fires early still surfaces as `white-edge-check-early`.)
+function whiteCrossSolved(): boolean {
+  return [2, 4, 6, 8].every((i) => get(i)?.orientation.top === 'W')
+}
 
 const MOVES = [
   'rotateTopCW',
@@ -153,9 +164,11 @@ type Outcome =
   | 'edges-stuck' // edge phase made no progress for many iterations (dead-end path)
   | 'corners-stuck' // corner phase made no progress
   | 'middle-stuck' // middle-edge phase made no progress
+  | 'white-edges-stuck' // white-cross phase made no progress
   | 'edge-check-early' // hasSolvedYellowEdges said done while edges NOT actually solved
   | 'corner-check-early' // hasSolvedYellowCorners said done while corners NOT actually solved
   | 'middle-check-early' // isMiddleLayerSolved said done while equator NOT actually solved
+  | 'white-edge-check-early' // hasSolvedWhiteFaceEdges said done while cross NOT formed
   | 'checks-disagree' // solved per ground truth but a completion check disagrees
   | 'budget' // a subroutine ran away (infinite loop)
 
@@ -185,8 +198,20 @@ async function runSeq(seq: string[]): Promise<Outcome> {
       await solveMiddleEdges(solver)
       if (++g > 80) return 'middle-stuck'
     }
+    // Assert the yellow-side checks agree while yellow is still on top — moveToFinalLayer
+    // below flips white up, after which the yellow-oriented ground truths no longer apply.
     if (!hasSolvedYellowEdges(solver) || !hasSolvedYellowCorners(solver)) return 'checks-disagree'
     if (!isMiddleLayerSolved('top', rubiks)) return 'checks-disagree'
+
+    // Final layer: flip the white face to the top (as run() does), then form the white cross.
+    await (solver as any).moveToFinalLayer()
+    g = 0
+    while (!whiteCrossSolved()) {
+      if (hasSolvedWhiteFaceEdges(solver)) return 'white-edge-check-early'
+      await solveWhiteFaceEdges(solver)
+      if (++g > 80) return 'white-edges-stuck'
+    }
+    if (!hasSolvedWhiteFaceEdges(solver)) return 'checks-disagree'
     return 'ok'
   } catch (e: any) {
     if (e.message === 'BUDGET') return 'budget'
@@ -252,15 +277,34 @@ async function trace(seq: string[]) {
   await (solver as any).performInitialInspection()
   logging = true
 
-  for (let i = 0; i < 40 && (!edgesSolved() || !cornersSolved() || !middleEdgesSolved()); i++) {
-    const phase = !edgesSolved() ? 'edges' : !cornersSolved() ? 'corners' : 'middle'
+  // The yellow-oriented ground truths (edges/corners/middle) are valid only until the cube
+  // is flipped white-on-top; after that, drive by whiteCrossSolved(). `flipped` gates the two.
+  let flipped = false
+  for (let i = 0; i < 40; i++) {
+    let phase: string
+    if (!flipped) {
+      if (edgesSolved() && cornersSolved() && middleEdgesSolved()) {
+        moveLog.length = 0
+        await (solver as any).moveToFinalLayer()
+        flipped = true
+        console.log(`\n--- flip white to top (moveToFinalLayer) ---`)
+        console.log('  moves:', moveLog.join(' ') || '(none — white already on top)')
+        console.log(snap())
+        continue
+      }
+      phase = !edgesSolved() ? 'edges' : !cornersSolved() ? 'corners' : 'middle'
+    } else {
+      if (whiteCrossSolved()) break
+      phase = 'white-edges'
+    }
     moveLog.length = 0
     console.log(`\n--- ${phase} call #${i + 1} ---`)
     console.log(snap())
     try {
       if (phase === 'edges') await solveYellowEdges(solver)
       else if (phase === 'corners') await solveYellowCorners(solver)
-      else await solveMiddleEdges(solver)
+      else if (phase === 'middle') await solveMiddleEdges(solver)
+      else await solveWhiteFaceEdges(solver)
     } catch (e: any) {
       console.log('  THREW:', e.message, '(infinite loop — see the repeating tail below)')
       console.log('  moves:', moveLog.slice(0, 40).join(' '), '...')
@@ -269,7 +313,8 @@ async function trace(seq: string[]) {
     console.log('  moves:', moveLog.join(' ') || '(NONE — no progress; likely the bug)')
   }
   console.log(
-    `\nFinal: edgesSolved=${edgesSolved()} cornersSolved=${cornersSolved()} middleEdgesSolved=${middleEdgesSolved()}`
+    `\nFinal: edgesSolved=${edgesSolved()} cornersSolved=${cornersSolved()} ` +
+      `middleEdgesSolved=${middleEdgesSolved()} whiteCrossSolved=${whiteCrossSolved()}`
   )
 }
 

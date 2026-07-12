@@ -183,11 +183,11 @@ These are load-bearing. Breaking them brings back the "animate then teleport" bu
 ## Status
 
 `RubiksCubeSolver.run()` is a real **layer-by-layer solve** (yellow face first), **under active
-development**. It inspects the cube, orients yellow to the top, then advances through solve phases
-(`SOLUTION_PHASES`). The yellow-edge, yellow-corner, and middle-edge phases are implemented in
-`subroutines/`; the white-face phases (`WhiteFaceEdges`, `WhiteFaceCorners`) are still stubbed
-(they throw "not implemented"), and `run()` currently takes one phase step per call rather than
-looping to a finished cube. Fleshing this out should require **no changes** to the engine or the
+development**. It inspects the cube, orients yellow to the top, then advances a `solutionPhase`
+field through the `SolutionPhase` phases. The yellow-edge, yellow-corner, middle-edge, and white-face-edge phases are
+implemented in `subroutines/`; the last phase, `WhiteFaceCorners`, is still stubbed (it throws
+"not implemented"), and `run()` currently takes one phase step per call rather than looping to a
+finished cube. Fleshing this out should require **no changes** to the engine or the
 representations — that's the test of whether the decoupling held.
 
 When adding solve logic, drive every move through `solver.do(...)` (one move per `await settled()`)

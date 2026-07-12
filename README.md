@@ -153,9 +153,9 @@ build.mjs                   esbuild build → build/
 ```
 
 `RubiksCubeSolver.run()` implements a **layer-by-layer solve** (yellow face first). It's
-**under active development**: the yellow-edge, yellow-corner, and middle-edge phases are
-implemented, while the white-face phases (`WhiteFaceEdges`, `WhiteFaceCorners`) are still stubbed
-and `throw`. Fleshing it out requires no changes to the engine or the representations — the
+**under active development**: the yellow-edge, yellow-corner, middle-edge, and white-face-edge
+phases are implemented, while the last phase (`WhiteFaceCorners`) is still stubbed and `throw`s.
+Fleshing it out requires no changes to the engine or the representations — the
 decoupling is the point.
 
 Solver routines never call an engine move directly; they apply moves through `solver.do(...)`,

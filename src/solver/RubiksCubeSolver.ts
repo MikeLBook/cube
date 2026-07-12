@@ -91,21 +91,20 @@ export default class RubiksCubeSolver {
       : false
 
     if (this.middleLayerSolved) {
-      this.solutionPhase = 'WhiteFaceEdges'
-    } else if (this.yellowLayerSolved) {
-      this.solutionPhase = 'MiddleEdges'
-    }
-    if (!(this.yellowLayerSolved && this.middleLayerSolved && yellowFaceCube.isInTopLayer)) {
-      // Set Yellow as the Top
-      if (yellowFaceCube === this.cubeMap.get(positionMap[23])) {
+      await this.moveToFinalLayer()
+    } else {
+      if (this.yellowLayerSolved) {
+        this.solutionPhase = 'MiddleEdges'
+      }
+      if (yellowFaceCube.isInBottomLayer) {
         await this.do('YCW', 'YCW')
-      } else if (yellowFaceCube === this.cubeMap.get(positionMap[17])) {
+      } else if (yellowFaceCube.isInFrontLayer) {
         await this.do('YCW')
-      } else if (yellowFaceCube === this.cubeMap.get(positionMap[11])) {
+      } else if (yellowFaceCube.isInBackLayer) {
         await this.do('YCCW')
-      } else if (yellowFaceCube === this.cubeMap.get(positionMap[13])) {
+      } else if (yellowFaceCube.isInLeftLayer) {
         await this.do('ZCW')
-      } else if (yellowFaceCube === this.cubeMap.get(positionMap[15])) {
+      } else if (yellowFaceCube.isInRightLayer) {
         await this.do('ZCCW')
       }
     }
@@ -124,6 +123,7 @@ export default class RubiksCubeSolver {
       case 'YellowCorners':
         if (hasSolvedYellowCorners(this)) {
           this.solutionPhase = 'MiddleEdges'
+          this.yellowLayerSolved = true
           this.updateSolutionStatus()
         } else {
           solveYellowCorners(this)
@@ -131,7 +131,7 @@ export default class RubiksCubeSolver {
         break
       case 'MiddleEdges':
         if (isMiddleLayerSolved('top', this.rubiks)) {
-          this.solutionPhase = 'WhiteFaceEdges'
+          await this.moveToFinalLayer()
           this.updateSolutionStatus()
         } else {
           solveMiddleEdges(this)
@@ -152,6 +152,27 @@ export default class RubiksCubeSolver {
           solveWhiteFaceCorners(this)
         }
         break
+    }
+  }
+
+  private async moveToFinalLayer() {
+    this.solutionPhase = 'WhiteFaceEdges'
+    this.middleLayerSolved = true
+    const whiteFace = this.rubiks.cubes.find((cube) => cube.isFace && cube.hasFace('W'))
+    if (!whiteFace) {
+      console.error('Why is there no white face?')
+    } else {
+      if (whiteFace.isInBottomLayer) {
+        await this.do('YCW', 'YCW')
+      } else if (whiteFace.isInLeftLayer) {
+        await this.do('ZCW')
+      } else if (whiteFace.isInRightLayer) {
+        await this.do('ZCCW')
+      } else if (whiteFace.isInFrontLayer) {
+        await this.do('YCW')
+      } else if (whiteFace.isInBackLayer) {
+        await this.do('YCCW')
+      }
     }
   }
 }

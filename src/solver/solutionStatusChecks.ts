@@ -140,9 +140,19 @@ export function hasSolvedYellowCorners(solver: RubiksCubeSolver): boolean {
 }
 
 export function hasSolvedWhiteFaceEdges(solver: RubiksCubeSolver): boolean {
-  throw new Error('Method not implemented.')
+  const backEdge = solver.cubeMap.get(positionMap[2])
+  const leftEdge = solver.cubeMap.get(positionMap[4])
+  const rightEdge = solver.cubeMap.get(positionMap[6])
+  const frontEdge = solver.cubeMap.get(positionMap[8])
+
+  return [backEdge, leftEdge, rightEdge, frontEdge].every((edge) => edge?.orientation.top === 'W')
 }
 
 export function hasSolvedWhiteFaceCorners(solver: RubiksCubeSolver): boolean {
-  throw new Error('Method not implemented.')
+  const backLeft = solver.cubeMap.get(positionMap[1])
+  const backRight = solver.cubeMap.get(positionMap[3])
+  const frontLeft = solver.cubeMap.get(positionMap[7])
+  const frontRight = solver.cubeMap.get(positionMap[9])
+
+  return [backLeft, backRight, frontLeft, frontRight].every((edge) => edge?.orientation.top === 'W')
 }

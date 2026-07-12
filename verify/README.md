@@ -20,20 +20,27 @@ is outside `tsconfig`'s `src/**` scope, so it never affects `tsc --noEmit`.
 
 ## Latest verification result
 
-The yellow layer (edges → corners) **and** the middle-layer edges solve on **every**
-scramble:
+The yellow layer (edges → corners), the middle-layer edges, **and** the final-layer
+white cross form on **every** scramble:
 
 ```
-full pipeline (edges + corners + middle edges): 20000 / 20000  ok
+full pipeline (edges + corners + middle edges + white cross): 20000 / 20000  ok
 ```
 
 Re-run `node verify/run.mjs count` after any change to `src/solver/**` and expect
 `✅ all N scrambles solved`. Anything else is a regression.
 
-> Scope note: the solver currently solves the **yellow layer + middle edges** (phases
-> `YellowEdges`, `YellowCorners`, `MiddleEdges`). `WhiteFaceEdges` onward in
-> `RubiksCubeSolver` are stubs that `throw`. The harness verifies exactly the three
-> implemented phases.
+> Scope note: the solver currently solves through the **final-layer white cross** (phases
+> `YellowEdges`, `YellowCorners`, `MiddleEdges`, `WhiteFaceEdges`). After the middle layer,
+> the harness calls `moveToFinalLayer()` — flipping white on top, as `run()` does — then
+> drives `solveWhiteFaceEdges` until the cross is formed. `WhiteFaceCorners` onward remain
+> stubs; the harness stops at the white cross.
+>
+> Orientation-flip note: the `edges/corners/middle` ground truths are defined
+> **yellow-on-top** and stop applying once `moveToFinalLayer()` flips white up. Both
+> `runSeq` and `trace` assert (or gate) the yellow-side checks *before* the flip, then switch
+> to `whiteCrossSolved()` afterward. The white-cross check is orientation-only (each top edge
+> shows white up) — that is genuinely all the phase targets, so it is not permutation-matched.
 >
 > Middle-edge coverage note: the harder branch — all four bottom edges carry white, so
 > a misplaced equator edge must first be *extracted* to the bottom before re-inserting —
@@ -49,9 +56,9 @@ three tools in order:
 1. **`count`** — classify the failure. Each outcome is a distinct failure mode:
    | outcome | meaning |
    |---|---|
-   | `ok` | solved (only success) |
-   | `edges-stuck` / `corners-stuck` / `middle-stuck` | subroutine returned making **no progress**, solver spun in place |
-   | `edge-check-early` / `corner-check-early` / `middle-check-early` | a completion check reported "done" while the layer was **not** actually solved → phase advanced too early |
+   | `ok` | solved through the white cross (only success) |
+   | `edges-stuck` / `corners-stuck` / `middle-stuck` / `white-edges-stuck` | subroutine returned making **no progress**, solver spun in place |
+   | `edge-check-early` / `corner-check-early` / `middle-check-early` / `white-edge-check-early` | a completion check reported "done" while the layer/cross was **not** actually solved → phase advanced too early |
    | `checks-disagree` | ground truth says solved but a completion check disagrees |
    | `budget` | a subroutine **infinite-looped** (a `while`/`do-while` whose exit condition can never be met) |
 
