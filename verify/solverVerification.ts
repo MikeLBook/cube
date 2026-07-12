@@ -22,7 +22,7 @@ import RubiksCube from '../src/engine/RubiksCube'
 import RubiksCubeSolver from '../src/solver/RubiksCubeSolver'
 import solveYellowEdges from '../src/solver/subroutines/solveYellowEdges'
 import solveYellowCorners from '../src/solver/subroutines/solveYellowCorners'
-import { solveMiddleEdges } from '../src/solver/subroutines/solveMiddleEdges'
+import solveMiddleEdges from '../src/solver/subroutines/solveMiddleEdges'
 import {
   hasSolvedYellowEdges,
   hasSolvedYellowCorners,
@@ -57,6 +57,7 @@ for (const k of Object.getOwnPropertyNames(Object.getPrototypeOf(rubiks))) {
   }
 }
 
+// @ts-ignore
 const get = (i: number) => solver.cubeMap.get(positionMap[i])
 const centers = () => ({
   back: get(11)?.orientation.back,
