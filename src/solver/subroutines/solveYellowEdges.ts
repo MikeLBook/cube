@@ -8,23 +8,34 @@ export default async function solveYellowEdges(solver: RubiksCubeSolver) {
   )
 
   for (const yellowTop of yellowTops) {
-    if (yellowTop.isInLeftLayer) {
+    let solved = true
+    if (
+      yellowTop.isInLeftLayer &&
+      solver.cubeMap.get(positionMap[13])?.orientation.left !== yellowTop.orientation.left
+    ) {
       await solver.do('XCCW')
-    } else if (yellowTop.isInBackLayer) {
+      solved = false
+    } else if (
+      yellowTop.isInBackLayer &&
+      solver.cubeMap.get(positionMap[11])?.orientation.back !== yellowTop.orientation.back
+    ) {
       await solver.do('XCCW', 'XCCW')
-    } else if (yellowTop.isInRightLayer) {
+      solved = false
+    } else if (
+      yellowTop.isInRightLayer &&
+      solver.cubeMap.get(positionMap[15])?.orientation.right !== yellowTop.orientation.right
+    ) {
       await solver.do('XCW')
+      solved = false
     }
 
-    if (solver.cubeMap.get(positionMap[17])?.orientation.front !== yellowTop.orientation.front) {
+    if (!solved) {
       await solver.do('rotateFrontCW', 'rotateFrontCW')
-
       do {
         await solver.do('rotateBottomCW', 'XCCW')
       } while (
         solver.cubeMap.get(positionMap[17])?.orientation.front !== yellowTop.orientation.front
       )
-
       await solver.do('rotateFrontCW', 'rotateFrontCW')
       return
     }
@@ -106,7 +117,6 @@ export default async function solveYellowEdges(solver: RubiksCubeSolver) {
     }
     return
   }
-  debugger
-  console.error('not sure how I got to the end of solveYellowEdges with no operation to perform')
+  console.error('not sure how I got here')
   return
 }

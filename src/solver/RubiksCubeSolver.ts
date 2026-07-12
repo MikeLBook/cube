@@ -13,14 +13,12 @@ import { solveMiddleEdges } from './subroutines/solveMiddleEdges'
 import { LayerMove, Rotation } from '../engine/types'
 import { IPacer } from '../interfaces/IPacer'
 
-const SOLUTION_PHASES = [
-  'YellowEdges',
-  'YellowCorners',
-  'MiddleEdges',
-  'WhiteFaceEdges',
-  'WhiteFaceCorners'
-] as const
-type SolutionPhase = (typeof SOLUTION_PHASES)[number]
+type SolutionPhase =
+  | 'YellowEdges'
+  | 'YellowCorners'
+  | 'MiddleEdges'
+  | 'WhiteFaceEdges'
+  | 'WhiteFaceCorners'
 
 export default class RubiksCubeSolver {
   rubiks: RubiksCube
