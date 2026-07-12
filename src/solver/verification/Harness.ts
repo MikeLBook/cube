@@ -24,10 +24,12 @@ import solveYellowEdges from '../subroutines/solveYellowEdges'
 import solveYellowCorners from '../subroutines/solveYellowCorners'
 import solveMiddleEdges from '../subroutines/solveMiddleEdges'
 import solveWhiteFaceEdges from '../subroutines/solveWhiteFaceEdges'
+import solveWhiteFaceCorners from '../subroutines/solveWhiteFaceCorners'
 import {
   hasSolvedYellowEdges,
   hasSolvedYellowCorners,
   hasSolvedWhiteFaceEdges,
+  hasSolvedWhiteFaceCorners,
   isMiddleLayerSolved
 } from '../solutionStatusChecks'
 import { positionMap } from '../../utils'
@@ -136,6 +138,13 @@ function middleEdgesSolved(): boolean {
 function whiteCrossSolved(): boolean {
   return [2, 4, 6, 8].every((i) => get(i)?.orientation.top === 'W')
 }
+// Independent ground truth for the white-corners phase (the last implemented phase). Its goal,
+// like the cross, is orientation only: each of the 4 top corners shows white up. It does NOT
+// place the top layer's side stickers — the cube is not fully solved at this point, so this is
+// deliberately *not* `rubiks.isSolved`. Mirrors the solver's own hasSolvedWhiteFaceCorners.
+function whiteCornersSolved(): boolean {
+  return [1, 3, 7, 9].every((i) => get(i)?.orientation.top === 'W')
+}
 
 const MOVES = [
   'rotateTopCW',
@@ -165,10 +174,12 @@ type Outcome =
   | 'corners-stuck' // corner phase made no progress
   | 'middle-stuck' // middle-edge phase made no progress
   | 'white-edges-stuck' // white-cross phase made no progress
+  | 'white-corners-stuck' // white-corners phase made no progress
   | 'edge-check-early' // hasSolvedYellowEdges said done while edges NOT actually solved
   | 'corner-check-early' // hasSolvedYellowCorners said done while corners NOT actually solved
   | 'middle-check-early' // isMiddleLayerSolved said done while equator NOT actually solved
   | 'white-edge-check-early' // hasSolvedWhiteFaceEdges said done while cross NOT formed
+  | 'white-corner-check-early' // hasSolvedWhiteFaceCorners said done while corners NOT white-up
   | 'checks-disagree' // solved per ground truth but a completion check disagrees
   | 'budget' // a subroutine ran away (infinite loop)
 
@@ -212,6 +223,15 @@ async function runSeq(seq: string[]): Promise<Outcome> {
       if (++g > 80) return 'white-edges-stuck'
     }
     if (!hasSolvedWhiteFaceEdges(solver)) return 'checks-disagree'
+
+    // White-face corners: orient all 4 top corners white-up (the last implemented phase).
+    g = 0
+    while (!whiteCornersSolved()) {
+      if (hasSolvedWhiteFaceCorners(solver)) return 'white-corner-check-early'
+      await solveWhiteFaceCorners(solver)
+      if (++g > 80) return 'white-corners-stuck'
+    }
+    if (!hasSolvedWhiteFaceCorners(solver)) return 'checks-disagree'
     return 'ok'
   } catch (e: any) {
     if (e.message === 'BUDGET') return 'budget'
@@ -282,7 +302,7 @@ async function trace(seq: string[]) {
   // The yellow-oriented ground truths (edges/corners/middle) are valid only until the cube
   // is flipped white-on-top; after that, drive by whiteCrossSolved(). `flipped` gates the two.
   let flipped = false
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 60; i++) {
     let phase: string
     if (!flipped) {
       if (edgesSolved() && cornersSolved() && middleEdgesSolved()) {
@@ -296,8 +316,8 @@ async function trace(seq: string[]) {
       }
       phase = !edgesSolved() ? 'edges' : !cornersSolved() ? 'corners' : 'middle'
     } else {
-      if (whiteCrossSolved()) break
-      phase = 'white-edges'
+      if (whiteCornersSolved()) break
+      phase = !whiteCrossSolved() ? 'white-edges' : 'white-corners'
     }
     moveLog.length = 0
     console.log(`\n--- ${phase} call #${i + 1} ---`)
@@ -306,7 +326,8 @@ async function trace(seq: string[]) {
       if (phase === 'edges') await solveYellowEdges(solver)
       else if (phase === 'corners') await solveYellowCorners(solver)
       else if (phase === 'middle') await solveMiddleEdges(solver)
-      else await solveWhiteFaceEdges(solver)
+      else if (phase === 'white-edges') await solveWhiteFaceEdges(solver)
+      else await solveWhiteFaceCorners(solver)
     } catch (e: any) {
       console.log('  THREW:', e.message, '(infinite loop — see the repeating tail below)')
       console.log('  moves:', moveLog.slice(0, 40).join(' '), '...')
@@ -316,7 +337,8 @@ async function trace(seq: string[]) {
   }
   console.log(
     `\nFinal: edgesSolved=${edgesSolved()} cornersSolved=${cornersSolved()} ` +
-      `middleEdgesSolved=${middleEdgesSolved()} whiteCrossSolved=${whiteCrossSolved()}`
+      `middleEdgesSolved=${middleEdgesSolved()} whiteCrossSolved=${whiteCrossSolved()} ` +
+      `whiteCornersSolved=${whiteCornersSolved()}`
   )
 }
 

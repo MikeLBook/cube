@@ -7,8 +7,9 @@
 //   node src/solver/verification/run.mjs trace '<json>'   # step through one scramble
 //
 // Outcomes: ok, edges-stuck, corners-stuck, middle-stuck, white-edges-stuck,
-//           edge-check-early, corner-check-early, middle-check-early,
-//           white-edge-check-early, checks-disagree, budget
+//           white-corners-stuck, edge-check-early, corner-check-early,
+//           middle-check-early, white-edge-check-early, white-corner-check-early,
+//           checks-disagree, budget
 //           (see Harness.ts for what each means).
 //
 // Paths are resolved relative to this file (not the cwd) so `npm run verify` and a

@@ -7,7 +7,7 @@ aren't obvious from the code.
 ## Scope of AI involvement (read first)
 
 This project is a **coding puzzle/challenge**: engineering the cube and its solver by hand is the
-whole point. Using AI to design the cube representation or to write the solver would defeat that
+whole point. Using AI to design the cube engine or to write the solver would defeat that
 purpose, so AI assistance is **restricted** to a narrow perimeter:
 
 - **`src/presentations/3DWeb/`** — the 3D view (`3DWeb.ts`/`.html`/`.css`).
@@ -191,11 +191,13 @@ These are load-bearing. Breaking them brings back the "animate then teleport" bu
 
 `RubiksCubeSolver.run()` is a real **layer-by-layer solve** (yellow face first), **under active
 development**. It inspects the cube, orients yellow to the top, then advances a `solutionPhase`
-field through the `SolutionPhase` phases. The yellow-edge, yellow-corner, middle-edge, and white-face-edge phases are
-implemented in `subroutines/`; the last phase, `WhiteFaceCorners`, is still stubbed (it throws
-"not implemented"), and `run()` currently takes one phase step per call rather than looping to a
-finished cube. Fleshing this out should require **no changes** to the engine or the
-representations — that's the test of whether the decoupling held.
+field through the `SolutionPhase` phases. All five phases — yellow-edge, yellow-corner,
+middle-edge, white-face-edge, and white-face-corner — are implemented in `subroutines/`. The
+white-face-corner phase only *orients* the last-layer corners white-up; the top layer's side
+stickers (left/right/front/back) aren't placed yet, so the solve currently stops short of a fully
+solved cube. `run()` also still takes one phase step per call rather than looping to a finished
+cube. Finishing this out should require **no changes** to the engine or the representations —
+that's the test of whether the decoupling held.
 
 When adding solve logic, drive every move through `solver.do(...)` (one move per `await settled()`)
 rather than calling engine methods directly — that's what keeps the solver paced against the

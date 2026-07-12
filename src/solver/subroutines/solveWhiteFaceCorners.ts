@@ -1,7 +1,81 @@
+import { positionMap } from '../../utils'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 
 export default async function solveWhiteFaceCorners(solver: RubiksCubeSolver) {
-  throw new Error('solve white face corners not implemented.')
+  if (
+    solver.rubiks.cubes
+      .filter((cube) => cube.isCorner && cube.isInTopLayer)
+      .every((corner) => corner?.orientation.top !== 'W')
+  ) {
+    await runAlgorithm(solver)
+    return
+  }
+
+  while (solver.cubeMap.get(positionMap[7])?.orientation.top !== 'W') {
+    await solver.do('XCW')
+  }
+
+  const frontRight = solver.cubeMap.get(positionMap[9])
+  const backLeft = solver.cubeMap.get(positionMap[1])
+  const backRight = solver.cubeMap.get(positionMap[3])
+
+  if (
+    frontRight?.orientation.top === 'W' &&
+    backLeft?.orientation.back === 'W' &&
+    backRight?.orientation.back === 'W'
+  ) {
+    await runInverseAlgorithm(solver)
+    return
+  }
+
+  if (
+    frontRight?.orientation.top === 'W' &&
+    backLeft?.orientation.back !== 'W' &&
+    backRight?.orientation.back !== 'W'
+  ) {
+    await runSidewaysAlgorithm(solver)
+    return
+  }
+
+  await runAlgorithm(solver)
+  return
 }
 
-async function runAlgorithm(solver: RubiksCubeSolver) {}
+async function runAlgorithm(solver: RubiksCubeSolver) {
+  await solver.do(
+    'rotateRightCW',
+    'rotateTopCW',
+    'rotateRightCCW',
+    'rotateTopCW',
+    'rotateRightCW',
+    'rotateTopCW',
+    'rotateTopCW',
+    'rotateRightCCW'
+  )
+}
+
+async function runInverseAlgorithm(solver: RubiksCubeSolver) {
+  await solver.do(
+    'rotateLeftCCW',
+    'rotateTopCW',
+    'rotateLeftCW',
+    'rotateTopCW',
+    'rotateLeftCCW',
+    'rotateTopCW',
+    'rotateTopCW',
+    'rotateLeftCW'
+  )
+}
+
+async function runSidewaysAlgorithm(solver: RubiksCubeSolver) {
+  await solver.do(
+    'rotateFrontCW',
+    'rotateTopCW',
+    'rotateFrontCCW',
+    'rotateTopCW',
+    'rotateFrontCW',
+    'rotateTopCW',
+    'rotateTopCW',
+    'rotateFrontCCW'
+  )
+}

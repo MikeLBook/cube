@@ -23,27 +23,30 @@ check rather than breaking it.
 
 ## Latest verification result
 
-The yellow layer (edges → corners), the middle-layer edges, **and** the final-layer
-white cross form on **every** scramble:
+The yellow layer (edges → corners), the middle-layer edges, the final-layer white cross,
+**and** orienting the white corners white-up all succeed on **every** scramble:
 
 ```
-full pipeline (edges + corners + middle edges + white cross): 20000 / 20000  ok
+full pipeline (edges + corners + middle edges + white cross + white corners): 20000 / 20000  ok
 ```
 
 Re-run `npm run verify` after any change to `src/solver/**` and expect
 `✅ all N scrambles solved`. Anything else is a regression.
 
-> Scope note: the solver currently solves through the **final-layer white cross** (phases
-> `YellowEdges`, `YellowCorners`, `MiddleEdges`, `WhiteFaceEdges`). After the middle layer,
-> the harness calls `moveToFinalLayer()` — flipping white on top, as `run()` does — then
-> drives `solveWhiteFaceEdges` until the cross is formed. `WhiteFaceCorners` onward remain
-> stubs; the harness stops at the white cross.
+> Scope note: the solver currently solves through the **white-face corners** (all five phases:
+> `YellowEdges`, `YellowCorners`, `MiddleEdges`, `WhiteFaceEdges`, `WhiteFaceCorners`). After the
+> middle layer, the harness calls `moveToFinalLayer()` — flipping white on top, as `run()` does —
+> then drives `solveWhiteFaceEdges` until the cross is formed and `solveWhiteFaceCorners` until
+> all four top corners show white up. That white-corner orientation is the last implemented step:
+> the top layer's side stickers (left/right/front/back) are **not** yet placed, so the cube is
+> not fully solved and the harness deliberately does **not** assert `rubiks.isSolved`.
 >
 > Orientation-flip note: the `edges/corners/middle` ground truths are defined
 > **yellow-on-top** and stop applying once `moveToFinalLayer()` flips white up. Both
 > `runSeq` and `trace` assert (or gate) the yellow-side checks _before_ the flip, then switch
-> to `whiteCrossSolved()` afterward. The white-cross check is orientation-only (each top edge
-> shows white up) — that is genuinely all the phase targets, so it is not permutation-matched.
+> to `whiteCrossSolved()` / `whiteCornersSolved()` afterward. Both white checks are
+> orientation-only (each top edge/corner shows white up) — that is genuinely all those phases
+> target, so they are not permutation-matched.
 >
 > Middle-edge coverage note: the harder branch — all four bottom edges carry white, so
 > a misplaced equator edge must first be _extracted_ to the bottom before re-inserting —
@@ -59,9 +62,9 @@ three tools in order:
 1. **`count`** — classify the failure. Each outcome is a distinct failure mode:
    | outcome | meaning |
    |---|---|
-   | `ok` | solved through the white cross (only success) |
-   | `edges-stuck` / `corners-stuck` / `middle-stuck` / `white-edges-stuck` | subroutine returned making **no progress**, solver spun in place |
-   | `edge-check-early` / `corner-check-early` / `middle-check-early` / `white-edge-check-early` | a completion check reported "done" while the layer/cross was **not** actually solved → phase advanced too early |
+   | `ok` | solved through the white corners (cross formed + top corners white-up; only success) |
+   | `edges-stuck` / `corners-stuck` / `middle-stuck` / `white-edges-stuck` / `white-corners-stuck` | subroutine returned making **no progress**, solver spun in place |
+   | `edge-check-early` / `corner-check-early` / `middle-check-early` / `white-edge-check-early` / `white-corner-check-early` | a completion check reported "done" while the layer/cross/corners were **not** actually solved → phase advanced too early |
    | `checks-disagree` | ground truth says solved but a completion check disagrees |
    | `budget` | a subroutine **infinite-looped** (a `while`/`do-while` whose exit condition can never be met) |
 
