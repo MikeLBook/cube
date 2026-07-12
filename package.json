@@ -9,7 +9,7 @@
   "scripts": {
     "build": "node build.mjs",
     "watch": "node build.mjs --watch",
-    "verify": "node verify/run.mjs count",
+    "verify": "node src/solver/verification/run.mjs count",
     "format": "npx prettier --write \"**/*.ts\""
   },
   "dependencies": {

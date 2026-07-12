@@ -11,14 +11,16 @@ whole point. Using AI to design the cube representation or to write the solver w
 purpose, so AI assistance is **restricted** to a narrow perimeter:
 
 - **`src/presentations/3DWeb/`** — the 3D view (`3DWeb.ts`/`.html`/`.css`).
-- **The verification harness** — everything under `verify/`.
+- **The verification harness** — everything under `src/solver/verification/`.
 - **Miscellaneous tooling** — build/config plumbing such as `package.json` scripts and
   `build.mjs`.
 
-**Every other TypeScript file is human-authored and off-limits to AI.** Concretely, `3DWeb.ts`
-is the *only* `.ts` file AI may edit — the engine (`src/engine/`), the solver (`src/solver/`,
-including all subroutines and status checks), the shared interfaces (`src/interfaces/`), the 2D
-view (`src/presentations/2DWeb/`), and `src/utils.ts` must stay hand-written. Do not add solver logic, cube-modeling logic, or any other
+**Every other TypeScript file is human-authored and off-limits to AI.** Concretely, the only
+`.ts` files AI may edit are `3DWeb.ts` and the verification harness
+(`src/solver/verification/Harness.ts`) — the engine (`src/engine/`), the rest of the solver
+(everything in `src/solver/` *outside* `verification/`, including all subroutines and status
+checks), the shared interfaces (`src/interfaces/`), the 2D view (`src/presentations/2DWeb/`), and
+`src/utils.ts` must stay hand-written. Do not add solver logic, cube-modeling logic, or any other
 core code with AI, even if asked to "just fix" something there; flag it and let the human author
 it. (Editing this doc, `README.md`, and other Markdown is fine.)
 
@@ -34,18 +36,20 @@ npx tsc --noEmit -p tsconfig.json   # type-check only (no emit; esbuild does the
 There is **no browser test runner** and **no lint script** yet. Verify changes with
 `tsc --noEmit`, `npm run build`, and by opening the built pages.
 
-The solver, however, has a headless verification harness (`verify/`, see its README):
+The solver, however, has a headless verification harness (`src/solver/verification/`, see its
+README):
 
 ```sh
-npm run verify                       # node verify/run.mjs count — tally outcomes over random scrambles
-node verify/run.mjs repro <outcome>  # shortest scramble producing an outcome
-node verify/run.mjs trace '<json>'   # step through one scramble
+npm run verify                       # node src/solver/verification/run.mjs count — tally outcomes over random scrambles
+node src/solver/verification/run.mjs repro <outcome>  # shortest scramble producing an outcome
+node src/solver/verification/run.mjs trace '<json>'   # step through one scramble
 ```
 
 It bundles the *real* engine + solver with esbuild and drives them over thousands of scrambles
-with an instant mock `IPacer`. It bundles to `verify/dist/` (git-ignored), doesn't touch the
-site build, and is outside `tsconfig`'s `src/**` scope. Re-run it after any change to
-`src/solver/**`.
+with an instant mock `IPacer`. It bundles to a git-ignored `dist/` beside itself
+(`src/solver/verification/dist/`), doesn't touch the site build, and — though it lives under
+`src/` — is excluded from `tsconfig.json` (via the `exclude` list), so it never affects
+`tsc --noEmit`. Re-run it after any change to `src/solver/**`.
 
 **Build output.** `build.mjs` (driven by esbuild) emits a flat `build/` directory: the 2D view
 ships as `index.{html,css,js}` (the site entry point) and the 3D view as `3DWeb.{html,css,js}`.

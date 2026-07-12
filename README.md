@@ -8,9 +8,10 @@ there's hardware.
 > **A note on AI.** This project is a coding puzzle/challenge — modeling the cube and writing the
 > solver by hand is the point, and using AI to represent or solve the cube would be antithetical
 > to its spirit. AI involvement is therefore restricted to the **3D view**
-> (`src/presentations/3DWeb/`), the **verification harness** (`verify/`), and **miscellaneous
-> tooling** (e.g. `package.json` scripts). Every TypeScript file except `3DWeb.ts` — the engine,
-> the solver, the 2D view, and `utils.ts` — is human-authored.
+> (`src/presentations/3DWeb/`), the **verification harness** (`src/solver/verification/`), and
+> **miscellaneous tooling** (e.g. `package.json` scripts). Every TypeScript file except `3DWeb.ts`
+> and the harness's `Harness.ts` — the engine, the rest of the solver, the 2D view, and
+> `utils.ts` — is human-authored.
 
 ## Layers
 
@@ -180,12 +181,12 @@ scramble on one is reflected on the other.
 
 There is no browser test runner, but the solver has a headless verification harness that bundles
 the real engine + solver and drives them over thousands of random scrambles with an instant
-`IPacer` (see `verify/README.md`):
+`IPacer` (see `src/solver/verification/README.md`):
 
 ```sh
 npm run verify                       # tally outcomes over random scrambles
-node verify/run.mjs repro <outcome>  # find the shortest scramble producing an outcome
-node verify/run.mjs trace '<json>'   # step through one scramble
+node src/solver/verification/run.mjs repro <outcome>  # find the shortest scramble producing an outcome
+node src/solver/verification/run.mjs trace '<json>'   # step through one scramble
 ```
 
 ### 3D view controls

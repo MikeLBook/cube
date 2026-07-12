@@ -1,16 +1,16 @@
 // Headless verification harness for the solver.
 //
 // The app has no test runner. This harness bundles the *real* engine + solver
-// (via esbuild, same as the site build — see verify/run.mjs) and exercises the
-// solver over thousands of random scrambles with a mock, instant `MovePacer`.
+// (via esbuild, same as the site build — see run.mjs alongside this file) and exercises
+// the solver over thousands of random scrambles with a mock, instant `MovePacer`.
 //
 // Why it exists: the solver mutates the engine one move at a time and is otherwise
 // impossible to eyeball. This harness gives three tools that together make solver
-// bugs tractable — see verify/README.md for the full playbook.
+// bugs tractable — see README.md alongside this file for the full playbook.
 //
-//   node verify/run.mjs count            # tally outcomes over N scrambles
-//   node verify/run.mjs repro <outcome>  # find the SHORTEST scramble with that outcome
-//   node verify/run.mjs trace '<json>'   # step through one scramble, logging every move
+//   node src/solver/verification/run.mjs count            # tally outcomes over N scrambles
+//   node src/solver/verification/run.mjs repro <outcome>  # find the SHORTEST scramble with that outcome
+//   node src/solver/verification/run.mjs trace '<json>'   # step through one scramble, logging every move
 //
 // The independent `edgesSolved`/`cornersSolved` checkers below compare stickers to
 // the *centers* and are deliberately NOT the solver's own solutionStatusChecks —
@@ -18,19 +18,19 @@
 
 console.error = () => {} // solver logs a diagnostic on its dead-end path; silence the spam.
 
-import RubiksCube from '../src/engine/RubiksCube'
-import RubiksCubeSolver from '../src/solver/RubiksCubeSolver'
-import solveYellowEdges from '../src/solver/subroutines/solveYellowEdges'
-import solveYellowCorners from '../src/solver/subroutines/solveYellowCorners'
-import solveMiddleEdges from '../src/solver/subroutines/solveMiddleEdges'
-import solveWhiteFaceEdges from '../src/solver/subroutines/solveWhiteFaceEdges'
+import RubiksCube from '../../engine/RubiksCube'
+import RubiksCubeSolver from '../RubiksCubeSolver'
+import solveYellowEdges from '../subroutines/solveYellowEdges'
+import solveYellowCorners from '../subroutines/solveYellowCorners'
+import solveMiddleEdges from '../subroutines/solveMiddleEdges'
+import solveWhiteFaceEdges from '../subroutines/solveWhiteFaceEdges'
 import {
   hasSolvedYellowEdges,
   hasSolvedYellowCorners,
   hasSolvedWhiteFaceEdges,
   isMiddleLayerSolved
-} from '../src/solver/solutionStatusChecks'
-import { positionMap } from '../src/utils'
+} from '../solutionStatusChecks'
+import { positionMap } from '../../utils'
 
 const rubiks = RubiksCube.getInstance()
 
@@ -246,7 +246,9 @@ async function repro(want: string) {
       if ((await runSeq(seq)) === want) {
         console.log(`REPRO (${len} moves) for "${want}":`)
         console.log(JSON.stringify(seq))
-        console.log(`\nInspect it with:  node verify/run.mjs trace '${JSON.stringify(seq)}'`)
+        console.log(
+          `\nInspect it with:  node src/solver/verification/run.mjs trace '${JSON.stringify(seq)}'`
+        )
         return
       }
     }

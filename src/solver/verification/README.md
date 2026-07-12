@@ -8,15 +8,17 @@ scrambles with a mock, instant `MovePacer`.
 ## Running it
 
 ```sh
-node verify/run.mjs count            # tally outcomes over 5000 random scrambles
-node verify/run.mjs count 20000      # ...over N scrambles
-node verify/run.mjs repro <outcome>  # find the SHORTEST scramble with that outcome
-node verify/run.mjs trace '["rotateBackCCW"]'   # step through one scramble
+npm run verify                       # tally outcomes over 5000 random scrambles
+node src/solver/verification/run.mjs count 20000      # ...over N scrambles
+node src/solver/verification/run.mjs repro <outcome>  # find the SHORTEST scramble with that outcome
+node src/solver/verification/run.mjs trace '["rotateBackCCW"]'   # step through one scramble
 ```
 
-`build/` is git-ignored and wiped by `npm run build`, so this harness bundles to
-`verify/dist/` (also git-ignored) instead. It does **not** touch the site build and
-is outside `tsconfig`'s `src/**` scope, so it never affects `tsc --noEmit`.
+The harness lives in `src/solver/verification/` (`Harness.ts` + `run.mjs`). `build/` is
+git-ignored and wiped by `npm run build`, so `run.mjs` bundles to a git-ignored `dist/`
+beside itself (`src/solver/verification/dist/`) instead. It does **not** touch the site
+build, and although it now sits under `src/`, `tsconfig.json` **excludes**
+`src/solver/verification`, so it never affects `tsc --noEmit`.
 
 ## Latest verification result
 
@@ -27,7 +29,7 @@ white cross form on **every** scramble:
 full pipeline (edges + corners + middle edges + white cross): 20000 / 20000  ok
 ```
 
-Re-run `node verify/run.mjs count` after any change to `src/solver/**` and expect
+Re-run `npm run verify` after any change to `src/solver/**` and expect
 `✅ all N scrambles solved`. Anything else is a regression.
 
 > Scope note: the solver currently solves through the **final-layer white cross** (phases
