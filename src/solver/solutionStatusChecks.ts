@@ -138,3 +138,11 @@ export function hasSolvedYellowCorners(solver: RubiksCubeSolver): boolean {
 
   return true
 }
+
+export function hasSolvedWhiteFaceEdges(solver: RubiksCubeSolver): boolean {
+  throw new Error('Method not implemented.')
+}
+
+export function hasSolvedWhiteFaceCorners(solver: RubiksCubeSolver): boolean {
+  throw new Error('Method not implemented.')
+}

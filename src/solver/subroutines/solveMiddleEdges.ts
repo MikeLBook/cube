@@ -2,7 +2,7 @@ import Cube from '../../engine/Cube'
 import { positionMap } from '../../utils'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 
-export async function solveMiddleEdges(solver: RubiksCubeSolver) {
+export default async function solveMiddleEdges(solver: RubiksCubeSolver) {
   const bottomEdge = solver.rubiks.cubes.find((cube) => cube.isInBottomLayer && !cube.hasFace('W'))
 
   if (bottomEdge) {

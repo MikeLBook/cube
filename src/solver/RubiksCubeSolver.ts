@@ -2,6 +2,8 @@ import Cube from '../engine/Cube'
 import RubiksCube from '../engine/RubiksCube'
 import { isRotation, positionMap } from '../utils'
 import {
+  hasSolvedWhiteFaceCorners,
+  hasSolvedWhiteFaceEdges,
   hasSolvedYellowCorners,
   hasSolvedYellowEdges,
   isMiddleLayerSolved,
@@ -9,9 +11,11 @@ import {
 } from './solutionStatusChecks'
 import solveYellowCorners from './subroutines/solveYellowCorners'
 import solveYellowEdges from './subroutines/solveYellowEdges'
-import { solveMiddleEdges } from './subroutines/solveMiddleEdges'
+import solveMiddleEdges from './subroutines/solveMiddleEdges'
 import { LayerMove, Rotation } from '../engine/types'
 import { IPacer } from '../interfaces/IPacer'
+import solveWhiteFaceCorners from './subroutines/solveWhiteFaceCorners'
+import solveWhiteFaceEdges from './subroutines/solveWhiteFaceEdges'
 
 type SolutionPhase =
   | 'YellowEdges'
@@ -134,33 +138,20 @@ export default class RubiksCubeSolver {
         }
         break
       case 'WhiteFaceEdges':
-        if (this.hasSolvedWhiteFaceEdges()) {
+        if (hasSolvedWhiteFaceEdges(this)) {
           this.solutionPhase = 'WhiteFaceCorners'
           this.updateSolutionStatus()
         } else {
-          this.solveWhiteFaceEdges()
+          solveWhiteFaceEdges(this)
         }
         break
       case 'WhiteFaceCorners':
-        if (this.hasSolvedWhiteFaceCorners()) {
+        if (hasSolvedWhiteFaceCorners(this)) {
           console.log('what now')
         } else {
-          this.solveWhiteFaceCorners()
+          solveWhiteFaceCorners(this)
         }
         break
     }
-  }
-
-  hasSolvedWhiteFaceEdges(): boolean {
-    throw new Error('Method not implemented.')
-  }
-  solveWhiteFaceEdges() {
-    throw new Error('Method not implemented.')
-  }
-  hasSolvedWhiteFaceCorners(): boolean {
-    throw new Error('Method not implemented.')
-  }
-  solveWhiteFaceCorners() {
-    throw new Error('Method not implemented.')
   }
 }
