@@ -3,7 +3,7 @@ import Cube from '../../engine/Cube'
 import { Face, LayerMove, Orientation, Rotation } from '../../engine/types'
 import RubiksCubeSolver from '../../solver/RubiksCubeSolver'
 import IRubiksCubeObserver from '../../interfaces/IRubiksCubeObserver'
-import { IPacer } from '../../interfaces/IPacer'
+import { IMovePacer } from '../../interfaces/IMovePacer'
 
 type Axis = 'X' | 'Y' | 'Z'
 type Status = 'free' | 'ready' | 'scrambling' | 'solving' | 'solved'
@@ -51,9 +51,9 @@ interface CubieEntry {
  * the animation, every source is paced: the solver and scramble are async "drivers" that
  * mutate then await settled(); discrete manual turns only apply while the view is idle.
  */
-class CubeView implements IRubiksCubeObserver, IPacer {
+class CubeView implements IRubiksCubeObserver, IMovePacer {
   private rubiks = RubiksCube.getInstance()
-  // We are this solver's pacer (see MovePacer): it mutates the engine directly and awaits
+  // We are this solver's pacer (see IMovePacer): it mutates the engine directly and awaits
   // settled() after each move, so we present one turn at a time.
   private solver = new RubiksCubeSolver(this.rubiks, this)
 
@@ -355,7 +355,7 @@ class CubeView implements IRubiksCubeObserver, IPacer {
     })
   }
 
-  // MovePacer: a driver awaits this after each move. Resolve immediately when idle, otherwise
+  // IMovePacer: a driver awaits this after each move. Resolve immediately when idle, otherwise
   // once the in-flight animation settles (see flushSettled). This is how the "reporter" tells
   // the "solver" it may proceed — a robot would resolve it when the physical turn completes.
   public settled(): Promise<void> {

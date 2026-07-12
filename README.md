@@ -50,7 +50,7 @@ the move that caused it:
 ```ts
 // src/interfaces/IRubiksCubeObserver.ts
 interface IRubiksCubeObserver {
-  onMove: (move?: LayerMove | Rotation) => void;
+  onMove: (move?: LayerMove | Rotation) => void
 }
 ```
 
@@ -63,7 +63,7 @@ input → RubiksCube method call → onMove(move) → representation presents th
 
 - The **2D view** (`src/presentations/2DWeb/`) is the simplest consumer: `onMove` just
   re-renders the net and writes the state to `localStorage` (shared with the 3D page).
-- The **3D view** (`src/presentations/3DWeb/`) animates. *Every* change is animated the
+- The **3D view** (`src/presentations/3DWeb/`) animates. _Every_ change is animated the
   same way: after the fact, from the move in the `onMove` event — there is one animation path,
   whether the move came from a drag, the keyboard, a button, a scramble, or the solver.
 
@@ -84,9 +84,9 @@ every representation; the only thing it knows about the outside world is a small
 uses to pace itself:
 
 ```ts
-// src/interfaces/IPacer.ts
-interface IPacer {
-  settled(): Promise<void>; // resolves when the latest move has been fully presented
+// src/interfaces/IMovePacer.ts
+interface IMovePacer {
+  settled(): Promise<void> // resolves when the latest move has been fully presented
 }
 ```
 
@@ -106,19 +106,19 @@ to tell the solver to slow down: it resolves `settled()` only once it has finish
 the move. This keeps the model and the representation in **lock-step** — essential for the
 eventual robot, where the model must not race ahead of the physical cube.
 
-Each representation implements `IPacer.settled()` for its own medium:
+Each representation implements `IMovePacer.settled()` for its own medium:
 
-| Representation | `settled()` resolves when… |
-| --- | --- |
-| 2D view / headless tests | immediately (presentation is instant) |
-| 3D view | the move's CSS animation finishes |
-| Robot (future) | the physical turn completes (and rejects on a fault) |
+| Representation           | `settled()` resolves when…                           |
+| ------------------------ | ---------------------------------------------------- |
+| 2D view / headless tests | immediately (presentation is instant)                |
+| 3D view                  | the move's CSS animation finishes                    |
+| Robot (future)           | the physical turn completes (and rejects on a fault) |
 
 In the 3D view, `CubeView` implements both `IRubiksCubeObserver` (to learn what changed) and
-`IPacer` (to pace a driver). One click runs the solver's whole paced sequence; `reset()`
+`IMovePacer` (to pace a driver). One click runs the solver's whole paced sequence; `reset()`
 aborts an in-flight driver via the `AbortSignal`.
 
-The same `IPacer` mechanism paces the 3D view's own **scramble**: it's just another paced
+The same `IMovePacer` mechanism paces the 3D view's own **scramble**: it's just another paced
 driver (apply a random turn → `await settled()` → repeat), so the solver isn't special — any
 multi-move source shares one pacing path. Only one driver runs at a time, and manual input is
 locked out while one is active.
@@ -141,15 +141,15 @@ src/
     RubiksCube.ts           the cube; source of truth; emits onMove
   interfaces/
     IRubiksCubeObserver.ts  observer interface (onMove)
-    IPacer.ts               pacing interface (settled) the solver depends on
+    IMovePacer.ts               pacing interface (settled) the solver depends on
   utils.ts                  (de)serialization guards, position map, isRotation
   solver/
-    RubiksCubeSolver.ts     the "person"; async, paced via IPacer
+    RubiksCubeSolver.ts     the "person"; async, paced via IMovePacer
     solutionStatusChecks.ts predicates: is a given layer/phase solved?
     subroutines/            per-phase solving routines (solveYellowEdges, solveYellowCorners, solveMiddleEdges, …)
   presentations/
     2DWeb/                  2DWeb.ts/.html/.css   — 2D net view (observer)
-    3DWeb/                  3DWeb.ts/.html/.css   — 3D interactive view (observer + IPacer)
+    3DWeb/                  3DWeb.ts/.html/.css   — 3D interactive view (observer + IMovePacer)
 build.mjs                   esbuild build → build/
 ```
 
@@ -163,7 +163,7 @@ Solver routines never call an engine move directly; they apply moves through `so
 which runs each move and `await`s the pacer between them, so a whole algorithm is one paced call:
 
 ```ts
-await solver.do("rotateFrontCW", "rotateFrontCW", "rotateBottomCW");
+await solver.do('rotateFrontCW', 'rotateFrontCW', 'rotateBottomCW')
 ```
 
 ## Build & run
@@ -181,7 +181,7 @@ scramble on one is reflected on the other.
 
 There is no browser test runner, but the solver has a headless verification harness that bundles
 the real engine + solver and drives them over thousands of random scrambles with an instant
-`IPacer` (see `src/solver/verification/README.md`):
+`IMovePacer` (see `src/solver/verification/README.md`):
 
 ```sh
 npm run verify                       # tally outcomes over random scrambles

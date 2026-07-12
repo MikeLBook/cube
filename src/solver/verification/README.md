@@ -1,9 +1,9 @@
 # Solver verification & troubleshooting
 
 The app has **no test runner**. This folder is how we verify and debug the solver
-without opening a browser. It bundles the *real* engine + solver (via esbuild, the
+without opening a browser. It bundles the _real_ engine + solver (via esbuild, the
 same bundler the site uses) and drives them headlessly over thousands of random
-scrambles with a mock, instant `MovePacer`.
+scrambles with a mock, instant `IMovePacer`.
 
 ## Running it
 
@@ -17,8 +17,9 @@ node src/solver/verification/run.mjs trace '["rotateBackCCW"]'   # step through 
 The harness lives in `src/solver/verification/` (`Harness.ts` + `run.mjs`). `build/` is
 git-ignored and wiped by `npm run build`, so `run.mjs` bundles to a git-ignored `dist/`
 beside itself (`src/solver/verification/dist/`) instead. It does **not** touch the site
-build, and although it now sits under `src/`, `tsconfig.json` **excludes**
-`src/solver/verification`, so it never affects `tsc --noEmit`.
+build. Because it sits under `src/` it's part of the `tsc --noEmit` project (so node types
+resolve and the editor checks it), but it's written to type-check cleanly and so passes the
+check rather than breaking it.
 
 ## Latest verification result
 
@@ -40,12 +41,12 @@ Re-run `npm run verify` after any change to `src/solver/**` and expect
 >
 > Orientation-flip note: the `edges/corners/middle` ground truths are defined
 > **yellow-on-top** and stop applying once `moveToFinalLayer()` flips white up. Both
-> `runSeq` and `trace` assert (or gate) the yellow-side checks *before* the flip, then switch
+> `runSeq` and `trace` assert (or gate) the yellow-side checks _before_ the flip, then switch
 > to `whiteCrossSolved()` afterward. The white-cross check is orientation-only (each top edge
 > shows white up) — that is genuinely all the phase targets, so it is not permutation-matched.
 >
 > Middle-edge coverage note: the harder branch — all four bottom edges carry white, so
-> a misplaced equator edge must first be *extracted* to the bottom before re-inserting —
+> a misplaced equator edge must first be _extracted_ to the bottom before re-inserting —
 > fires in ~38% of solves, so it is genuinely exercised, not skipped. The equator
 > extraction's two `if` blocks (`isInLeftLayer` / `isInRightLayer`) never both fire in a
 > single call, so the missing `else` is safe (verified: 0 double-fires / 20000).
@@ -83,12 +84,12 @@ that's how the runaway loop's state was captured. Remove it afterward.
 - **The cubie rotation method names don't match the geometric axis.** On `Cube`,
   `rotateXCW` keeps top/bottom fixed (it's a spin about the **vertical** axis);
   `rotateYCW` keeps left/right fixed (spin about the **left-right** axis). Track
-  *stickers*, not the letters. `rotateRubiksCube("XCCW")` brings the **left** face
+  _stickers_, not the letters. `rotateRubiksCube("XCCW")` brings the **left** face
   to the **front**; `"XCW"` brings the **right** face to the front.
 - **The alignment loops keep the bottom layer fixed while spinning the rest.** A
   `rotateBottomCW()` immediately followed by `rotateRubiksCube("XCCW")` cancels out
   for bottom-layer cubies (`rotateXCW` then `rotateXCCW` = identity) but rotates the
-  top+middle. That's *why* naive left/right mirroring of a subroutine is wrong (see
+  top+middle. That's _why_ naive left/right mirroring of a subroutine is wrong (see
   below) — the loop reorients the whole cube differently on each side.
 
 ### The left↔right subroutine symmetry (transform `T`)
@@ -104,7 +105,7 @@ Verified: `T` maps `solveBottomLeft` (loop **and** insert) exactly onto
 `solveBottomRight`, and `solveFrontLeftCorner` exactly onto `solveFrontRightCorner`.
 The bugs fixed were Right-side routines that had been copy-pasted from the Left side
 without applying `T` to the face turns (they still used `Left` turns, and the naive
-mirror using `RightCW`↔`LeftCCW` inserts into the *wrong* slot — it lands a corner in
+mirror using `RightCW`↔`LeftCCW` inserts into the _wrong_ slot — it lands a corner in
 the **back-right** slot instead of **front-right**).
 
 ### Reference: which insertion trigger fills which top-corner slot
@@ -113,13 +114,13 @@ From a solved cube, each 4-move `[Bottom, Face, Bottom', Face']` trigger disturb
 exactly one top corner. Handy when checking a corner-insertion routine targets the
 slot its alignment loop set up:
 
-| trigger | slot filled |
-|---|---|
-| `Bottom- Left- Bottom+ Left+` | 7 (front-left) — used by `solveBottomLeft` |
+| trigger                         | slot filled                                  |
+| ------------------------------- | -------------------------------------------- |
+| `Bottom- Left- Bottom+ Left+`   | 7 (front-left) — used by `solveBottomLeft`   |
 | `Bottom+ Right- Bottom- Right+` | 9 (front-right) — used by `solveBottomRight` |
-| `Bottom+ Left+ Bottom- Left-` | 1 (back-left) |
-| `Bottom+ Right+ Bottom- Right-` | 3 (back-right) |
-| `Bottom+ Front+ Bottom- Front-` | 9 (front-right) |
+| `Bottom+ Left+ Bottom- Left-`   | 1 (back-left)                                |
+| `Bottom+ Right+ Bottom- Right-` | 3 (back-right)                               |
+| `Bottom+ Front+ Bottom- Front-` | 9 (front-right)                              |
 
 (`+` = CW, `-` = CCW. Slot numbers are `positionMap` indices; see
 `RubiksCube.ts`'s ASCII layout.)

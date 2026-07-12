@@ -18,7 +18,7 @@ purpose, so AI assistance is **restricted** to a narrow perimeter:
 **Every other TypeScript file is human-authored and off-limits to AI.** Concretely, the only
 `.ts` files AI may edit are `3DWeb.ts` and the verification harness
 (`src/solver/verification/Harness.ts`) — the engine (`src/engine/`), the rest of the solver
-(everything in `src/solver/` *outside* `verification/`, including all subroutines and status
+(everything in `src/solver/` _outside_ `verification/`, including all subroutines and status
 checks), the shared interfaces (`src/interfaces/`), the 2D view (`src/presentations/2DWeb/`), and
 `src/utils.ts` must stay hand-written. Do not add solver logic, cube-modeling logic, or any other
 core code with AI, even if asked to "just fix" something there; flag it and let the human author
@@ -45,11 +45,12 @@ node src/solver/verification/run.mjs repro <outcome>  # shortest scramble produc
 node src/solver/verification/run.mjs trace '<json>'   # step through one scramble
 ```
 
-It bundles the *real* engine + solver with esbuild and drives them over thousands of scrambles
-with an instant mock `IPacer`. It bundles to a git-ignored `dist/` beside itself
-(`src/solver/verification/dist/`), doesn't touch the site build, and — though it lives under
-`src/` — is excluded from `tsconfig.json` (via the `exclude` list), so it never affects
-`tsc --noEmit`. Re-run it after any change to `src/solver/**`.
+It bundles the _real_ engine + solver with esbuild and drives them over thousands of scrambles
+with an instant mock `IMovePacer`. It bundles to a git-ignored `dist/` beside itself
+(`src/solver/verification/dist/`) and doesn't touch the site build. Because it lives under
+`src/` it's part of the `tsc --noEmit` project (so node types resolve and the editor checks it),
+but it's written to type-check cleanly, so it passes the check rather than breaking it. Re-run it
+after any change to `src/solver/**`.
 
 **Build output.** `build.mjs` (driven by esbuild) emits a flat `build/` directory: the 2D view
 ships as `index.{html,css,js}` (the site entry point) and the 3D view as `3DWeb.{html,css,js}`.
@@ -81,7 +82,7 @@ depends on nothing.
   `LAYER_MOVES`/`ROTATIONS` constants and their `LayerMove`/`Rotation` types.
 - `src/interfaces/IRubiksCubeObserver.ts` — the `IRubiksCubeObserver` interface (`onMove`,
   the one-way contract representations implement); default-exported.
-- `src/interfaces/IPacer.ts` — the `IPacer` interface (`settled()`) the solver depends on to
+- `src/interfaces/IMovePacer.ts` — the `IMovePacer` interface (`settled()`) the solver depends on to
   pace itself against a representation.
 - `src/engine/Cube.ts` — one cubie. Holds `position` + `orientation` and the six axis rotations
   (`rotateXCW`…`rotateZCCW`). **Layer membership is derived from orientation, not position**
@@ -91,8 +92,8 @@ depends on nothing.
   Exposes the moves, `isSolved` (a getter), `setState`/serialization, and the observer registry.
   **Pure and synchronous** — no DOM, timing, animation, or async. Each move method mutates the
   cubies in place and then calls the private `onMove(move)` to notify observers.
-- `src/solver/RubiksCubeSolver.ts` — the solver; depends on `IPacer`
-  (`src/interfaces/IPacer.ts`). Its `do(...moves)` helper applies a sequence of moves,
+- `src/solver/RubiksCubeSolver.ts` — the solver; depends on `IMovePacer`
+  (`src/interfaces/IMovePacer.ts`). Its `do(...moves)` helper applies a sequence of moves,
   `await`ing the pacer between each.
 - `src/solver/solutionStatusChecks.ts` — pure predicates ("is this layer/phase solved?").
 - `src/solver/subroutines/` — one module per solve phase (e.g. `solveYellowEdges`,
@@ -118,8 +119,10 @@ source → RubiksCube method → onMove(move) → representation presents the ch
   and the representation reacts via `onMove`. The solver's only outward dependency is:
 
   ```ts
-  // src/interfaces/IPacer.ts
-  interface IPacer { settled(): Promise<void>; }
+  // src/interfaces/IMovePacer.ts
+  interface IMovePacer {
+    settled(): Promise<void>
+  }
   ```
 
   The solver is **async** and makes **one move per `await settled()`**. `settled()` resolves once
@@ -148,8 +151,8 @@ source → RubiksCube method → onMove(move) → representation presents the ch
    animation timing; buffering (let the solver finish instantly, replay later) would let the model
    race ahead of the physical cube, which is exactly wrong for a robot.
 
-5. **One animation path in the 3D view.** *Every* change — drag, keyboard, button, scramble,
-   solver — mutates the engine first and is animated *after the fact* in `onMove`. There is no
+5. **One animation path in the 3D view.** _Every_ change — drag, keyboard, button, scramble,
+   solver — mutates the engine first and is animated _after the fact_ in `onMove`. There is no
    separate "animate then commit" path. This is the literal realization of "all downstream effects
    flow through `onMove`."
 

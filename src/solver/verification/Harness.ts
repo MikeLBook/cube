@@ -2,7 +2,7 @@
 //
 // The app has no test runner. This harness bundles the *real* engine + solver
 // (via esbuild, same as the site build — see run.mjs alongside this file) and exercises
-// the solver over thousands of random scrambles with a mock, instant `MovePacer`.
+// the solver over thousands of random scrambles with a mock, instant `IMovePacer`.
 //
 // Why it exists: the solver mutates the engine one move at a time and is otherwise
 // impossible to eyeball. This harness gives three tools that together make solver

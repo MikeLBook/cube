@@ -13,7 +13,7 @@ import solveYellowCorners from './subroutines/solveYellowCorners'
 import solveYellowEdges from './subroutines/solveYellowEdges'
 import solveMiddleEdges from './subroutines/solveMiddleEdges'
 import { LayerMove, Rotation } from '../engine/types'
-import { IPacer } from '../interfaces/IPacer'
+import { IMovePacer } from '../interfaces/IMovePacer'
 import solveWhiteFaceCorners from './subroutines/solveWhiteFaceCorners'
 import solveWhiteFaceEdges from './subroutines/solveWhiteFaceEdges'
 
@@ -26,12 +26,12 @@ type SolutionPhase =
 
 export default class RubiksCubeSolver {
   rubiks: RubiksCube
-  pacer: IPacer
+  pacer: IMovePacer
   private yellowLayerSolved: boolean | undefined
   private middleLayerSolved: boolean | undefined
   private solutionPhase: SolutionPhase = 'YellowEdges'
 
-  constructor(rubiks: RubiksCube, pacer: IPacer) {
+  constructor(rubiks: RubiksCube, pacer: IMovePacer) {
     this.rubiks = rubiks
     this.pacer = pacer
   }
