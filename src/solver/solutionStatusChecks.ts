@@ -1,5 +1,5 @@
 import Cube from '../engine/Cube'
-import { OrientationKey } from '../engine/models'
+import { OrientationKey } from '../engine/types'
 import RubiksCube from '../engine/RubiksCube'
 import { JSONEquals, positionMap } from '../utils'
 import RubiksCubeSolver from './RubiksCubeSolver'

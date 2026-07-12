@@ -1,7 +1,6 @@
 import { JSONEquals } from '../../utils'
-import { FACES, Orientation } from '../../engine/models'
+import { FACES, LAYER_MOVES, Orientation, ROTATIONS } from '../../engine/types'
 import RubiksCube from '../../engine/RubiksCube'
-import IRubiksCubeObserver, { LAYER_MOVES } from '../../engine/IRubiksCubeObserver'
 
 const rubiksCube = RubiksCube.getInstance()
 const cubeState = localStorage.getItem('cubeState')
@@ -11,42 +10,15 @@ LAYER_MOVES.forEach((move) => {
   document.getElementById(move)?.addEventListener('click', () => rubiksCube[move]())
 })
 
-document.querySelector('#rotateCubeXCW')?.addEventListener('click', () => {
-  rubiksCube.rotateRubiksCube('XCW')
-})
-
-document.querySelector('#rotateCubeXCCW')?.addEventListener('click', () => {
-  rubiksCube.rotateRubiksCube('XCCW')
-})
-
-document.querySelector('#rotateCubeYCW')?.addEventListener('click', () => {
-  rubiksCube.rotateRubiksCube('YCW')
-})
-
-document.querySelector('#rotateCubeYCCW')?.addEventListener('click', () => {
-  rubiksCube.rotateRubiksCube('YCCW')
-})
-
-document.querySelector('#rotateCubeZCW')?.addEventListener('click', () => {
-  rubiksCube.rotateRubiksCube('ZCW')
-})
-
-document.querySelector('#rotateCubeZCCW')?.addEventListener('click', () => {
-  rubiksCube.rotateRubiksCube('ZCCW')
+ROTATIONS.forEach((rotation) => {
+  document
+    .getElementById(rotation)
+    ?.addEventListener('click', () => rubiksCube.rotateRubiksCube(rotation))
 })
 
 document.querySelector('#reset')?.addEventListener('click', () => {
   rubiksCube.reset()
 })
-
-const observer: IRubiksCubeObserver = {
-  onMove: () => {
-    localStorage.setItem('cubeState', JSON.stringify(rubiksCube.cubes))
-    renderCube()
-  }
-}
-
-rubiksCube.addObserver(observer)
 
 function renderCube() {
   document.querySelectorAll('.cube').forEach((el) => {
@@ -72,5 +44,12 @@ function renderCube() {
     }
   })
 }
+
+rubiksCube.addObserver({
+  onMove: () => {
+    localStorage.setItem('cubeState', JSON.stringify(rubiksCube.cubes))
+    renderCube()
+  }
+})
 
 renderCube()

@@ -1,8 +1,9 @@
 import RubiksCube from '../../engine/RubiksCube'
 import Cube from '../../engine/Cube'
-import { Face, Orientation } from '../../engine/models'
-import RubiksCubeSolver, { MovePacer } from '../../solver/RubiksCubeSolver'
-import IRubiksCubeObserver, { LayerMove, Rotation } from '../../engine/IRubiksCubeObserver'
+import { Face, LayerMove, Orientation, Rotation } from '../../engine/types'
+import RubiksCubeSolver from '../../solver/RubiksCubeSolver'
+import IRubiksCubeObserver from '../../interfaces/IRubiksCubeObserver'
+import { IPacer } from '../../interfaces/IPacer'
 
 type Axis = 'X' | 'Y' | 'Z'
 type Status = 'free' | 'ready' | 'scrambling' | 'solving' | 'solved'
@@ -50,7 +51,7 @@ interface CubieEntry {
  * the animation, every source is paced: the solver and scramble are async "drivers" that
  * mutate then await settled(); discrete manual turns only apply while the view is idle.
  */
-class CubeView implements IRubiksCubeObserver, MovePacer {
+class CubeView implements IRubiksCubeObserver, IPacer {
   private rubiks = RubiksCube.getInstance()
   // We are this solver's pacer (see MovePacer): it mutates the engine directly and awaits
   // settled() after each move, so we present one turn at a time.

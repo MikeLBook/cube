@@ -1,4 +1,4 @@
-import { Position, Orientation, Face, OrientationKey } from './models'
+import { Position, Orientation, Face, OrientationKey } from './types'
 
 export default class Cube {
   position: Position

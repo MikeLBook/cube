@@ -10,15 +10,15 @@ This project is a **coding puzzle/challenge**: engineering the cube and its solv
 whole point. Using AI to design the cube representation or to write the solver would defeat that
 purpose, so AI assistance is **restricted** to a narrow perimeter:
 
-- **`src/presentations/3DView/`** — the 3D view (`3DView.ts`/`.html`/`.css`).
+- **`src/presentations/3DWeb/`** — the 3D view (`3DWeb.ts`/`.html`/`.css`).
 - **The verification harness** — everything under `verify/`.
 - **Miscellaneous tooling** — build/config plumbing such as `package.json` scripts and
   `build.mjs`.
 
-**Every other TypeScript file is human-authored and off-limits to AI.** Concretely, `3DView.ts`
+**Every other TypeScript file is human-authored and off-limits to AI.** Concretely, `3DWeb.ts`
 is the *only* `.ts` file AI may edit — the engine (`src/engine/`), the solver (`src/solver/`,
-including all subroutines and status checks), the 2D view (`src/presentations/2DView/`), and
-`src/utils.ts` must stay hand-written. Do not add solver logic, cube-modeling logic, or any other
+including all subroutines and status checks), the shared interfaces (`src/interfaces/`), the 2D
+view (`src/presentations/2DWeb/`), and `src/utils.ts` must stay hand-written. Do not add solver logic, cube-modeling logic, or any other
 core code with AI, even if asked to "just fix" something there; flag it and let the human author
 it. (Editing this doc, `README.md`, and other Markdown is fine.)
 
@@ -43,15 +43,15 @@ node verify/run.mjs trace '<json>'   # step through one scramble
 ```
 
 It bundles the *real* engine + solver with esbuild and drives them over thousands of scrambles
-with an instant mock `MovePacer`. It bundles to `verify/dist/` (git-ignored), doesn't touch the
+with an instant mock `IPacer`. It bundles to `verify/dist/` (git-ignored), doesn't touch the
 site build, and is outside `tsconfig`'s `src/**` scope. Re-run it after any change to
 `src/solver/**`.
 
 **Build output.** `build.mjs` (driven by esbuild) emits a flat `build/` directory: the 2D view
-ships as `index.{html,css,js}` (the site entry point) and the 3D view as `3DView.{html,css,js}`.
+ships as `index.{html,css,js}` (the site entry point) and the 3D view as `3DWeb.{html,css,js}`.
 `build/` is generated and git-ignored — never edit it by hand. esbuild has no HTML loader, so the
 HTML files are copied verbatim; their `href`/`src` attributes must therefore match the built
-names (`index.css`, `index.js`, `3DView.html`, …), not the source filenames. Output names are
+names (`index.css`, `index.js`, `3DWeb.html`, …), not the source filenames. Output names are
 chosen by the entry-point maps in `build.mjs`.
 
 ## The mental model
@@ -64,7 +64,7 @@ there's hardware. Keep that endpoint in mind for every decision.
 - **Solver** (`src/solver/`) — the "person." Decides and applies moves. Knows nothing about any
   representation beyond a tiny pacing interface.
 - **Representations** — the "reporters." Present state to viewers: the 2D net
-  (`src/presentations/2DView/`), the 3D view (`src/presentations/3DView/`), and eventually a
+  (`src/presentations/2DWeb/`), the 3D view (`src/presentations/3DWeb/`), and eventually a
   robot. Observe the engine; never own state.
 
 Dependencies point inward only: representations and the solver depend on the engine; the engine
@@ -72,10 +72,13 @@ depends on nothing.
 
 ## Layers (inner → outer)
 
-- `src/engine/models.ts` — pure types/constants: `Position`, `Orientation`, `Face`,
-  `ORIENTATION_KEYS`, `AXES`, `FACES`, etc.
-- `src/engine/IRubiksCubeObserver.ts` — the `IRubiksCubeObserver` interface plus the move-name
-  constants/types `LayerMove` and `Rotation` (the engine's move vocabulary).
+- `src/engine/types.ts` — pure types/constants: `Position`, `Orientation`, `Face`,
+  `ORIENTATION_KEYS`, `AXES`, `FACES`, plus the engine's move vocabulary — the
+  `LAYER_MOVES`/`ROTATIONS` constants and their `LayerMove`/`Rotation` types.
+- `src/interfaces/IRubiksCubeObserver.ts` — the `IRubiksCubeObserver` interface (`onMove`,
+  the one-way contract representations implement); default-exported.
+- `src/interfaces/IPacer.ts` — the `IPacer` interface (`settled()`) the solver depends on to
+  pace itself against a representation.
 - `src/engine/Cube.ts` — one cubie. Holds `position` + `orientation` and the six axis rotations
   (`rotateXCW`…`rotateZCCW`). **Layer membership is derived from orientation, not position**
   (`isInTopLayer = orientation.top !== undefined`), and `rotate()` recomputes `position` from the
@@ -84,13 +87,14 @@ depends on nothing.
   Exposes the moves, `isSolved` (a getter), `setState`/serialization, and the observer registry.
   **Pure and synchronous** — no DOM, timing, animation, or async. Each move method mutates the
   cubies in place and then calls the private `onMove(move)` to notify observers.
-- `src/solver/RubiksCubeSolver.ts` — the solver + the `MovePacer` interface it depends on. Its
-  `do(...moves)` helper applies a sequence of moves, `await`ing the pacer between each.
+- `src/solver/RubiksCubeSolver.ts` — the solver; depends on `IPacer`
+  (`src/interfaces/IPacer.ts`). Its `do(...moves)` helper applies a sequence of moves,
+  `await`ing the pacer between each.
 - `src/solver/solutionStatusChecks.ts` — pure predicates ("is this layer/phase solved?").
 - `src/solver/subroutines/` — one module per solve phase (e.g. `solveYellowEdges`,
   `solveYellowCorners`, `solveMiddleEdges`); each takes the solver and drives moves through
   `solver.do(...)`.
-- `src/presentations/2DView/` / `src/presentations/3DView/` — the two representations. Each
+- `src/presentations/2DWeb/` / `src/presentations/3DWeb/` — the two representations. Each
   folder holds its `.ts` (logic), `.html`, and `.css`; the build flattens them into `build/`.
 
 ## The observer + pacing contract
@@ -102,7 +106,7 @@ source → RubiksCube method → onMove(move) → representation presents the ch
 ```
 
 - `IRubiksCubeObserver.onMove(move?: LayerMove | Rotation)` is defined in
-  `IRubiksCubeObserver.ts`. The
+  `src/interfaces/IRubiksCubeObserver.ts`. The
   engine passes the move's identity so a representation can present the specific change (animate
   the right layer, or the whole cube for a `Rotation`). `reset()` passes no move.
 - Representations register via `rubiks.addObserver(this)`.
@@ -110,7 +114,8 @@ source → RubiksCube method → onMove(move) → representation presents the ch
   and the representation reacts via `onMove`. The solver's only outward dependency is:
 
   ```ts
-  interface MovePacer { settled(): Promise<void>; }
+  // src/interfaces/IPacer.ts
+  interface IPacer { settled(): Promise<void>; }
   ```
 
   The solver is **async** and makes **one move per `await settled()`**. `settled()` resolves once

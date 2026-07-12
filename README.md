@@ -8,8 +8,8 @@ there's hardware.
 > **A note on AI.** This project is a coding puzzle/challenge — modeling the cube and writing the
 > solver by hand is the point, and using AI to represent or solve the cube would be antithetical
 > to its spirit. AI involvement is therefore restricted to the **3D view**
-> (`src/presentations/3DView/`), the **verification harness** (`verify/`), and **miscellaneous
-> tooling** (e.g. `package.json` scripts). Every TypeScript file except `3DView.ts` — the engine,
+> (`src/presentations/3DWeb/`), the **verification harness** (`verify/`), and **miscellaneous
+> tooling** (e.g. `package.json` scripts). Every TypeScript file except `3DWeb.ts` — the engine,
 > the solver, the 2D view, and `utils.ts` — is human-authored.
 
 ## Layers
@@ -18,7 +18,7 @@ The codebase is built in deliberate layers, inner to outer. Each layer knows onl
 ones beneath it.
 
 ```
-                 models  (types: Position, Orientation, Face; move names live in IRubiksCubeObserver)
+                 types  (Position, Orientation, Face; move names: LayerMove, Rotation)
                    │
                   Cube  (one cubie: position + sticker orientation, rotation methods)
                    │
@@ -29,7 +29,8 @@ ones beneath it.
    (decides moves)     (2D view · 3D view · …robot)
 ```
 
-- **`src/engine/models.ts`** — pure types and constants shared everywhere.
+- **`src/engine/types.ts`** — pure types and constants shared everywhere, including the engine's
+  move vocabulary (`LayerMove`, `Rotation`).
 - **`src/engine/Cube.ts`** — a single cubie. Knows its position and which colour faces which
   way, and how to rotate itself about each axis.
 - **`src/engine/RubiksCube.ts`** — the whole cube and the **single source of truth** for state.
@@ -46,6 +47,7 @@ This inner core was built and validated first; everything outside it is a consum
 the move that caused it:
 
 ```ts
+// src/interfaces/IRubiksCubeObserver.ts
 interface IRubiksCubeObserver {
   onMove: (move?: LayerMove | Rotation) => void;
 }
@@ -58,9 +60,9 @@ always:
 input → RubiksCube method call → onMove(move) → representation presents the change
 ```
 
-- The **2D view** (`src/presentations/2DView/`) is the simplest consumer: `onMove` just
+- The **2D view** (`src/presentations/2DWeb/`) is the simplest consumer: `onMove` just
   re-renders the net and writes the state to `localStorage` (shared with the 3D page).
-- The **3D view** (`src/presentations/3DView/`) animates. *Every* change is animated the
+- The **3D view** (`src/presentations/3DWeb/`) animates. *Every* change is animated the
   same way: after the fact, from the move in the `onMove` event — there is one animation path,
   whether the move came from a drag, the keyboard, a button, a scramble, or the solver.
 
@@ -81,7 +83,8 @@ every representation; the only thing it knows about the outside world is a small
 uses to pace itself:
 
 ```ts
-interface MovePacer {
+// src/interfaces/IPacer.ts
+interface IPacer {
   settled(): Promise<void>; // resolves when the latest move has been fully presented
 }
 ```
@@ -102,7 +105,7 @@ to tell the solver to slow down: it resolves `settled()` only once it has finish
 the move. This keeps the model and the representation in **lock-step** — essential for the
 eventual robot, where the model must not race ahead of the physical cube.
 
-Each representation implements `MovePacer.settled()` for its own medium:
+Each representation implements `IPacer.settled()` for its own medium:
 
 | Representation | `settled()` resolves when… |
 | --- | --- |
@@ -111,10 +114,10 @@ Each representation implements `MovePacer.settled()` for its own medium:
 | Robot (future) | the physical turn completes (and rejects on a fault) |
 
 In the 3D view, `CubeView` implements both `IRubiksCubeObserver` (to learn what changed) and
-`MovePacer` (to pace a driver). One click runs the solver's whole paced sequence; `reset()`
+`IPacer` (to pace a driver). One click runs the solver's whole paced sequence; `reset()`
 aborts an in-flight driver via the `AbortSignal`.
 
-The same `MovePacer` mechanism paces the 3D view's own **scramble**: it's just another paced
+The same `IPacer` mechanism paces the 3D view's own **scramble**: it's just another paced
 driver (apply a random turn → `await settled()` → repeat), so the solver isn't special — any
 multi-move source shares one pacing path. Only one driver runs at a time, and manual input is
 locked out while one is active.
@@ -132,18 +135,20 @@ solver to animation timing.
 ```
 src/
   engine/
-    models.ts               types + constants
+    types.ts                types + constants (incl. LayerMove/Rotation move names)
     Cube.ts                 one cubie
     RubiksCube.ts           the cube; source of truth; emits onMove
-    IRubiksCubeObserver.ts  observer interface + LayerMove/Rotation move names
+  interfaces/
+    IRubiksCubeObserver.ts  observer interface (onMove)
+    IPacer.ts               pacing interface (settled) the solver depends on
   utils.ts                  (de)serialization guards, position map, isRotation
   solver/
-    RubiksCubeSolver.ts     the "person"; async, paced via MovePacer
+    RubiksCubeSolver.ts     the "person"; async, paced via IPacer
     solutionStatusChecks.ts predicates: is a given layer/phase solved?
     subroutines/            per-phase solving routines (solveYellowEdges, solveYellowCorners, solveMiddleEdges, …)
   presentations/
-    2DView/                 2DView.ts/.html/.css   — 2D net view (observer)
-    3DView/                 3DView.ts/.html/.css   — 3D interactive view (observer + MovePacer)
+    2DWeb/                  2DWeb.ts/.html/.css   — 2D net view (observer)
+    3DWeb/                  3DWeb.ts/.html/.css   — 3D interactive view (observer + IPacer)
 build.mjs                   esbuild build → build/
 ```
 
@@ -169,13 +174,13 @@ npm run watch      # rebuild (and re-copy HTML) on change
 ```
 
 The build emits a flat `build/` directory (git-ignored): the 2D view as `index.{html,css,js}`
-and the 3D view as `3DView.{html,css,js}`. Open `build/index.html` (2D net) or
-`build/3DView.html` (3D) in a browser. Both pages share cube state through `localStorage`, so a
+and the 3D view as `3DWeb.{html,css,js}`. Open `build/index.html` (2D net) or
+`build/3DWeb.html` (3D) in a browser. Both pages share cube state through `localStorage`, so a
 scramble on one is reflected on the other.
 
 There is no browser test runner, but the solver has a headless verification harness that bundles
 the real engine + solver and drives them over thousands of random scrambles with an instant
-`MovePacer` (see `verify/README.md`):
+`IPacer` (see `verify/README.md`):
 
 ```sh
 npm run verify                       # tally outcomes over random scrambles

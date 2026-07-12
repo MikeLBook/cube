@@ -1,6 +1,15 @@
 import Cube from './engine/Cube'
-import { LayerMove, Rotation, ROTATIONS } from './engine/IRubiksCubeObserver'
-import { AXES, Face, FACES, Orientation, ORIENTATION_KEYS, Position } from './engine/models'
+import {
+  AXES,
+  Face,
+  FACES,
+  LayerMove,
+  Orientation,
+  ORIENTATION_KEYS,
+  Position,
+  Rotation,
+  ROTATIONS
+} from './engine/types'
 
 export function JSONEquals(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b)
@@ -44,7 +53,7 @@ export function isCubeArray(value: unknown): value is Cube[] {
   )
 }
 
-// Keys based on ascii representation in RubiksCube.ts
+// Keys based on the ascii representation in RubiksCube.ts
 export const positionMap = {
   // Top Layer
   1: JSON.stringify({ X: -1, Y: 1, Z: -1 }),

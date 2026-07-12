@@ -1,6 +1,5 @@
 import Cube from '../engine/Cube'
 import RubiksCube from '../engine/RubiksCube'
-import { LayerMove, Rotation } from '../engine/IRubiksCubeObserver'
 import { isRotation, positionMap } from '../utils'
 import {
   hasSolvedYellowCorners,
@@ -11,16 +10,8 @@ import {
 import solveYellowCorners from './subroutines/solveYellowCorners'
 import solveYellowEdges from './subroutines/solveYellowEdges'
 import { solveMiddleEdges } from './subroutines/solveMiddleEdges'
-
-// Implemented by whatever presents the cube (3D view, 2D view, a robot). After the solver
-// makes a move on the engine it awaits settled(), giving the representation time to present
-// that move before the next one. This is the only thing the solver knows about the outside
-// world — it never references a concrete representation.
-export interface MovePacer {
-  // Resolves once the representation has finished presenting the latest move (animation
-  // or motor movement complete). A representation may reject the Promise to signal a failure.
-  settled(): Promise<void>
-}
+import { LayerMove, Rotation } from '../engine/types'
+import { IPacer } from '../interfaces/IPacer'
 
 const SOLUTION_PHASES = [
   'YellowEdges',
@@ -33,12 +24,12 @@ type SolutionPhase = (typeof SOLUTION_PHASES)[number]
 
 export default class RubiksCubeSolver {
   rubiks: RubiksCube
-  pacer: MovePacer
+  pacer: IPacer
   private yellowLayerSolved: boolean | undefined
   private middleLayerSolved: boolean | undefined
   private solutionPhase: SolutionPhase = 'YellowEdges'
 
-  constructor(rubiks: RubiksCube, pacer: MovePacer) {
+  constructor(rubiks: RubiksCube, pacer: IPacer) {
     this.rubiks = rubiks
     this.pacer = pacer
   }

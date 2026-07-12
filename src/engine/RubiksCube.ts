@@ -1,7 +1,7 @@
 import Cube from './Cube'
 import { isCubeArray } from '../utils'
-import { Face, ORIENTATION_KEYS } from './models'
-import IRubiksCubeObserver, { LayerMove, Rotation } from './IRubiksCubeObserver'
+import { Face, LayerMove, ORIENTATION_KEYS, Rotation } from './types'
+import IRubiksCubeObserver from '../interfaces/IRubiksCubeObserver'
 
 // 3D layout of the 27 cubes in a Rubiks Cube. Coordinates are (X, Y, Z):
 //   X:  -1 = left    →   1 = right
@@ -26,36 +26,6 @@ import IRubiksCubeObserver, { LayerMove, Rotation } from './IRubiksCubeObserver'
 // FRONT (Z: 1) ╱   ╱   ╱
 //            25──26──27
 //
-// ── Which way a face move turns ─────────────────────────────────────
-//
-// A move's CW/CCW is judged from ONE fixed viewpoint per axis: the
-// +axis side, looking toward the origin —
-//   • top / bottom : from ABOVE       (+Y, looking down)
-//   • left / right : from the RIGHT   (+X, looking left)
-//   • front / back : from the FRONT   (+Z, looking back)
-//
-// A face and its opposite share the same cubie method (rotateX/Y/ZCW),
-// so a pair always spins the same way *in space*. That means the near
-// face of each pair reads as named, while its opposite reads reversed
-// when you look straight AT it from outside the cube:
-//
-//   as-named (near, +axis)            reversed (far, -axis)
-//     TOP    RIGHT   FRONT              BOTTOM   LEFT    BACK
-//   ┌────┐ ┌────┐ ┌────┐              ┌────┐ ┌────┐ ┌────┐
-//   │ ↻  │ │ ↻  │ │ ↻  │              │ ↺  │ │ ↺  │ │ ↺  │
-//   └────┘ └────┘ └────┘              └────┘ └────┘ └────┘
-//   a CW move looks CW here           a CW move looks CCW here
-//
-// So `rotateLeftCW` looks CCW if you face the left side head-on, but
-// CW once you picture that face pushed to the back (viewing from +X) —
-// the same clockwise sense as `rotateRightCW`. Likewise `rotateTopCW`
-// and `rotateBottomCW` both turn clockwise seen from above; the bottom
-// only *looks* reversed because you flip the cube over to face it.
-//
-// Exact sticker cycles (the axis's own face stays put; CCW = reversed):
-//   rotateXCW  (top / xMid / bottom):  front→left→back→right→front
-//   rotateYCW  (left / yMid / right):  front→top→back→bottom→front
-//   rotateZCW  (front / zMid / back):  left→top→right→bottom→left
 
 export default class RubiksCube {
   private _cubes: Cube[]
