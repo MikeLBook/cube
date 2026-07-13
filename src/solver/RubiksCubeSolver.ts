@@ -42,14 +42,8 @@ export default class RubiksCubeSolver {
     this.pacer = pacer
   }
 
-  get cubeMap(): Map<string, Cube> {
-    const cubeMap = new Map<string, Cube>()
-    this.rubiks.cubes.forEach((cube) => cubeMap.set(JSON.stringify(cube.position), cube))
-    return cubeMap
-  }
-
   public fetchPosition(position: PositionKey): Cube | undefined {
-    return this.cubeMap.get(positionMap[position])
+    return this.rubiks.cubes.find((cube) => JSON.stringify(cube.position) === positionMap[position])
   }
 
   // Apply a sequence of moves to the engine, one per settled() so the presentation
