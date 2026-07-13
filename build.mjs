@@ -17,7 +17,7 @@ const CSS = {
 // esbuild has no HTML loader, so HTML is copied verbatim (and the 2D Web renamed to index.html).
 const HTML = [
   ['src/presentations/2DWeb/2DWeb.html', `${OUT}/index.html`],
-  ['src/presentations/3DWeb/3DWeb.html', `${OUT}/3DWeb.html`]
+  ['src/presentations/3DWeb/3DWeb.html', `${OUT}/3D.html`]
 ]
 
 const opts = (entryPoints) => ({ entryPoints, bundle: true, outdir: OUT })
