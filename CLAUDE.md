@@ -55,10 +55,11 @@ but it's written to type-check cleanly, so it passes the check rather than break
 after any change to `src/solver/**`.
 
 **Build output.** `build.mjs` (driven by esbuild) emits a flat `build/` directory: the 2D view
-ships as `index.{html,css,js}` (the site entry point) and the 3D view as `3DWeb.{html,css,js}`.
+ships as `index.{html,css,js}` (the site entry point) and the 3D view as `3D.html` +
+`3DWeb.{css,js}`.
 `build/` is generated and git-ignored — never edit it by hand. esbuild has no HTML loader, so the
 HTML files are copied verbatim; their `href`/`src` attributes must therefore match the built
-names (`index.css`, `index.js`, `3DWeb.html`, …), not the source filenames. Output names are
+names (`index.css`, `index.js`, `3D.html`, …), not the source filenames. Output names are
 chosen by the entry-point maps in `build.mjs`.
 
 ## The mental model

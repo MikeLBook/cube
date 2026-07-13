@@ -176,8 +176,8 @@ npm run watch      # rebuild (and re-copy HTML) on change
 ```
 
 The build emits a flat `build/` directory (git-ignored): the 2D view as `index.{html,css,js}`
-and the 3D view as `3DWeb.{html,css,js}`. Open `build/index.html` (2D net) or
-`build/3DWeb.html` (3D) in a browser. Both pages share cube state through `localStorage`, so a
+and the 3D view as `3D.html` + `3DWeb.{css,js}`. Open `build/index.html` (2D net) or
+`build/3D.html` (3D) in a browser. Both pages share cube state through `localStorage`, so a
 scramble on one is reflected on the other.
 
 There is no browser test runner, but the solver has a headless verification harness that bundles

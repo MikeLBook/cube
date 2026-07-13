@@ -1,6 +1,7 @@
 import RubiksCube from '../../engine/RubiksCube'
 import Cube from '../../engine/Cube'
 import { Face, LayerMove, Orientation, Rotation } from '../../engine/types'
+import { isRotation } from '../../utils'
 import RubiksCubeSolver from '../../solver/RubiksCubeSolver'
 import IRubiksCubeObserver from '../../interfaces/IRubiksCubeObserver'
 import { IMovePacer } from '../../interfaces/IMovePacer'
@@ -8,30 +9,26 @@ import { IMovePacer } from '../../interfaces/IMovePacer'
 type Axis = 'X' | 'Y' | 'Z'
 type Status = 'free' | 'ready' | 'scrambling' | 'solving' | 'solved'
 
-// Singmaster-style face notation keys handled by this view.
-type MoveKey = 'U' | 'E' | 'D' | 'L' | 'M' | 'R' | 'B' | 'S' | 'F'
-
-const DEFAULT_YAW = -45
-const DEFAULT_PITCH = -19.5
-
-interface MoveDef {
-  posAxis: Axis
-  layer: number
-  cw: LayerMove
-  ccw: LayerMove
-  cssAxis: Axis
-}
-
-interface CubeMoveDef {
-  rotation: Rotation
-  axis: Axis
-  angle: number
-}
-
 interface Vec3 {
   X: number
   Y: number
   Z: number
+}
+
+// A layer turn: which engine layer it selects (axis + coordinate) and the engine methods for
+// each direction. The engine position axis is also the CSS rotation axis (X→rotateX, …).
+interface MoveDef {
+  axis: Axis
+  layer: number
+  cw: LayerMove
+  ccw: LayerMove
+}
+
+// A whole-cube re-orientation: the engine rotation and the matching world spin.
+interface CubeMoveDef {
+  rotation: Rotation
+  axis: Axis
+  angle: number
 }
 
 // One rendered cubie: the engine Cube it mirrors, its DOM element, and its six sticker elements.
@@ -39,6 +36,121 @@ interface CubieEntry {
   cube: Cube
   el: HTMLElement
   stickers: Record<keyof Orientation, HTMLElement>
+}
+
+// ---------- static config ----------
+
+const DEFAULT_YAW = -28
+const DEFAULT_PITCH = -19
+
+// sticker colours (reuse the index.css palette)
+const COLORS: Record<Face, string> = {
+  Y: '#ffd43b',
+  R: '#d92b3c',
+  B: '#2256d6',
+  G: '#1eaa5b',
+  O: '#ff7a18',
+  W: '#f4f4f0'
+}
+const DIRS: (keyof Orientation)[] = ['front', 'back', 'right', 'left', 'top', 'bottom']
+
+// geometry (px)
+const SIZE = 58 // cubie face size
+const HALF = 29
+const UNIT = 63 // grid pitch between cubie centers
+
+// calibration signs (flip if a turn animates the wrong way)
+const ANIM_SIGN: Record<Axis, number> = { X: 1, Y: -1, Z: 1 }
+const CW_SIGN: Record<Axis, number> = { X: -1, Y: -1, Z: -1 }
+
+// Singmaster-style face notation -> engine methods + layer-selection metadata.
+const MOVES = {
+  U: { axis: 'Y', layer: 1, cw: 'rotateTopCW', ccw: 'rotateTopCCW' },
+  E: { axis: 'Y', layer: 0, cw: 'rotateXMidCW', ccw: 'rotateXMidCCW' },
+  D: { axis: 'Y', layer: -1, cw: 'rotateBottomCW', ccw: 'rotateBottomCCW' },
+  L: { axis: 'X', layer: -1, cw: 'rotateLeftCW', ccw: 'rotateLeftCCW' },
+  M: { axis: 'X', layer: 0, cw: 'rotateYMidCW', ccw: 'rotateYMidCCW' },
+  R: { axis: 'X', layer: 1, cw: 'rotateRightCW', ccw: 'rotateRightCCW' },
+  B: { axis: 'Z', layer: -1, cw: 'rotateBackCW', ccw: 'rotateBackCCW' },
+  S: { axis: 'Z', layer: 0, cw: 'rotateZMidCW', ccw: 'rotateZMidCCW' },
+  F: { axis: 'Z', layer: 1, cw: 'rotateFrontCW', ccw: 'rotateFrontCCW' }
+} as const satisfies Record<string, MoveDef>
+type MoveKey = keyof typeof MOVES
+
+// LayerMove -> the layer to spin and the signed CSS angle, derived once from MOVES so
+// onMove can present any engine move without searching.
+const LAYER_ANIM = new Map<LayerMove, { def: MoveDef; angle: number }>()
+for (const def of Object.values(MOVES)) {
+  const base = ANIM_SIGN[def.axis] * 90
+  LAYER_ANIM.set(def.cw, { def, angle: base })
+  LAYER_ANIM.set(def.ccw, { def, angle: -base })
+}
+
+// whole-cube re-orientation -> engine rotation + matching world animation
+const CUBE_MOVES: Record<string, CubeMoveDef> = {
+  spinRight: { rotation: 'XCW', axis: 'Y', angle: -90 },
+  spinLeft: { rotation: 'XCCW', axis: 'Y', angle: 90 },
+  rollUp: { rotation: 'YCW', axis: 'X', angle: 90 },
+  rollDown: { rotation: 'YCCW', axis: 'X', angle: -90 },
+  tiltRight: { rotation: 'ZCW', axis: 'Z', angle: 90 },
+  tiltLeft: { rotation: 'ZCCW', axis: 'Z', angle: -90 }
+}
+const ROTATION_ANIM = new Map(Object.values(CUBE_MOVES).map((c) => [c.rotation, c]))
+
+// panel buttons that trigger whole-cube re-orientations
+const CUBE_MOVE_BUTTONS: Record<string, string> = {
+  'btn-roll-up': 'rollUp',
+  'btn-roll-down': 'rollDown',
+  'btn-spin-left': 'spinLeft',
+  'btn-spin-right': 'spinRight',
+  'btn-tilt-left': 'tiltLeft',
+  'btn-tilt-right': 'tiltRight'
+}
+
+// keyboard: wasd re-orients the whole cube (exact case; shifted keys do nothing),
+// letter keys map to face turns (shift = counter-clockwise), space recenters the view
+const KEY_CUBE_MOVES: Record<string, string> = {
+  a: 'spinLeft',
+  d: 'spinRight',
+  w: 'rollUp',
+  s: 'rollDown'
+}
+const KEY_FACE_MOVES: Record<string, MoveKey> = {
+  t: 'U',
+  b: 'D',
+  l: 'L',
+  r: 'R',
+  f: 'F',
+  q: 'B',
+  y: 'M',
+  x: 'E',
+  z: 'S'
+}
+
+const NORMALS: Record<keyof Orientation, Vec3> = {
+  right: { X: 1, Y: 0, Z: 0 },
+  left: { X: -1, Y: 0, Z: 0 },
+  top: { X: 0, Y: 1, Z: 0 },
+  bottom: { X: 0, Y: -1, Z: 0 },
+  front: { X: 0, Y: 0, Z: 1 },
+  back: { X: 0, Y: 0, Z: -1 }
+}
+
+const FACE_TRANSFORMS: Record<keyof Orientation, string> = {
+  front: `translateZ(${HALF}px)`,
+  back: `rotateY(180deg) translateZ(${HALF}px)`,
+  right: `rotateY(90deg) translateZ(${HALF}px)`,
+  left: `rotateY(-90deg) translateZ(${HALF}px)`,
+  top: `rotateX(90deg) translateZ(${HALF}px)`,
+  bottom: `rotateX(-90deg) translateZ(${HALF}px)`
+}
+
+const STATUS_META: Record<Status, { label: string; color: string }> = {
+  free: { label: 'Free Play', color: 'var(--text)' },
+  ready: { label: 'Ready', color: 'var(--text)' },
+  scrambling: { label: 'Scrambling…', color: 'var(--accent-x)' },
+  solving: { label: 'Solving…', color: 'var(--accent-z)' },
+  solved: { label: 'Solved!', color: 'var(--accent-y)' }
 }
 
 /**
@@ -69,6 +181,8 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
   private sceneEl: HTMLElement
   private worldEl!: HTMLElement
   private entries: CubieEntry[] = []
+  // sticker face element -> its cubie, for drag hit-testing
+  private faceEntries = new WeakMap<HTMLElement, CubieEntry>()
 
   private animating = false
 
@@ -98,112 +212,6 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
   private py = 0
   private yaw0 = 0
   private pitch0 = 0
-
-  // sticker colours (reuse the index.css palette)
-  private readonly COLORS: Record<Face, string> = {
-    Y: '#ffd43b',
-    R: '#d92b3c',
-    B: '#2256d6',
-    G: '#1eaa5b',
-    O: '#ff7a18',
-    W: '#f4f4f0'
-  }
-  private readonly DIRS: (keyof Orientation)[] = ['front', 'back', 'right', 'left', 'top', 'bottom']
-
-  // geometry
-  private readonly S = 58
-  private readonly HALF = 29
-  private readonly UNIT = 63
-
-  // calibration signs (flip if a turn animates the wrong way)
-  private readonly ANIM_SIGN: Record<Axis, number> = { X: 1, Y: -1, Z: 1 }
-  private readonly CW_SIGN: Record<Axis, number> = { X: -1, Y: -1, Z: -1 }
-
-  // notation -> engine method + animation metadata. Method names match RubiksCube exactly.
-  private readonly MOVES = {
-    U: {
-      posAxis: 'Y',
-      layer: 1,
-      cw: 'rotateTopCW',
-      ccw: 'rotateTopCCW',
-      cssAxis: 'Y'
-    },
-    E: {
-      posAxis: 'Y',
-      layer: 0,
-      cw: 'rotateXMidCW',
-      ccw: 'rotateXMidCCW',
-      cssAxis: 'Y'
-    },
-    D: {
-      posAxis: 'Y',
-      layer: -1,
-      cw: 'rotateBottomCW',
-      ccw: 'rotateBottomCCW',
-      cssAxis: 'Y'
-    },
-    L: {
-      posAxis: 'X',
-      layer: -1,
-      cw: 'rotateLeftCW',
-      ccw: 'rotateLeftCCW',
-      cssAxis: 'X'
-    },
-    M: {
-      posAxis: 'X',
-      layer: 0,
-      cw: 'rotateYMidCW',
-      ccw: 'rotateYMidCCW',
-      cssAxis: 'X'
-    },
-    R: {
-      posAxis: 'X',
-      layer: 1,
-      cw: 'rotateRightCW',
-      ccw: 'rotateRightCCW',
-      cssAxis: 'X'
-    },
-    B: {
-      posAxis: 'Z',
-      layer: -1,
-      cw: 'rotateBackCW',
-      ccw: 'rotateBackCCW',
-      cssAxis: 'Z'
-    },
-    S: {
-      posAxis: 'Z',
-      layer: 0,
-      cw: 'rotateZMidCW',
-      ccw: 'rotateZMidCCW',
-      cssAxis: 'Z'
-    },
-    F: {
-      posAxis: 'Z',
-      layer: 1,
-      cw: 'rotateFrontCW',
-      ccw: 'rotateFrontCCW',
-      cssAxis: 'Z'
-    }
-  } as const satisfies Record<string, MoveDef>
-
-  private readonly NORMALS: Record<keyof Orientation, Vec3> = {
-    right: { X: 1, Y: 0, Z: 0 },
-    left: { X: -1, Y: 0, Z: 0 },
-    top: { X: 0, Y: 1, Z: 0 },
-    bottom: { X: 0, Y: -1, Z: 0 },
-    front: { X: 0, Y: 0, Z: 1 },
-    back: { X: 0, Y: 0, Z: -1 }
-  }
-
-  // whole-cube re-orientation -> engine rotateCube + matching world animation
-  private readonly CUBE_MOVES: Record<string, CubeMoveDef> = {
-    spinRight: { rotation: 'XCW', axis: 'Y', angle: -90 },
-    spinLeft: { rotation: 'XCCW', axis: 'Y', angle: 90 },
-    rollUp: { rotation: 'YCW', axis: 'X', angle: 90 },
-    rollDown: { rotation: 'YCCW', axis: 'X', angle: -90 },
-    tiltRight: { rotation: 'ZCW', axis: 'Z', angle: 90 },
-    tiltLeft: { rotation: 'ZCCW', axis: 'Z', angle: -90 }
-  }
 
   constructor(sceneEl: HTMLElement) {
     this.sceneEl = sceneEl
@@ -245,46 +253,45 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
 
   // ---------- rendering ----------
   private createCubie(cube: Cube): CubieEntry {
-    const S = this.S,
-      H = this.HALF
     const el = document.createElement('div')
-    el.style.cssText =
-      'position:absolute; left:0; top:0; width:' +
-      S +
-      'px; height:' +
-      S +
-      'px; transform-style:preserve-3d;'
-    const faceTf: Record<keyof Orientation, string> = {
-      front: 'translateZ(' + H + 'px)',
-      back: 'rotateY(180deg) translateZ(' + H + 'px)',
-      right: 'rotateY(90deg) translateZ(' + H + 'px)',
-      left: 'rotateY(-90deg) translateZ(' + H + 'px)',
-      top: 'rotateX(90deg) translateZ(' + H + 'px)',
-      bottom: 'rotateX(-90deg) translateZ(' + H + 'px)'
-    }
+    el.style.cssText = `position:absolute; left:0; top:0; width:${SIZE}px; height:${SIZE}px; transform-style:preserve-3d;`
     const stickers = {} as Record<keyof Orientation, HTMLElement>
     const entry: CubieEntry = { cube, el, stickers }
-    this.DIRS.forEach((dir) => {
+    for (const dir of DIRS) {
       const face = document.createElement('div')
       face.className = 'face'
       face.dataset.dir = dir
-      ;(face as any).__entry = entry
+      this.faceEntries.set(face, entry)
       face.style.cssText =
-        'position:absolute; left:0; top:0; width:' +
-        S +
-        'px; height:' +
-        S +
-        'px; background:#14141b; border-radius:9px; transform:' +
-        faceTf[dir] +
-        '; -webkit-backface-visibility:hidden; backface-visibility:hidden;'
+        `position:absolute; left:0; top:0; width:${SIZE}px; height:${SIZE}px; ` +
+        `background:#14141b; border-radius:9px; transform:${FACE_TRANSFORMS[dir]}; ` +
+        '-webkit-backface-visibility:hidden; backface-visibility:hidden;'
       const st = document.createElement('div')
       st.style.cssText =
         'position:absolute; inset:5px; border-radius:7px; box-shadow: inset 0 2px 5px rgba(255,255,255,.18), inset 0 -3px 6px rgba(0,0,0,.4);'
       face.appendChild(st)
       el.appendChild(face)
       stickers[dir] = st
-    })
+    }
     return entry
+  }
+
+  private renderCube() {
+    this.entries.forEach((e) => {
+      const p = e.cube.position
+      // engine pos -> CSS: X = right(+), Y = up(+) so screen-down is -Y, Z = front(+) toward viewer
+      e.el.style.transform = `translate3d(${p.X * UNIT - HALF}px,${-p.Y * UNIT - HALF}px,${p.Z * UNIT}px)`
+      DIRS.forEach((dir) => {
+        const col = e.cube.orientation[dir]
+        const st = e.stickers[dir]
+        if (col) {
+          st.style.display = 'block'
+          st.style.background = COLORS[col]
+        } else {
+          st.style.display = 'none'
+        }
+      })
+    })
   }
 
   // Write engine state to the localStorage key shared with the 2D page.
@@ -292,17 +299,18 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     localStorage.setItem('cubeState', JSON.stringify(this.rubiks.cubes))
   }
 
-  // Observer hook fired by the engine after every state mutation — the single animation entry
-  // point. reset() rebuilds the cubes array, so re-point each rendered cubie at the current
-  // engine Cube (a no-op for in-place layer/whole-cube turns), then persist and present.
+  // ---------- observer (the single animation entry point) ----------
+  // Fired by the engine after every state mutation. reset() rebuilds the cubes array, so
+  // re-point each rendered cubie at the current engine Cube (a no-op for in-place layer/
+  // whole-cube turns), then persist and present.
   public onMove(move?: LayerMove | Rotation) {
     this.entries.forEach((e, i) => (e.cube = this.rubiks.cubes[i]))
     this.persist()
     // Count the solver's layer turns while it works a timed attempt — the counterpart to
     // afterUserMove's manual count. `solverActive` excludes manual turns (counted there) and
-    // scramble moves; the 'solving' status excludes untracked free-play solves; isLayerMove
-    // excludes whole-cube rotations (which never count, just like userCubeMove).
-    if (move && this.solverActive && this.status === 'solving' && this.isLayerMove(move)) {
+    // scramble moves; the 'solving' status excludes untracked free-play solves; whole-cube
+    // rotations never count, just like userCubeMove.
+    if (move && this.solverActive && this.status === 'solving' && !isRotation(move)) {
       this.moveCount++
       this.updateStats()
     }
@@ -314,42 +322,23 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
       this.renderCube()
       return
     }
-    this.animateMove(move, fast)
-  }
-
-  // Animate a move the engine has *already* applied. The DOM still shows the pre-move state, so
-  // spinning the affected layer (or the whole world) by 90° lands exactly where the settling
-  // renderCube repaints it.
-  private animateMove(move: LayerMove | Rotation, fast: boolean) {
-    const key = (Object.keys(this.MOVES) as MoveKey[]).find(
-      (k) => this.MOVES[k].cw === move || this.MOVES[k].ccw === move
-    )
-    if (key) {
-      const m = this.MOVES[key]
-      const prime = m.ccw === move
-      const base = this.ANIM_SIGN[m.cssAxis] * 90
-      this.animateLayer(m, prime ? -base : base, fast)
-      return
+    // Animate the move the engine has *already* applied. The DOM still shows the pre-move
+    // state, so spinning the affected layer (or the whole world) by 90° lands exactly where
+    // the settling renderCube repaints it.
+    if (isRotation(move)) {
+      const def = ROTATION_ANIM.get(move)
+      if (def) this.animateWholeCube(def)
+      else this.renderCube() // unmappable change — settle without a spin
+    } else {
+      const anim = LAYER_ANIM.get(move)
+      if (anim) this.animateLayer(anim.def, anim.angle, fast)
+      else this.renderCube()
     }
-    const cubeDef = Object.values(this.CUBE_MOVES).find((c) => c.rotation === move)
-    if (cubeDef) {
-      this.animateWholeCube(cubeDef)
-      return
-    }
-    // Unmappable change — settle without a spin.
-    this.renderCube()
-  }
-
-  // A layer turn (vs a whole-cube rotation) — i.e. something that counts as a solve move.
-  private isLayerMove(move: LayerMove | Rotation): boolean {
-    return (Object.keys(this.MOVES) as MoveKey[]).some(
-      (k) => this.MOVES[k].cw === move || this.MOVES[k].ccw === move
-    )
   }
 
   // ---------- drivers (paced move sequences) ----------
   // One click runs the solver's whole sequence. The solver mutates the engine directly (each
-  // move fires onMove → animateMove) and awaits settled() between moves, so we present one turn
+  // move fires onMove → animation) and awaits settled() between moves, so we present one turn
   // at a time.
   private startSolve() {
     if (this.driving || this.animating) return
@@ -431,7 +420,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
   // Apply a layer turn to the engine; onMove animates it. `fast` is a one-shot presentation
   // hint (used by scramble) consumed by the resulting onMove.
   private applyMove(face: MoveKey, prime: boolean, fast = false) {
-    const m = this.MOVES[face]
+    const m = MOVES[face]
     this.movePresentation = { fast }
     this.rubiks[prime ? m.ccw : m.cw]()
   }
@@ -448,7 +437,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
   // solve moves, so there's no bookkeeping.
   private userCubeMove(key: string) {
     if (this.animating || this.driving) return
-    const c = this.CUBE_MOVES[key]
+    const c = CUBE_MOVES[key]
     if (!c) return
     this.rubiks.rotateRubiksCube(c.rotation)
   }
@@ -471,10 +460,32 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
 
   // ---------- animation ----------
   private orbitStr() {
-    return 'rotateX(' + this.pitch + 'deg) rotateY(' + this.yaw + 'deg)'
+    return `rotateX(${this.pitch}deg) rotateY(${this.yaw}deg)`
   }
 
-  private animateLayer(m: MoveDef, angle: number, fast: boolean) {
+  // Wait for `el`'s own transform transition to end (with a timeout fallback — transitionend
+  // can be swallowed), then tear down the animation DOM and settle: repaint from the model,
+  // clear `animating`, and wake any driver awaiting settled().
+  private settleAfterTransform(el: HTMLElement, timeoutMs: number, teardown: () => void) {
+    let finished = false
+    const done = () => {
+      if (finished) return
+      finished = true
+      el.removeEventListener('transitionend', onEnd)
+      teardown()
+      this.renderCube()
+      this.animating = false
+      this.flushSettled()
+    }
+    // Only react to el's own transform transition (transitionend bubbles from children).
+    const onEnd = (e: TransitionEvent) => {
+      if (e.target === el && e.propertyName === 'transform') done()
+    }
+    el.addEventListener('transitionend', onEnd)
+    setTimeout(done, timeoutMs)
+  }
+
+  private animateLayer(def: MoveDef, angle: number, fast: boolean) {
     this.animating = true
     const group = document.createElement('div')
     group.style.cssText =
@@ -483,36 +494,23 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     // The engine already turned this layer, but a face turn keeps its cubies in the layer, so
     // selecting by current position still gathers the right ones; their on-screen transforms
     // still show the pre-move state.
-    const moving = this.entries.filter((e) => e.cube.position[m.posAxis] === m.layer)
-    moving.forEach((e) => group.appendChild(e.el))
+    this.entries
+      .filter((e) => e.cube.position[def.axis] === def.layer)
+      .forEach((e) => group.appendChild(e.el))
     group.getBoundingClientRect() // reflow
     const dur = fast ? 135 : 290
-    group.style.transition = 'transform ' + dur + 'ms cubic-bezier(.34,.66,.24,1)'
-    group.style.transform = 'rotate' + m.cssAxis + '(' + angle + 'deg)'
-
-    let finished = false
-    const done = () => {
-      if (finished) return
-      finished = true
-      group.removeEventListener('transitionend', onEnd)
-      // Tear down the turn-group wrapper, then settle the cubies onto the (already-applied) model.
-      // Re-append *every* cubie in canonical (entries) order — not just the moving ones — so the
-      // worldEl child order stays the stable, known-good order init() built. Appending only the
-      // moving cubies would shove them to the end of the list; since CSS-3D face hit-testing
-      // follows DOM order, that lets a just-turned layer steal pointerdowns from cubies it
-      // overlaps on screen, making them undraggable until they're themselves moved.
+    group.style.transition = `transform ${dur}ms cubic-bezier(.34,.66,.24,1)`
+    group.style.transform = `rotate${def.axis}(${angle}deg)`
+    this.settleAfterTransform(group, dur + 140, () => {
+      // Tear down the turn-group wrapper before the settling repaint. Re-append *every* cubie
+      // in canonical (entries) order — not just the moving ones — so the worldEl child order
+      // stays the stable, known-good order init() built. Appending only the moving cubies
+      // would shove them to the end of the list; since CSS-3D face hit-testing follows DOM
+      // order, that lets a just-turned layer steal pointerdowns from cubies it overlaps on
+      // screen, making them undraggable until they're themselves moved.
       this.entries.forEach((e) => this.worldEl.appendChild(e.el))
       group.remove()
-      this.renderCube()
-      this.animating = false
-      this.flushSettled()
-    }
-    // Only react to this group's own transform transition (ignore any bubbled child events).
-    const onEnd = (e: TransitionEvent) => {
-      if (e.target === group && e.propertyName === 'transform') done()
-    }
-    group.addEventListener('transitionend', onEnd)
-    setTimeout(done, dur + 140)
+    })
   }
 
   private animateWholeCube(c: CubeMoveDef) {
@@ -520,58 +518,24 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     // Commit a clean resting orientation as the animation's starting point. Without the forced
     // reflow, the reset (transition:none) and the spin (transition+transform) collapse into one
     // style pass with no baseline to animate from, so the turn would jump instantly.
-    this.worldEl.style.transition = 'none'
-    this.worldEl.style.transform = this.orbitStr()
-    this.worldEl.getBoundingClientRect() // reflow
-    this.worldEl.style.transition = 'transform 320ms cubic-bezier(.34,.66,.24,1)'
-    this.worldEl.style.transform = this.orbitStr() + ' rotate' + c.axis + '(' + c.angle + 'deg)'
-    let finished = false
-    const done = () => {
-      if (finished) return
-      finished = true
-      this.worldEl.removeEventListener('transitionend', onEnd)
-      // The engine already re-keyed every cubie; reset the world to its resting orbit and
-      // repaint so the spun look becomes the new resting state.
-      this.worldEl.style.transition = 'none'
-      this.worldEl.style.transform = this.orbitStr()
-      this.renderCube()
-      this.animating = false
-      this.flushSettled()
-    }
-    // Only react to worldEl's own transform transition (transitionend bubbles).
-    const onEnd = (e: TransitionEvent) => {
-      if (e.target === this.worldEl && e.propertyName === 'transform') done()
-    }
-    this.worldEl.addEventListener('transitionend', onEnd)
-    setTimeout(done, 470)
-  }
-
-  private renderCube() {
-    const U = this.UNIT,
-      H = this.HALF
-    this.entries.forEach((e) => {
-      const p = e.cube.position
-      // engine pos -> CSS: X = right(+), Y = up(+) so screen-down is -Y, Z = front(+) toward viewer
-      e.el.style.transform =
-        'translate3d(' + (p.X * U - H) + 'px,' + (-p.Y * U - H) + 'px,' + p.Z * U + 'px)'
-      this.DIRS.forEach((dir) => {
-        const col = e.cube.orientation[dir]
-        const st = e.stickers[dir]
-        if (col) {
-          st.style.display = 'block'
-          st.style.background = this.COLORS[col]
-        } else {
-          st.style.display = 'none'
-        }
-      })
+    const world = this.worldEl
+    world.style.transition = 'none'
+    world.style.transform = this.orbitStr()
+    world.getBoundingClientRect() // reflow
+    world.style.transition = 'transform 320ms cubic-bezier(.34,.66,.24,1)'
+    world.style.transform = `${this.orbitStr()} rotate${c.axis}(${c.angle}deg)`
+    this.settleAfterTransform(world, 470, () => {
+      // The engine already re-keyed every cubie; reset the world to its resting orbit before
+      // the settling repaint so the spun look becomes the new resting state.
+      world.style.transition = 'none'
+      world.style.transform = this.orbitStr()
     })
   }
 
   private applyView(animate: boolean) {
-    if (this.animating) return
-    if (!this.worldEl) return
+    if (this.animating || !this.worldEl) return
     this.worldEl.style.transition = animate ? 'transform .4s cubic-bezier(.2,.6,.2,1)' : 'none'
-    this.worldEl.style.transform = 'rotateX(' + this.pitch + 'deg) rotateY(' + this.yaw + 'deg)'
+    this.worldEl.style.transform = this.orbitStr()
   }
 
   // ---------- timer ----------
@@ -623,8 +587,8 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
       do {
         f = faces[Math.floor(Math.random() * faces.length)]
         guard++
-      } while (this.MOVES[f].posAxis === lastAxis && guard < 8)
-      lastAxis = this.MOVES[f].posAxis
+      } while (MOVES[f].axis === lastAxis && guard < 8)
+      lastAxis = MOVES[f].axis
       seq.push({ f, prime: Math.random() < 0.5 })
     }
     return seq
@@ -644,6 +608,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     }
   }
 
+  // The one intentional exception to pacing: force-stop everything and settle instantly.
   private reset() {
     if (this.timer) clearInterval(this.timer)
     this.running = false
@@ -730,8 +695,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
       z = v.Z
     const x1 = x * Math.cos(b) + z * Math.sin(b)
     const z1 = -x * Math.sin(b) + z * Math.cos(b)
-    const y1 = y
-    const y2 = y1 * Math.cos(a) - z1 * Math.sin(a)
+    const y2 = y * Math.cos(a) - z1 * Math.sin(a)
     return { x: x1, y: y2 }
   }
 
@@ -740,26 +704,27 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     dx: number,
     dy: number
   ): { face: MoveKey; prime: boolean } | null {
-    const dir = faceEl.dataset.dir as keyof Orientation
-    const entry = (faceEl as any).__entry as CubieEntry | undefined
-    if (!entry) return null
-    const cube = entry.cube
-    const normal = this.NORMALS[dir]
+    const entry = this.faceEntries.get(faceEl)
+    const dir = faceEl.dataset.dir as keyof Orientation | undefined
+    if (!entry || !dir) return null
+    const normal = NORMALS[dir]
     const normalAxis: Axis = normal.X ? 'X' : normal.Y ? 'Y' : 'Z'
-    const axes = (['X', 'Y', 'Z'] as Axis[]).filter((a) => a !== normalAxis)
-    let best: { axis: Axis; dot: number; sign: number } | null = null
-    axes.forEach((axis) => {
+    // Of the face's two in-plane axes, take the one whose screen projection best matches the drag.
+    let best: { axis: Axis; sign: number; score: number } | null = null
+    for (const axis of ['X', 'Y', 'Z'] as Axis[]) {
+      if (axis === normalAxis) continue
       const vec: Vec3 = { X: 0, Y: 0, Z: 0 }
       vec[axis] = 1
       const proj = this.projectAxis(vec)
       const dot = dx * proj.x + dy * proj.y
-      if (!best || Math.abs(dot) > Math.abs(best.dot)) best = { axis, dot, sign: dot >= 0 ? 1 : -1 }
-    })
+      if (!best || Math.abs(dot) > best.score) {
+        best = { axis, sign: dot >= 0 ? 1 : -1, score: Math.abs(dot) }
+      }
+    }
     if (!best) return null
-    const chosen = best as { axis: Axis; dot: number; sign: number }
     const m: Vec3 = { X: 0, Y: 0, Z: 0 }
-    m[chosen.axis] = chosen.sign
-    // r = normal x m
+    m[best.axis] = best.sign
+    // turn axis r = face normal × drag direction
     const r: Vec3 = {
       X: normal.Y * m.Z - normal.Z * m.Y,
       Y: normal.Z * m.X - normal.X * m.Z,
@@ -767,59 +732,31 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     }
     const rAxis: Axis = Math.abs(r.X) > 0.5 ? 'X' : Math.abs(r.Y) > 0.5 ? 'Y' : 'Z'
     const rSign = r[rAxis] >= 0 ? 1 : -1
-    const layer = cube.position[rAxis]
-    let face: MoveKey | null = null
-    ;(Object.keys(this.MOVES) as MoveKey[]).forEach((k) => {
-      const mv = this.MOVES[k]
-      if (mv.posAxis === rAxis && mv.layer === layer) face = k
-    })
+    const layer = entry.cube.position[rAxis]
+    const face = (Object.keys(MOVES) as MoveKey[]).find(
+      (k) => MOVES[k].axis === rAxis && MOVES[k].layer === layer
+    )
     if (!face) return null
-    const prime = rSign === this.CW_SIGN[rAxis] ? false : true
-    return { face, prime }
+    return { face, prime: rSign !== CW_SIGN[rAxis] }
   }
 
+  // ---------- keyboard ----------
   private onKey(e: KeyboardEvent) {
     const tag = (e.target as HTMLElement | null)?.tagName || ''
     if (/input|textarea|select/i.test(tag)) return
     if (this.dragging) return // ignore keypresses while the pointer is held down
-    const k = e.key
-    if (k === 'a') {
-      this.userCubeMove('spinLeft')
-      e.preventDefault()
-      return
-    }
-    if (k === 'd') {
-      this.userCubeMove('spinRight')
-      e.preventDefault()
-      return
-    }
-    if (k === 'w') {
-      this.userCubeMove('rollUp')
-      e.preventDefault()
-      return
-    }
-    if (k === 's') {
-      this.userCubeMove('rollDown')
-      e.preventDefault()
-      return
-    }
-    if (k === ' ') {
+    if (e.key === ' ') {
       this.resetView()
       e.preventDefault()
       return
     }
-    const map: Record<string, MoveKey> = {
-      t: 'U',
-      b: 'D',
-      l: 'L',
-      r: 'R',
-      f: 'F',
-      q: 'B',
-      y: 'M',
-      x: 'E',
-      z: 'S'
+    const cubeMove = KEY_CUBE_MOVES[e.key]
+    if (cubeMove) {
+      this.userCubeMove(cubeMove)
+      e.preventDefault()
+      return
     }
-    const face = map[k.toLowerCase()]
+    const face = KEY_FACE_MOVES[e.key.toLowerCase()]
     if (face) {
       this.userMove(face, e.shiftKey)
       e.preventDefault()
@@ -845,14 +782,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
   }
 
   private updateStatus() {
-    const statusMap: Record<Status, { label: string; color: string }> = {
-      free: { label: 'Free Play', color: 'var(--text)' },
-      ready: { label: 'Ready', color: 'var(--text)' },
-      scrambling: { label: 'Scrambling…', color: 'var(--accent-x)' },
-      solving: { label: 'Solving…', color: 'var(--accent-z)' },
-      solved: { label: 'Solved!', color: 'var(--accent-y)' }
-    }
-    const st = statusMap[this.status]
+    const st = STATUS_META[this.status]
     const pill = document.getElementById('status-pill')
     const dot = document.getElementById('status-dot')
     const label = document.getElementById('status-label')
@@ -875,18 +805,10 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
       const el = document.getElementById(id) as HTMLButtonElement | null
       if (el) el.disabled = disabled
     }
-    ;[
-      'btn-scramble',
-      'btn-reset',
-      'solve',
-      'btn-recenter',
-      'btn-roll-up',
-      'btn-roll-down',
-      'btn-spin-left',
-      'btn-spin-right',
-      'btn-tilt-left',
-      'btn-tilt-right'
-    ].forEach((id) => setDisabled(id, solving))
+    const lockable = ['btn-scramble', 'btn-reset', 'solve', 'btn-recenter'].concat(
+      Object.keys(CUBE_MOVE_BUTTONS)
+    )
+    lockable.forEach((id) => setDisabled(id, solving))
     const abort = document.getElementById('abort-solve') as HTMLButtonElement | null
     if (abort) {
       abort.disabled = !solving || this.aborting
@@ -903,12 +825,9 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     bind('solve', () => this.startSolve())
     bind('abort-solve', () => this.abortSolve())
     bind('btn-recenter', () => this.resetView())
-    bind('btn-roll-up', () => this.userCubeMove('rollUp'))
-    bind('btn-roll-down', () => this.userCubeMove('rollDown'))
-    bind('btn-spin-left', () => this.userCubeMove('spinLeft'))
-    bind('btn-spin-right', () => this.userCubeMove('spinRight'))
-    bind('btn-tilt-left', () => this.userCubeMove('tiltLeft'))
-    bind('btn-tilt-right', () => this.userCubeMove('tiltRight'))
+    for (const [id, move] of Object.entries(CUBE_MOVE_BUTTONS)) {
+      bind(id, () => this.userCubeMove(move))
+    }
   }
 }
 
