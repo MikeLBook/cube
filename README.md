@@ -1,5 +1,7 @@
 # Cube
 
+https://consider-it-cubed.netlify.app/3d
+
 A Rubik's Cube engine with multiple presentations — a 2D net view, a 3D interactive
 view — and a pluggable solver. The long-term goal is a machine that holds a physical cube and
 scrambles/solves it in a loop; the web views are how we prove out the architecture before
