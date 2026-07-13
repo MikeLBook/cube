@@ -1,5 +1,5 @@
 import Cube from '../../engine/Cube'
-import { cubesShareFace, positionMap } from '../../utils'
+import { cubesShareFace } from '../../utils'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 
 export default async function solveMiddleEdges(solver: RubiksCubeSolver) {
@@ -14,14 +14,10 @@ export default async function solveMiddleEdges(solver: RubiksCubeSolver) {
     .filter((cube) => cube.isInXMidLayer)
     .find((cube) => {
       return (
-        (cube.orientation.front &&
-          !cubesShareFace('front', cube, solver.cubeMap.get(positionMap[17]))) ||
-        (cube.orientation.left &&
-          !cubesShareFace('left', cube, solver.cubeMap.get(positionMap[13]))) ||
-        (cube.orientation.back &&
-          !cubesShareFace('back', cube, solver.cubeMap.get(positionMap[11]))) ||
-        (cube.orientation.right &&
-          !cubesShareFace('right', cube, solver.cubeMap.get(positionMap[15])))
+        (cube.orientation.front && !cubesShareFace('front', cube, solver.fetchPosition(17))) ||
+        (cube.orientation.left && !cubesShareFace('left', cube, solver.fetchPosition(13))) ||
+        (cube.orientation.back && !cubesShareFace('back', cube, solver.fetchPosition(11))) ||
+        (cube.orientation.right && !cubesShareFace('right', cube, solver.fetchPosition(15)))
       )
     })!
 
@@ -69,11 +65,11 @@ async function solveBottomEdge(solver: RubiksCubeSolver, bottomEdge: Cube) {
     await solver.do('XCW')
   }
 
-  while (!cubesShareFace('front', bottomEdge, solver.cubeMap.get(positionMap[17]))) {
+  while (!cubesShareFace('front', bottomEdge, solver.fetchPosition(17))) {
     await solver.do('rotateBottomCW', 'XCCW')
   }
 
-  if (bottomEdge.orientation.bottom === solver.cubeMap.get(positionMap[13])?.orientation.left) {
+  if (bottomEdge.orientation.bottom === solver.fetchPosition(13)?.orientation.left) {
     await solver.do(
       'rotateBottomCCW',
       'rotateLeftCCW',

@@ -19,6 +19,7 @@ import solveWhiteFaceEdges from './subroutines/solveWhiteFaceEdges'
 import solveFinalCorners from './subroutines/solveFinalCorners'
 import solveFinalEdges from './subroutines/solveFinalEdges'
 import solveFinishedLayers from './subroutines/solveFinishedLayers'
+import { PositionKey, positionMap } from '../utils'
 
 type SolutionPhase =
   | 'YellowEdges'
@@ -45,6 +46,10 @@ export default class RubiksCubeSolver {
     const cubeMap = new Map<string, Cube>()
     this.rubiks.cubes.forEach((cube) => cubeMap.set(JSON.stringify(cube.position), cube))
     return cubeMap
+  }
+
+  public fetchPosition(position: PositionKey): Cube | undefined {
+    return this.cubeMap.get(positionMap[position])
   }
 
   // Apply a sequence of moves to the engine, one per settled() so the presentation

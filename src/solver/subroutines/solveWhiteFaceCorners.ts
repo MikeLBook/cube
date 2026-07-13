@@ -1,4 +1,3 @@
-import { positionMap } from '../../utils'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 
 export default async function solveWhiteFaceCorners(solver: RubiksCubeSolver) {
@@ -11,13 +10,13 @@ export default async function solveWhiteFaceCorners(solver: RubiksCubeSolver) {
     return
   }
 
-  while (solver.cubeMap.get(positionMap[7])?.orientation.top !== 'W') {
+  while (solver.fetchPosition(7)?.orientation.top !== 'W') {
     await solver.do('XCW')
   }
 
-  const frontRight = solver.cubeMap.get(positionMap[9])
-  const backLeft = solver.cubeMap.get(positionMap[1])
-  const backRight = solver.cubeMap.get(positionMap[3])
+  const frontRight = solver.fetchPosition(9)
+  const backLeft = solver.fetchPosition(1)
+  const backRight = solver.fetchPosition(3)
 
   if (
     frontRight?.orientation.top === 'W' &&

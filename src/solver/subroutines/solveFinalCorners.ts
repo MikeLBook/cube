@@ -1,11 +1,11 @@
-import { cubesShareFace, positionMap } from '../../utils'
+import { cubesShareFace } from '../../utils'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 
 export default async function solveFinalCorners(solver: RubiksCubeSolver) {
-  const frontRight = solver.cubeMap.get(positionMap[9])
-  const backLeft = solver.cubeMap.get(positionMap[1])
-  const backRight = solver.cubeMap.get(positionMap[3])
-  const frontLeft = solver.cubeMap.get(positionMap[7])
+  const frontRight = solver.fetchPosition(9)
+  const backLeft = solver.fetchPosition(1)
+  const backRight = solver.fetchPosition(3)
+  const frontLeft = solver.fetchPosition(7)
 
   if (cubesShareFace('front', frontRight, frontLeft)) {
     await solver.do('XCW', 'XCW')
@@ -31,12 +31,8 @@ export default async function solveFinalCorners(solver: RubiksCubeSolver) {
   }
 
   while (
-    !cubesShareFace(
-      'left',
-      solver.cubeMap.get(positionMap[1]),
-      solver.cubeMap.get(positionMap[13])
-    ) &&
-    !cubesShareFace('back', solver.cubeMap.get(positionMap[1]), solver.cubeMap.get(positionMap[11]))
+    !cubesShareFace('left', solver.fetchPosition(1), solver.fetchPosition(13)) &&
+    !cubesShareFace('back', solver.fetchPosition(1), solver.fetchPosition(11))
   ) {
     await solver.do('rotateTopCW', 'XCCW')
   }

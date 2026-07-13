@@ -1,13 +1,13 @@
-import { cubesShareFace, positionMap } from '../../utils'
+import { cubesShareFace } from '../../utils'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 
 export default async function solveYellowCorners(solver: RubiksCubeSolver) {
   /////////////////////////////////
   // Solve yellow top corner cubes
   /////////////////////////////////
-  const backLeft = solver.cubeMap.get(positionMap[1])
-  const backEdge = solver.cubeMap.get(positionMap[2])
-  const leftEdge = solver.cubeMap.get(positionMap[4])
+  const backLeft = solver.fetchPosition(1)
+  const backEdge = solver.fetchPosition(2)
+  const leftEdge = solver.fetchPosition(4)
   if (
     backLeft?.hasFace('Y') &&
     !(
@@ -21,8 +21,8 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     return
   }
 
-  const backRight = solver.cubeMap.get(positionMap[3])
-  const rightEdge = solver.cubeMap.get(positionMap[6])
+  const backRight = solver.fetchPosition(3)
+  const rightEdge = solver.fetchPosition(6)
   if (
     backRight?.hasFace('Y') &&
     !(
@@ -36,8 +36,8 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     return
   }
 
-  const frontLeft = solver.cubeMap.get(positionMap[7])
-  const frontEdge = solver.cubeMap.get(positionMap[8])
+  const frontLeft = solver.fetchPosition(7)
+  const frontEdge = solver.fetchPosition(8)
   if (
     frontLeft?.hasFace('Y') &&
     !(
@@ -50,7 +50,7 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     return
   }
 
-  const frontRight = solver.cubeMap.get(positionMap[9])
+  const frontRight = solver.fetchPosition(9)
   if (
     frontRight?.hasFace('Y') &&
     !(
@@ -66,7 +66,7 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
   ////////////////////////////////////
   // Solve yellow bottom corner cubes
   ////////////////////////////////////
-  const bottomBackLeft = solver.cubeMap.get(positionMap[19])
+  const bottomBackLeft = solver.fetchPosition(19)
   if (bottomBackLeft?.hasFace('Y')) {
     if (bottomBackLeft.orientation.bottom === 'Y') {
       await solver.do('XCCW')
@@ -81,7 +81,7 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     return
   }
 
-  const bottomBackRight = solver.cubeMap.get(positionMap[21])
+  const bottomBackRight = solver.fetchPosition(21)
   if (bottomBackRight?.hasFace('Y')) {
     if (bottomBackRight.orientation.bottom === 'Y') {
       await solver.do('XCW')
@@ -96,7 +96,7 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     return
   }
 
-  const bottomFrontLeft = solver.cubeMap.get(positionMap[25])
+  const bottomFrontLeft = solver.fetchPosition(25)
   if (bottomFrontLeft?.hasFace('Y')) {
     if (bottomFrontLeft.orientation.bottom === 'Y') {
       await solveBottomLeftFaceDown(solver)
@@ -109,7 +109,7 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     return
   }
 
-  const bottomFrontRight = solver.cubeMap.get(positionMap[27])
+  const bottomFrontRight = solver.fetchPosition(27)
   if (bottomFrontRight?.hasFace('Y')) {
     if (bottomFrontRight.orientation.bottom === 'Y') {
       await solveBottomRightFaceDown(solver)
@@ -127,7 +127,7 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
 // Solve for specific cubes
 ////////////////////////////////////
 async function solveFrontRightCorner(solver: RubiksCubeSolver) {
-  const unsolvedCube = solver.cubeMap.get(positionMap[9])
+  const unsolvedCube = solver.fetchPosition(9)
   if (unsolvedCube?.orientation.front === 'Y') {
     await solver.do('rotateFrontCW', 'rotateBottomCCW', 'rotateFrontCCW', 'XCW')
     await solveBottomRight(solver)
@@ -142,7 +142,7 @@ async function solveFrontRightCorner(solver: RubiksCubeSolver) {
 }
 
 async function solveFrontLeftCorner(solver: RubiksCubeSolver) {
-  const unsolvedCube = solver.cubeMap.get(positionMap[7])
+  const unsolvedCube = solver.fetchPosition(7)
   if (unsolvedCube?.orientation.front === 'Y') {
     await solver.do('rotateFrontCCW', 'rotateBottomCW', 'rotateFrontCW', 'XCCW')
     await solveBottomLeft(solver)
@@ -159,9 +159,9 @@ async function solveFrontLeftCorner(solver: RubiksCubeSolver) {
 async function solveBottomLeftFaceDown(solver: RubiksCubeSolver) {
   let unsolvedWorkingCube = false
   do {
-    const topLeftCorner = solver.cubeMap.get(positionMap[7])
-    const topLeftEdge = solver.cubeMap.get(positionMap[4])
-    const topFrontEdge = solver.cubeMap.get(positionMap[8])
+    const topLeftCorner = solver.fetchPosition(7)
+    const topLeftEdge = solver.fetchPosition(4)
+    const topFrontEdge = solver.fetchPosition(8)
     if (
       topLeftCorner?.orientation.top !== 'Y' ||
       !cubesShareFace('left', topLeftCorner, topLeftEdge) ||
@@ -190,9 +190,9 @@ async function solveBottomLeftFaceDown(solver: RubiksCubeSolver) {
 async function solveBottomRightFaceDown(solver: RubiksCubeSolver) {
   let unsolvedWorkingCube = false
   do {
-    const topRightCorner = solver.cubeMap.get(positionMap[9])
-    const topRightEdge = solver.cubeMap.get(positionMap[6])
-    const topFrontEdge = solver.cubeMap.get(positionMap[8])
+    const topRightCorner = solver.fetchPosition(9)
+    const topRightEdge = solver.fetchPosition(6)
+    const topFrontEdge = solver.fetchPosition(8)
     if (
       topRightCorner?.orientation.top !== 'Y' ||
       !cubesShareFace('right', topRightCorner, topRightEdge) ||
@@ -219,8 +219,8 @@ async function solveBottomRightFaceDown(solver: RubiksCubeSolver) {
 }
 
 async function solveBottomLeft(solver: RubiksCubeSolver) {
-  const cube = solver.cubeMap.get(positionMap[25])
-  while (!cubesShareFace('left', cube, solver.cubeMap.get(positionMap[13]))) {
+  const cube = solver.fetchPosition(25)
+  while (!cubesShareFace('left', cube, solver.fetchPosition(13))) {
     await solver.do('rotateBottomCW', 'XCCW')
   }
   await solver.do('rotateBottomCCW', 'rotateLeftCCW', 'rotateBottomCW', 'rotateLeftCW')
@@ -228,8 +228,8 @@ async function solveBottomLeft(solver: RubiksCubeSolver) {
 }
 
 async function solveBottomRight(solver: RubiksCubeSolver) {
-  const cube = solver.cubeMap.get(positionMap[27])
-  while (!cubesShareFace('right', cube, solver.cubeMap.get(positionMap[15]))) {
+  const cube = solver.fetchPosition(27)
+  while (!cubesShareFace('right', cube, solver.fetchPosition(15))) {
     await solver.do('rotateBottomCCW', 'XCW')
   }
   await solver.do('rotateBottomCW', 'rotateRightCCW', 'rotateBottomCCW', 'rotateRightCW')

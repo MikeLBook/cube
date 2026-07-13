@@ -1,11 +1,10 @@
-import { positionMap } from '../../utils'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 
 export default async function solveWhiteFaceEdges(solver: RubiksCubeSolver) {
-  const backEdge = solver.cubeMap.get(positionMap[2])
-  const leftEdge = solver.cubeMap.get(positionMap[4])
-  const rightEdge = solver.cubeMap.get(positionMap[6])
-  const frontEdge = solver.cubeMap.get(positionMap[8])
+  const backEdge = solver.fetchPosition(2)
+  const leftEdge = solver.fetchPosition(4)
+  const rightEdge = solver.fetchPosition(6)
+  const frontEdge = solver.fetchPosition(8)
 
   if (backEdge?.orientation.top === 'W') {
     if (leftEdge?.orientation.top === 'W') {

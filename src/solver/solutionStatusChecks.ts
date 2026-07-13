@@ -1,7 +1,7 @@
 import Cube from '../engine/Cube'
 import { OrientationKey } from '../engine/types'
 import RubiksCube from '../engine/RubiksCube'
-import { cubesShareFace, JSONEquals, positionMap } from '../utils'
+import { cubesShareFace, JSONEquals } from '../utils'
 import RubiksCubeSolver from './RubiksCubeSolver'
 
 export function isOutsideLayerSolved(orientation: OrientationKey, rubiks: RubiksCube): boolean {
@@ -80,10 +80,10 @@ export function hasSolvedYellowEdges(solver: RubiksCubeSolver): boolean {
   const rightEdge = topEdges.find((cube) => cube.isInRightLayer)
   const backEdge = topEdges.find((cube) => cube.isInBackLayer)
 
-  const frontFace = solver.cubeMap.get(positionMap[17])
-  const leftFace = solver.cubeMap.get(positionMap[13])
-  const rightFace = solver.cubeMap.get(positionMap[15])
-  const backFace = solver.cubeMap.get(positionMap[11])
+  const frontFace = solver.fetchPosition(17)
+  const leftFace = solver.fetchPosition(13)
+  const rightFace = solver.fetchPosition(15)
+  const backFace = solver.fetchPosition(11)
 
   if (!cubesShareFace('front', frontEdge, frontFace)) return false
   if (!cubesShareFace('left', leftEdge, leftFace)) return false
@@ -93,23 +93,20 @@ export function hasSolvedYellowEdges(solver: RubiksCubeSolver): boolean {
 }
 
 export function hasSolvedYellowCorners(solver: RubiksCubeSolver): boolean {
-  const backLeft = solver.cubeMap.get(positionMap[1])
-  const backRight = solver.cubeMap.get(positionMap[3])
-  const frontLeft = solver.cubeMap.get(positionMap[7])
-  const frontRight = solver.cubeMap.get(positionMap[9])
+  const backLeft = solver.fetchPosition(1)
+  const backRight = solver.fetchPosition(3)
+  const frontLeft = solver.fetchPosition(7)
+  const frontRight = solver.fetchPosition(9)
 
   if (![backLeft, backRight, frontLeft, frontRight].every((cube) => cube?.orientation.top === 'Y'))
     return false
 
-  const backEdge = solver.cubeMap.get(positionMap[2])
-  const leftEdge = solver.cubeMap.get(positionMap[4])
-  const rightEdge = solver.cubeMap.get(positionMap[6])
-  const frontEdge = solver.cubeMap.get(positionMap[8])
+  const backEdge = solver.fetchPosition(2)
+  const leftEdge = solver.fetchPosition(4)
+  const rightEdge = solver.fetchPosition(6)
+  const frontEdge = solver.fetchPosition(8)
 
-  if (
-    !cubesShareFace('left', backLeft, leftEdge) ||
-    !cubesShareFace('back', backLeft, backEdge)
-  )
+  if (!cubesShareFace('left', backLeft, leftEdge) || !cubesShareFace('back', backLeft, backEdge))
     return false
 
   if (
@@ -134,28 +131,28 @@ export function hasSolvedYellowCorners(solver: RubiksCubeSolver): boolean {
 }
 
 export function hasSolvedWhiteFaceEdges(solver: RubiksCubeSolver): boolean {
-  const backEdge = solver.cubeMap.get(positionMap[2])
-  const leftEdge = solver.cubeMap.get(positionMap[4])
-  const rightEdge = solver.cubeMap.get(positionMap[6])
-  const frontEdge = solver.cubeMap.get(positionMap[8])
+  const backEdge = solver.fetchPosition(2)
+  const leftEdge = solver.fetchPosition(4)
+  const rightEdge = solver.fetchPosition(6)
+  const frontEdge = solver.fetchPosition(8)
 
   return [backEdge, leftEdge, rightEdge, frontEdge].every((edge) => edge?.orientation.top === 'W')
 }
 
 export function hasSolvedWhiteFaceCorners(solver: RubiksCubeSolver): boolean {
-  const backLeft = solver.cubeMap.get(positionMap[1])
-  const backRight = solver.cubeMap.get(positionMap[3])
-  const frontLeft = solver.cubeMap.get(positionMap[7])
-  const frontRight = solver.cubeMap.get(positionMap[9])
+  const backLeft = solver.fetchPosition(1)
+  const backRight = solver.fetchPosition(3)
+  const frontLeft = solver.fetchPosition(7)
+  const frontRight = solver.fetchPosition(9)
 
   return [backLeft, backRight, frontLeft, frontRight].every((edge) => edge?.orientation.top === 'W')
 }
 
 export function hasCompletedCorners(solver: RubiksCubeSolver): boolean {
-  const backLeft = solver.cubeMap.get(positionMap[1])
-  const backRight = solver.cubeMap.get(positionMap[3])
-  const frontLeft = solver.cubeMap.get(positionMap[7])
-  const frontRight = solver.cubeMap.get(positionMap[9])
+  const backLeft = solver.fetchPosition(1)
+  const backRight = solver.fetchPosition(3)
+  const frontLeft = solver.fetchPosition(7)
+  const frontRight = solver.fetchPosition(9)
 
   return (
     [backLeft, backRight, frontLeft, frontRight].every(

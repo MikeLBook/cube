@@ -36,7 +36,6 @@ import {
   hasCompletedCorners,
   isMiddleLayerSolved
 } from '../solutionStatusChecks'
-import { positionMap } from '../../utils'
 
 const rubiks = RubiksCube.getInstance()
 
@@ -64,7 +63,7 @@ const origExecute = rubiks.execute.bind(rubiks)
 }
 
 // @ts-ignore
-const get = (i: number) => solver.cubeMap.get(positionMap[i])
+const get = (i: number) => solver.fetchPosition(i)
 const centers = () => ({
   back: get(11)?.orientation.back,
   left: get(13)?.orientation.left,

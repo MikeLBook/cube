@@ -96,3 +96,5 @@ export const positionMap = {
   26: JSON.stringify({ X: 0, Y: -1, Z: 1 }),
   27: JSON.stringify({ X: 1, Y: -1, Z: 1 })
 }
+
+export type PositionKey = keyof typeof positionMap

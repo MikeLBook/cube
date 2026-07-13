@@ -1,14 +1,14 @@
-import { cubesShareFace, positionMap } from '../../utils'
+import { cubesShareFace } from '../../utils'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 
 export default async function solveFinalEdges(solver: RubiksCubeSolver) {
-  const leftEdge = solver.cubeMap.get(positionMap[4])
-  const rightEdge = solver.cubeMap.get(positionMap[6])
-  const frontEdge = solver.cubeMap.get(positionMap[8])
-  const frontRight = solver.cubeMap.get(positionMap[9])
-  const backLeft = solver.cubeMap.get(positionMap[1])
-  const backRight = solver.cubeMap.get(positionMap[3])
-  const frontLeft = solver.cubeMap.get(positionMap[7])
+  const leftEdge = solver.fetchPosition(4)
+  const rightEdge = solver.fetchPosition(6)
+  const frontEdge = solver.fetchPosition(8)
+  const frontRight = solver.fetchPosition(9)
+  const backLeft = solver.fetchPosition(1)
+  const backRight = solver.fetchPosition(3)
+  const frontLeft = solver.fetchPosition(7)
 
   if (cubesShareFace('left', frontLeft, leftEdge, backLeft)) {
     await solver.do('XCW')
@@ -18,14 +18,11 @@ export default async function solveFinalEdges(solver: RubiksCubeSolver) {
     await solver.do('XCW', 'XCW')
   }
 
-  while (
-    solver.cubeMap.get(positionMap[1])?.orientation.back !==
-    solver.cubeMap.get(positionMap[11])?.orientation.back
-  ) {
+  while (solver.fetchPosition(1)?.orientation.back !== solver.fetchPosition(11)?.orientation.back) {
     await solver.do('rotateTopCW', 'XCCW')
   }
 
-  if (leftEdge?.orientation.left === solver.cubeMap.get(positionMap[17])?.orientation.front) {
+  if (leftEdge?.orientation.left === solver.fetchPosition(17)?.orientation.front) {
     await runAlgorithmLR(solver)
     return
   } else {
