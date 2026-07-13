@@ -209,13 +209,16 @@ async function runSeq(seq: string[]): Promise<Outcome> {
       await solveMiddleEdges(solver)
       if (++g > 80) return 'middle-stuck'
     }
-    // Assert the yellow-side checks agree while yellow is still on top — moveToFinalLayer
+    // Assert the yellow-side checks agree while yellow is still on top — advancePhase
     // below flips white up, after which the yellow-oriented ground truths no longer apply.
     if (!hasSolvedYellowEdges(solver) || !hasSolvedYellowCorners(solver)) return 'checks-disagree'
     if (!isMiddleLayerSolved('top', rubiks)) return 'checks-disagree'
 
     // Final layer: flip the white face to the top (as run() does), then form the white cross.
-    await (solver as any).moveToFinalLayer()
+    // advancePhase('WhiteFaceEdges') performs this flip; pass shouldRecurse=false so it does
+    // ONLY the flip — the harness drives the white phases itself below. (Letting it recurse
+    // spawns a dangling, un-awaited solveWhiteFaceEdges that interleaves with our own loop.)
+    await (solver as any).advancePhase('WhiteFaceEdges', false)
     g = 0
     while (!whiteCrossSolved()) {
       if (hasSolvedWhiteFaceEdges(solver)) return 'white-edge-check-early'
@@ -307,9 +310,9 @@ async function trace(seq: string[]) {
     if (!flipped) {
       if (edgesSolved() && cornersSolved() && middleEdgesSolved()) {
         moveLog.length = 0
-        await (solver as any).moveToFinalLayer()
+        await (solver as any).advancePhase('WhiteFaceEdges', false)
         flipped = true
-        console.log(`\n--- flip white to top (moveToFinalLayer) ---`)
+        console.log(`\n--- flip white to top (advancePhase('WhiteFaceEdges', false)) ---`)
         console.log('  moves:', moveLog.join(' ') || '(none — white already on top)')
         console.log(snap())
         continue
