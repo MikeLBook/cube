@@ -2,6 +2,7 @@ import Cube from '../engine/Cube'
 import RubiksCube from '../engine/RubiksCube'
 import { isRotation } from '../utils'
 import {
+  hasCompletedCorners,
   hasSolvedWhiteFaceCorners,
   hasSolvedWhiteFaceEdges,
   hasSolvedYellowCorners,
@@ -16,6 +17,8 @@ import { LayerMove, Rotation } from '../engine/types'
 import { IMovePacer } from '../interfaces/IMovePacer'
 import solveWhiteFaceCorners from './subroutines/solveWhiteFaceCorners'
 import solveWhiteFaceEdges from './subroutines/solveWhiteFaceEdges'
+import solveFinalCorners from './subroutines/solveFinalCorners'
+import solveFinalEdges from './subroutines/solveFinalEdges'
 
 type SolutionPhase =
   | 'YellowEdges'
@@ -108,7 +111,7 @@ export default class RubiksCubeSolver {
       }
       if (this.yellowLayerSolved) {
         await this.advancePhase('MiddleEdges')
-      }
+      } else this.updateSolutionStatus()
     }
   }
 
@@ -148,6 +151,16 @@ export default class RubiksCubeSolver {
         } else {
           solveWhiteFaceCorners(this)
         }
+        break
+      case 'CompleteCorners':
+        if (hasCompletedCorners(this)) {
+          await this.advancePhase('CompleteEdges')
+        } else {
+          solveFinalCorners(this)
+        }
+        break
+      case 'CompleteEdges':
+        solveFinalEdges(this)
         break
     }
   }

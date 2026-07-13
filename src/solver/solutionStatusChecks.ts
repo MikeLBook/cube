@@ -156,3 +156,20 @@ export function hasSolvedWhiteFaceCorners(solver: RubiksCubeSolver): boolean {
 
   return [backLeft, backRight, frontLeft, frontRight].every((edge) => edge?.orientation.top === 'W')
 }
+
+export function hasCompletedCorners(solver: RubiksCubeSolver): boolean {
+  const backLeft = solver.cubeMap.get(positionMap[1])
+  const backRight = solver.cubeMap.get(positionMap[3])
+  const frontLeft = solver.cubeMap.get(positionMap[7])
+  const frontRight = solver.cubeMap.get(positionMap[9])
+
+  return (
+    [backLeft, backRight, frontLeft, frontRight].every(
+      (corner) => corner?.orientation.top === 'W'
+    ) &&
+    backLeft?.orientation.back === backRight?.orientation.back &&
+    backLeft?.orientation.left === frontLeft?.orientation.left &&
+    frontLeft?.orientation.front === frontRight?.orientation.front &&
+    frontRight?.orientation.right === backRight?.orientation.right
+  )
+}
