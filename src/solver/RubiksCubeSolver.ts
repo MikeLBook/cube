@@ -67,9 +67,6 @@ export default class RubiksCubeSolver {
     this.solutionPhase = 'YellowEdges'
   }
 
-  // Mutate the engine one move at a time and wait for the presentation to settle
-  // before continuing. The finished solver will loop until the cube is solved;
-  // This placeholder is under active development
   public async run(signal?: AbortSignal) {
     while (!signal?.aborted && !this.rubiks.isSolved) {
       if (this.yellowLayerSolved === undefined) {
