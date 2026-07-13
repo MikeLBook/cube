@@ -72,12 +72,12 @@ there's hardware. Keep that endpoint in mind for every decision.
 
 - **Engine** (`src/engine/`) — the pure, synchronous source of truth.
 - **Solver** (`src/solver/`) — the "person." Decides and applies moves. Knows nothing about any
-  representation beyond a tiny pacing interface.
-- **Representations** — the "reporters." Present state to viewers: the 2D net
+  presentation beyond a tiny pacing interface.
+- **Presentations** — the "reporters." Present state to viewers: the 2D net
   (`src/presentations/2DWeb/`), the 3D view (`src/presentations/3DWeb/`), and eventually a
   robot. Observe the engine; never own state.
 
-Dependencies point inward only: representations and the solver depend on the engine; the engine
+Dependencies point inward only: presentations and the solver depend on the engine; the engine
 depends on nothing.
 
 ## Layers (inner → outer)
@@ -86,9 +86,9 @@ depends on nothing.
   `ORIENTATION_KEYS`, `AXES`, `FACES`, plus the engine's move vocabulary — the
   `LAYER_MOVES`/`ROTATIONS` constants and their `LayerMove`/`Rotation` types.
 - `src/interfaces/IRubiksCubeObserver.ts` — the `IRubiksCubeObserver` interface (`onMove`,
-  the one-way contract representations implement); default-exported.
+  the one-way contract presentations implement); default-exported.
 - `src/interfaces/IMovePacer.ts` — the `IMovePacer` interface (`settled()`) the solver depends on to
-  pace itself against a representation.
+  pace itself against a presentation.
 - `src/engine/Cube.ts` — one cubie. Holds `position` + `orientation` and the six axis rotations
   (`rotateXCW`…`rotateZCCW`). **Layer membership is derived from orientation, not position**
   (`isInTopLayer = orientation.top !== undefined`), and `rotate()` recomputes `position` from the
@@ -104,7 +104,7 @@ depends on nothing.
 - `src/solver/subroutines/` — one module per solve phase (e.g. `solveYellowEdges`,
   `solveYellowCorners`, `solveMiddleEdges`); each takes the solver and drives moves through
   `solver.do(...)`.
-- `src/presentations/2DWeb/` / `src/presentations/3DWeb/` — the two representations. Each
+- `src/presentations/2DWeb/` / `src/presentations/3DWeb/` — the two presentations. Each
   folder holds its `.ts` (logic), `.html`, and `.css`; the build flattens them into `build/`.
   The 3D view's logic is split into modules: `3DWeb.ts` (the entry point — the stateful
   `CubeView` core owning the pacing/driver/animation invariants), plus `types.ts`, `config.ts`
@@ -116,16 +116,16 @@ depends on nothing.
 State changes propagate one way:
 
 ```
-source → RubiksCube method → onMove(move) → representation presents the change
+source → RubiksCube method → onMove(move) → presentation presents the change
 ```
 
 - `IRubiksCubeObserver.onMove(move?: LayerMove | Rotation)` is defined in
   `src/interfaces/IRubiksCubeObserver.ts`. The
-  engine passes the move's identity so a representation can present the specific change (animate
+  engine passes the move's identity so a presentation can present the specific change (animate
   the right layer, or the whole cube for a `Rotation`). `reset()` passes no move.
-- Representations register via `rubiks.addObserver(this)`.
-- The **solver mutates the engine directly** (it does not ask a representation to move anything),
-  and the representation reacts via `onMove`. The solver's only outward dependency is:
+- Presentations register via `rubiks.addObserver(this)`.
+- The **solver mutates the engine directly** (it does not ask a presentation to move anything),
+  and the presentation reacts via `onMove`. The solver's only outward dependency is:
 
   ```ts
   // src/interfaces/IMovePacer.ts
@@ -135,9 +135,9 @@ source → RubiksCube method → onMove(move) → representation presents the ch
   ```
 
   The solver is **async** and makes **one move per `await settled()`**. `settled()` resolves once
-  the representation has finished presenting the move (instant for 2D, animation-end for 3D, motor
+  the presentation has finished presenting the move (instant for 2D, animation-end for 3D, motor
   movement for a robot). This lets the "reporter" pace the "person," keeping the model and the
-  representation in **lock-step** — required for the robot, where the model must not race ahead of
+  presentation in **lock-step** — required for the robot, where the model must not race ahead of
   the physical cube.
 
 ## Key decisions and why
@@ -149,7 +149,7 @@ source → RubiksCube method → onMove(move) → representation presents the ch
    none of that belongs in the engine. The `onMove` event carries only the move identity; any
    view-only metadata is the view's concern (see the 3D view's one-shot `movePresentation` hint).
 
-3. **Observer carries the move.** Earlier `onMove()` carried nothing, so a representation couldn't
+3. **Observer carries the move.** Earlier `onMove()` carried nothing, so a presentation couldn't
    animate a change it didn't initiate. Passing `move` is what makes solver-driven animation
    possible without the view diffing state.
 
@@ -208,7 +208,7 @@ last-layer phases — `CompleteCorners` (`solveFinalCorners`, permute the top co
 solved slots, gated by `hasCompletedCorners`) and `CompleteEdges` (`solveFinalEdges`, permute the
 top edges, gated by `rubiks.isSolved`). The last two place the top layer's side stickers, so the
 solve now runs through to a fully solved cube. Building this out required **no changes** to the
-engine or the representations — that's the test of whether the decoupling held.
+engine or the presentations — that's the test of whether the decoupling held.
 
 The headless verification harness (`src/solver/verification/`) drives the full pipeline to
 `rubiks.isSolved` over thousands of random scrambles and the solver **solves all of them** —
@@ -218,4 +218,4 @@ confirmed both by `count` (a hand-rolled phase loop with independent per-phase c
 
 When adding solve logic, drive every move through `solver.do(...)` (one move per `await settled()`)
 rather than calling engine methods directly — that's what keeps the solver paced against the
-representation.
+presentation.

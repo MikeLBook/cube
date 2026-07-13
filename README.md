@@ -1,12 +1,12 @@
 # Cube
 
-A Rubik's Cube engine with multiple representations — a 2D net view, a 3D interactive
+A Rubik's Cube engine with multiple presentations — a 2D net view, a 3D interactive
 view — and a pluggable solver. The long-term goal is a machine that holds a physical cube and
 scrambles/solves it in a loop; the web views are how we prove out the architecture before
 there's hardware.
 
 > **A note on AI.** This project is a coding puzzle/challenge — modeling the cube and writing the
-> solver by hand is the point, and using AI to represent or solve the cube would be antithetical
+> solver by hand is the point, and using AI to model or solve the cube would be antithetical
 > to its spirit. AI involvement is therefore restricted to the **3D view**
 > (`src/presentations/3DWeb/`), the **verification harness** (`src/solver/verification/`), and
 > **miscellaneous tooling** (e.g. `package.json` scripts). Every TypeScript file except the 3D
@@ -26,7 +26,7 @@ ones beneath it.
               RubiksCube  (the 27 cubies; the single source of truth; emits move events)
                  │   │
          ┌───────┘   └────────────┐
-       Solver                Representations
+       Solver                Presentations
    (decides moves)     (2D view · 3D view · …robot)
 ```
 
@@ -35,14 +35,14 @@ ones beneath it.
 - **`src/engine/Cube.ts`** — a single cubie. Knows its position and which colour faces which
   way, and how to rotate itself about each axis.
 - **`src/engine/RubiksCube.ts`** — the whole cube and the **single source of truth** for state.
-  A singleton (`getInstance`) so every representation on a page sees the same cube. It exposes
+  A singleton (`getInstance`) so every presentation on a page sees the same cube. It exposes
   the moves (`rotateTopCW`, … , `rotateRubiksCube`, `reset`), `isSolved`, and
   `setState`/serialization. It is **pure and synchronous** — it knows nothing about animation,
   timing, pixels, or motors.
 
 This inner core was built and validated first; everything outside it is a consumer.
 
-## The observer pattern: how representations stay in sync
+## The observer pattern: how presentations stay in sync
 
 `RubiksCube` doesn't draw anything. After every state change it notifies observers, passing
 the move that caused it:
@@ -54,11 +54,11 @@ interface IRubiksCubeObserver {
 }
 ```
 
-A representation implements `onMove` and registers via `rubiks.addObserver(this)`. The flow is
+A presentation implements `onMove` and registers via `rubiks.addObserver(this)`. The flow is
 always:
 
 ```
-input → RubiksCube method call → onMove(move) → representation presents the change
+input → RubiksCube method call → onMove(move) → presentation presents the change
 ```
 
 - The **2D view** (`src/presentations/2DWeb/`) is the simplest consumer: `onMove` just
@@ -79,8 +79,8 @@ exactly one fresh move.
 ## The solver and the pacing contract
 
 The **solver** is the "person" solving the cube. It has direct access to `RubiksCube` and
-mutates it directly — it does not ask a representation to move anything. It is decoupled from
-every representation; the only thing it knows about the outside world is a small interface it
+mutates it directly — it does not ask a presentation to move anything. It is decoupled from
+every presentation; the only thing it knows about the outside world is a small interface it
 uses to pace itself:
 
 ```ts
@@ -96,19 +96,19 @@ The solver is **async** and makes **one move per `await`**:
 async run(signal?: AbortSignal) {
   while (/* not solved */) {
     this.determineNextMove();   // mutate the engine directly → fires onMove
-    await this.pacer.settled(); // wait for the representation to present it
+    await this.pacer.settled(); // wait for the presentation to present it
   }
 }
 ```
 
-Think of the representation as a **reporter** broadcasting each change to viewers. It is allowed
+Think of the presentation as a **reporter** broadcasting each change to viewers. It is allowed
 to tell the solver to slow down: it resolves `settled()` only once it has finished presenting
-the move. This keeps the model and the representation in **lock-step** — essential for the
+the move. This keeps the model and the presentation in **lock-step** — essential for the
 eventual robot, where the model must not race ahead of the physical cube.
 
-Each representation implements `IMovePacer.settled()` for its own medium:
+Each presentation implements `IMovePacer.settled()` for its own medium:
 
-| Representation           | `settled()` resolves when…                           |
+| Presentation             | `settled()` resolves when…                           |
 | ------------------------ | ---------------------------------------------------- |
 | 2D view / headless tests | immediately (presentation is instant)                |
 | 3D view                  | the move's CSS animation finishes                    |
@@ -161,12 +161,10 @@ src/
 build.mjs                   esbuild build → build/
 ```
 
-`RubiksCubeSolver.run()` implements a **layer-by-layer solve** (yellow face first) and loops until
-the cube is solved. All seven phases are implemented (yellow-edge, yellow-corner, middle-edge,
-white-face-edge, white-face-corner, and the two last-layer phases — complete-corners and
-complete-edges — that permute the top layer into place). It solves every scramble in the headless
-verification harness (`src/solver/verification/`). Building it out required no changes to the
-engine or the representations — the decoupling is the point.
+`RubiksCubeSolver.run()` implements a **layer-by-layer solve** (yellow face first
+with seven distinct phases from start to end) and loops until
+the cube is solved. Building it out required no changes to the
+engine or the presentations — the decoupling is the point.
 
 Solver routines never call an engine move directly; they apply moves through `solver.do(...)`,
 which runs each move and `await`s the pacer between them, so a whole algorithm is one paced call:
