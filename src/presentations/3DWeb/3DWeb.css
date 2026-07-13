@@ -31,7 +31,14 @@ body {
     radial-gradient(1100px 700px at 30% -15%, #2a2b3c 0%, transparent 60%),
     linear-gradient(180deg, #15151d 0%, #0f0f15 100%);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -64,7 +71,9 @@ body {
   border: 1px solid var(--border);
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.02);
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .back-link:hover {
@@ -152,7 +161,7 @@ body {
 }
 
 .brand-tag {
-  font-size: 0.68rem;
+  font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -257,7 +266,10 @@ body {
   cursor: pointer;
   user-select: none;
   touch-action: manipulation;
-  transition: transform 0.06s ease, background 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.06s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .btn:hover {
@@ -299,4 +311,38 @@ body {
 
 .btn--wide:hover {
   color: var(--text);
+}
+
+/* Disabled controls (e.g. everything but Abort while the solver runs). */
+.btn:disabled {
+  pointer-events: none;
+}
+
+.btn:disabled:not(.btn--busy) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Processing state — Abort while the solve unwinds: spinner + "Aborting…", not dimmed. */
+.btn--busy {
+  cursor: progress;
+  color: var(--muted);
+}
+
+.btn--busy::before {
+  content: '';
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: 0.5em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

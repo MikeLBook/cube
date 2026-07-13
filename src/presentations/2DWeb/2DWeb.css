@@ -176,6 +176,7 @@ body {
 
 /* ---------- Cube net ---------- */
 .net {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(4, max-content);
   grid-template-areas:
@@ -188,6 +189,14 @@ body {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
   border-radius: 18px;
+}
+
+.net__reset {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 1;
+  width: auto;
 }
 
 .area-top {

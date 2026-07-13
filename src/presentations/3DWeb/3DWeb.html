@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="cube3d.css" />
+    <link rel="stylesheet" href="3DWeb.css" />
     <title>Cube · 3D</title>
   </head>
   <body>
@@ -11,7 +11,6 @@
       <!-- ===== Stage ===== -->
       <div class="stage">
         <a class="back-link" href="index.html">&larr; Net view</a>
-
         <header class="stage__title">
           <span class="eyebrow">Interactive</span>
           <h1>3D Cube</h1>
@@ -28,8 +27,7 @@
       <!-- ===== Control panel ===== -->
       <aside class="panel" aria-label="Controls">
         <div class="panel__brand">
-          <span class="brand">Phase2<span class="brand-accent">_</span></span>
-          <span class="brand-tag">Cube Lab</span>
+          <span class="brand-tag">Control Panel</span>
         </div>
 
         <div class="stats">
@@ -55,18 +53,28 @@
 
         <div class="group">
           <h2>Rotate Cube</h2>
-          <p class="group__desc">Re-orient the whole cube to bring any face to the top.</p>
+          <p class="group__desc">
+            Re-orient the whole cube — roll, spin, or tilt any face into view.
+          </p>
           <div class="group__grid">
             <button id="btn-roll-up" class="btn">Roll up</button>
             <button id="btn-roll-down" class="btn">Roll down</button>
             <button id="btn-spin-left" class="btn">Spin left</button>
             <button id="btn-spin-right" class="btn">Spin right</button>
+            <button id="btn-tilt-left" class="btn">Tilt left</button>
+            <button id="btn-tilt-right" class="btn">Tilt right</button>
           </div>
           <button id="btn-recenter" class="btn btn--ghost btn--wide">Recenter view</button>
+        </div>
+        <div class="group">
+          <h2>Solve Cube</h2>
+          <p class="group__desc">Leverage the algorithm to solve the cube for you.</p>
+          <button id="solve" class="btn btn--wide">Solve</button>
+          <button id="abort-solve" class="btn btn--wide">Abort</button>
         </div>
       </aside>
     </div>
 
-    <script src="./cube3d.js"></script>
+    <script src="3DWeb.js"></script>
   </body>
 </html>

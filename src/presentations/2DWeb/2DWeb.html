@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="index.css" />
+    <title>Cube</title>
+  </head>
+  <body>
+    <a class="view-3d-link" href="3DWeb.html">3D View &rarr;</a>
+    <main class="app">
+      <section class="net" aria-label="Cube net">
+        <button id="reset" class="net__reset">Reset</button>
+        <div class="face-wrap area-top">
+          <span class="face-label">Top</span>
+          <div id="top-face" class="face">
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="1"
+              data-pos-z="-1"
+              data-orientation="top"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="1"
+              data-pos-z="-1"
+              data-orientation="top"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="1"
+              data-pos-z="-1"
+              data-orientation="top"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="1"
+              data-pos-z="0"
+              data-orientation="top"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="1"
+              data-pos-z="0"
+              data-orientation="top"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="1"
+              data-pos-z="0"
+              data-orientation="top"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="1"
+              data-pos-z="1"
+              data-orientation="top"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="1"
+              data-pos-z="1"
+              data-orientation="top"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="1"
+              data-pos-z="1"
+              data-orientation="top"
+            ></div>
+          </div>
+        </div>
+
+        <div class="face-wrap area-left">
+          <span class="face-label">Left</span>
+          <div id="left-face" class="face">
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="1"
+              data-pos-z="-1"
+              data-orientation="left"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="1"
+              data-pos-z="0"
+              data-orientation="left"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="1"
+              data-pos-z="1"
+              data-orientation="left"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="0"
+              data-pos-z="-1"
+              data-orientation="left"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="0"
+              data-pos-z="0"
+              data-orientation="left"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="0"
+              data-pos-z="1"
+              data-orientation="left"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="-1"
+              data-pos-z="-1"
+              data-orientation="left"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="-1"
+              data-pos-z="0"
+              data-orientation="left"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="-1"
+              data-pos-z="1"
+              data-orientation="left"
+            ></div>
+          </div>
+        </div>
+
+        <div class="face-wrap area-front">
+          <span class="face-label">Front</span>
+          <div id="front-face" class="face">
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="1"
+              data-pos-z="1"
+              data-orientation="front"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="1"
+              data-pos-z="1"
+              data-orientation="front"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="1"
+              data-pos-z="1"
+              data-orientation="front"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="0"
+              data-pos-z="1"
+              data-orientation="front"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="0"
+              data-pos-z="1"
+              data-orientation="front"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="0"
+              data-pos-z="1"
+              data-orientation="front"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="-1"
+              data-pos-z="1"
+              data-orientation="front"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="-1"
+              data-pos-z="1"
+              data-orientation="front"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="-1"
+              data-pos-z="1"
+              data-orientation="front"
+            ></div>
+          </div>
+        </div>
+
+        <div class="face-wrap area-right">
+          <span class="face-label">Right</span>
+          <div id="right-face" class="face">
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="1"
+              data-pos-z="1"
+              data-orientation="right"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="1"
+              data-pos-z="0"
+              data-orientation="right"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="1"
+              data-pos-z="-1"
+              data-orientation="right"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="0"
+              data-pos-z="1"
+              data-orientation="right"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="0"
+              data-pos-z="0"
+              data-orientation="right"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="0"
+              data-pos-z="-1"
+              data-orientation="right"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="-1"
+              data-pos-z="1"
+              data-orientation="right"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="-1"
+              data-pos-z="0"
+              data-orientation="right"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="-1"
+              data-pos-z="-1"
+              data-orientation="right"
+            ></div>
+          </div>
+        </div>
+
+        <div class="face-wrap area-back">
+          <span class="face-label">Back</span>
+          <div id="back-face" class="face">
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="1"
+              data-pos-z="-1"
+              data-orientation="back"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="1"
+              data-pos-z="-1"
+              data-orientation="back"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="1"
+              data-pos-z="-1"
+              data-orientation="back"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="0"
+              data-pos-z="-1"
+              data-orientation="back"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="0"
+              data-pos-z="-1"
+              data-orientation="back"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="0"
+              data-pos-z="-1"
+              data-orientation="back"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="-1"
+              data-pos-z="-1"
+              data-orientation="back"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="-1"
+              data-pos-z="-1"
+              data-orientation="back"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="-1"
+              data-pos-z="-1"
+              data-orientation="back"
+            ></div>
+          </div>
+        </div>
+
+        <div class="face-wrap area-bottom">
+          <span class="face-label">Bottom</span>
+          <div id="bottom-face" class="face">
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="-1"
+              data-pos-z="1"
+              data-orientation="bottom"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="-1"
+              data-pos-z="1"
+              data-orientation="bottom"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="-1"
+              data-pos-z="1"
+              data-orientation="bottom"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="-1"
+              data-pos-z="0"
+              data-orientation="bottom"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="-1"
+              data-pos-z="0"
+              data-orientation="bottom"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="-1"
+              data-pos-z="0"
+              data-orientation="bottom"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="-1"
+              data-pos-y="-1"
+              data-pos-z="-1"
+              data-orientation="bottom"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="0"
+              data-pos-y="-1"
+              data-pos-z="-1"
+              data-orientation="bottom"
+            ></div>
+            <div
+              class="cube"
+              data-pos-x="1"
+              data-pos-y="-1"
+              data-pos-z="-1"
+              data-orientation="bottom"
+            ></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="controls-grid" aria-label="Rotation controls">
+        <div class="control-group group-x">
+          <h2>X Axis</h2>
+          <div class="btn-grid">
+            <button id="rotateTopCW">Top <span class="dir">&#8634;</span></button>
+            <button id="rotateTopCCW">Top <span class="dir">&#8635;</span></button>
+            <button id="rotateXMidCW">Mid <span class="dir">&#8634;</span></button>
+            <button id="rotateXMidCCW">Mid <span class="dir">&#8635;</span></button>
+            <button id="rotateBottomCW">Bottom <span class="dir">&#8634;</span></button>
+            <button id="rotateBottomCCW">Bottom <span class="dir">&#8635;</span></button>
+          </div>
+        </div>
+
+        <div class="control-group group-y">
+          <h2>Y Axis</h2>
+          <div class="btn-grid">
+            <button id="rotateLeftCW">Left <span class="dir">&#8593;</span></button>
+            <button id="rotateLeftCCW">Left <span class="dir">&#8595;</span></button>
+            <button id="rotateYMidCW">Mid <span class="dir">&#8593;</span></button>
+            <button id="rotateYMidCCW">Mid <span class="dir">&#8595;</span></button>
+            <button id="rotateRightCW">Right <span class="dir">&#8593;</span></button>
+            <button id="rotateRightCCW">Right <span class="dir">&#8595;</span></button>
+          </div>
+        </div>
+
+        <div class="control-group group-z">
+          <h2>Z Axis</h2>
+          <div class="btn-grid">
+            <button id="rotateFrontCW">Front <span class="dir">&#8635;</span></button>
+            <button id="rotateFrontCCW">Front <span class="dir">&#8634;</span></button>
+            <button id="rotateZMidCW">Mid <span class="dir">&#8635;</span></button>
+            <button id="rotateZMidCCW">Mid <span class="dir">&#8634;</span></button>
+            <button id="rotateBackCW">Back <span class="dir">&#8635;</span></button>
+            <button id="rotateBackCCW">Back <span class="dir">&#8634;</span></button>
+          </div>
+        </div>
+
+        <div class="control-group group-cube">
+          <h2>Whole Cube</h2>
+          <div class="btn-grid">
+            <button id="XCW">X <span class="dir">&#8634;</span></button>
+            <button id="XCCW">X <span class="dir">&#8635;</span></button>
+            <button id="YCW">Y <span class="dir">&#8593;</span></button>
+            <button id="YCCW">Y <span class="dir">&#8595;</span></button>
+            <button id="ZCW">Z <span class="dir">&#8635;</span></button>
+            <button id="ZCCW">Z <span class="dir">&#8634;</span></button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+  <script src="index.js"></script>
+</html>

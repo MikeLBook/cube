@@ -5,15 +5,18 @@
   "license": "ISC",
   "author": "mbook",
   "type": "commonjs",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
-    "build": "esbuild src/index.ts src/cube3d.ts --bundle --outdir=.",
-    "watch": "esbuild src/index.ts src/cube3d.ts --bundle --outdir=. --watch"
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "verify": "node src/solver/verification/run.mjs count",
+    "format": "npx prettier --write \"**/*.ts\""
   },
   "dependencies": {
     "typescript": "^6.0.3"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
     "esbuild": "^0.28.1"
   }
 }

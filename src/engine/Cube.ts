@@ -1,80 +1,79 @@
-import { Position, Orientation } from "./models";
+import { Position, Orientation, Face, OrientationKey } from './types'
 
 export default class Cube {
-  position: Position;
-  orientation: Orientation;
+  position: Position
+  orientation: Orientation
 
   public constructor(position: Position, orientation: Orientation) {
-    this.position = position;
-    this.orientation = orientation;
+    this.position = position
+    this.orientation = orientation
   }
 
   get isInTopLayer(): boolean {
-    return this.orientation.top !== undefined;
+    return this.orientation.top !== undefined
   }
 
   get isInXMidLayer(): boolean {
-    return (
-      this.orientation.top === undefined &&
-      this.orientation.bottom === undefined
-    );
+    return this.orientation.top === undefined && this.orientation.bottom === undefined
   }
 
   get isInBottomLayer(): boolean {
-    return this.orientation.bottom !== undefined;
+    return this.orientation.bottom !== undefined
   }
 
   get isInLeftLayer(): boolean {
-    return this.orientation.left !== undefined;
+    return this.orientation.left !== undefined
   }
 
   get isInYMidLayer(): boolean {
-    return (
-      this.orientation.left === undefined &&
-      this.orientation.right === undefined
-    );
+    return this.orientation.left === undefined && this.orientation.right === undefined
   }
 
   get isInRightLayer(): boolean {
-    return this.orientation.right !== undefined;
+    return this.orientation.right !== undefined
   }
 
   get isInFrontLayer(): boolean {
-    return this.orientation.front !== undefined;
+    return this.orientation.front !== undefined
   }
 
   get isInZMidLayer(): boolean {
-    return (
-      this.orientation.front === undefined &&
-      this.orientation.back === undefined
-    );
+    return this.orientation.front === undefined && this.orientation.back === undefined
   }
 
   get isInBackLayer(): boolean {
-    return this.orientation.back !== undefined;
+    return this.orientation.back !== undefined
   }
 
   get isCorner(): boolean {
-    return (
-      Object.values(this.orientation).filter((o) => o !== undefined).length ===
-      3
-    );
+    return Object.values(this.orientation).filter((o) => o !== undefined).length === 3
   }
 
   get isEdge(): boolean {
-    return (
-      Object.values(this.orientation).filter((o) => o !== undefined).length ===
-      2
-    );
+    return Object.values(this.orientation).filter((o) => o !== undefined).length === 2
+  }
+
+  get isFace(): boolean {
+    return Object.values(this.orientation).filter((o) => o !== undefined).length === 1
+  }
+
+  public hasFace(face: Face): boolean {
+    return Object.values(this.orientation).includes(face)
+  }
+
+  public getFaceOrientation(face: Face): OrientationKey | undefined {
+    for (const [key, value] of Object.entries(this.orientation)) {
+      if (value === face) return key as OrientationKey
+    }
   }
 
   private rotate(newOrientation: Orientation) {
     this.position = {
       X: newOrientation.left ? -1 : newOrientation.right ? 1 : 0,
       Y: newOrientation.top ? 1 : newOrientation.bottom ? -1 : 0,
-      Z: newOrientation.front ? 1 : newOrientation.back ? -1 : 0,
-    };
-    this.orientation = newOrientation;
+      Z: newOrientation.front ? 1 : newOrientation.back ? -1 : 0
+    }
+    this.orientation = newOrientation
   }
 
   public rotateXCW() {
@@ -84,8 +83,8 @@ export default class Cube {
       left: this.orientation.front,
       front: this.orientation.right,
       right: this.orientation.back,
-      back: this.orientation.left,
-    });
+      back: this.orientation.left
+    })
   }
 
   public rotateXCCW() {
@@ -95,8 +94,8 @@ export default class Cube {
       left: this.orientation.back,
       front: this.orientation.left,
       right: this.orientation.front,
-      back: this.orientation.right,
-    });
+      back: this.orientation.right
+    })
   }
 
   public rotateYCW() {
@@ -106,8 +105,8 @@ export default class Cube {
       bottom: this.orientation.back,
       front: this.orientation.bottom,
       left: this.orientation.left,
-      right: this.orientation.right,
-    });
+      right: this.orientation.right
+    })
   }
 
   public rotateYCCW() {
@@ -117,8 +116,8 @@ export default class Cube {
       bottom: this.orientation.front,
       back: this.orientation.bottom,
       left: this.orientation.left,
-      right: this.orientation.right,
-    });
+      right: this.orientation.right
+    })
   }
 
   public rotateZCW() {
@@ -128,8 +127,8 @@ export default class Cube {
       bottom: this.orientation.right,
       left: this.orientation.bottom,
       front: this.orientation.front,
-      back: this.orientation.back,
-    });
+      back: this.orientation.back
+    })
   }
 
   public rotateZCCW() {
@@ -139,7 +138,7 @@ export default class Cube {
       bottom: this.orientation.left,
       left: this.orientation.top,
       front: this.orientation.front,
-      back: this.orientation.back,
-    });
+      back: this.orientation.back
+    })
   }
 }
