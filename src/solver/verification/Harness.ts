@@ -170,7 +170,7 @@ function lastCornersPlaced(): boolean {
 
 // Flip the white face to the top — the reorientation the solver's advancePhase('WhiteFaceEdges')
 // performs before the last-layer phases. The harness does it directly rather than calling
-// advancePhase, because that method unconditionally recurses into updateSolutionStatus (firing an
+// advancePhase, because that method unconditionally recurses into resume() (firing an
 // un-awaited subroutine that interleaves with, and corrupts, the harness's own phase loops). The
 // harness only needs the physical flip; it drives the white phases itself. Mirror of the solver's
 // own flip logic — keep in sync if that changes.

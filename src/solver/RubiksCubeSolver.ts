@@ -67,7 +67,7 @@ export default class RubiksCubeSolver {
       if (this.yellowLayerSolved === undefined) {
         await this.performInitialInspection()
       } else {
-        await this.updateSolutionStatus()
+        await this.resume()
       }
     }
     this.reset()
@@ -98,65 +98,7 @@ export default class RubiksCubeSolver {
       }
       if (this.yellowLayerSolved) {
         await this.advancePhase('MiddleEdges')
-      } else await this.updateSolutionStatus()
-    }
-  }
-
-  private async updateSolutionStatus() {
-    switch (this.solutionPhase) {
-      case 'YellowEdges':
-        if (hasSolvedYellowEdges(this)) {
-          await this.advancePhase('YellowCorners')
-        } else {
-          await solveYellowEdges(this)
-        }
-        break
-      case 'YellowCorners':
-        if (hasSolvedYellowCorners(this)) {
-          await this.advancePhase('MiddleEdges')
-        } else {
-          await solveYellowCorners(this)
-        }
-        break
-      case 'MiddleEdges':
-        if (isMiddleLayerSolved('top', this.rubiks)) {
-          await this.advancePhase('WhiteFaceEdges')
-        } else {
-          await solveMiddleEdges(this)
-        }
-        break
-      case 'WhiteFaceEdges':
-        if (hasSolvedWhiteFaceEdges(this)) {
-          await this.advancePhase('WhiteFaceCorners')
-        } else {
-          await solveWhiteFaceEdges(this)
-        }
-        break
-      case 'WhiteFaceCorners':
-        if (hasSolvedWhiteFaceCorners(this)) {
-          await this.advancePhase('CompleteCorners')
-        } else {
-          await solveWhiteFaceCorners(this)
-        }
-        break
-      case 'CompleteCorners':
-        if (hasCompletedCorners(this)) {
-          await this.advancePhase('CompleteEdges')
-        } else {
-          await solveFinalCorners(this)
-        }
-        break
-      case 'CompleteEdges':
-        if (
-          isOutsideLayerSolved('top', this.rubiks) &&
-          isOutsideLayerSolved('bottom', this.rubiks) &&
-          isMiddleLayerSolved('bottom', this.rubiks)
-        ) {
-          await solveFinishedLayers(this)
-        } else {
-          await solveFinalEdges(this)
-        }
-        break
+      } else await this.resume()
     }
   }
 
@@ -178,6 +120,66 @@ export default class RubiksCubeSolver {
         await this.do('YCCW')
       }
     }
-    await this.updateSolutionStatus()
+    await this.resume()
+  }
+
+  Phases: Record<SolutionPhase, () => Promise<void>> = {
+    YellowEdges: async () => {
+      if (hasSolvedYellowEdges(this)) {
+        await this.advancePhase('YellowCorners')
+      } else {
+        await solveYellowEdges(this)
+      }
+    },
+    YellowCorners: async () => {
+      if (hasSolvedYellowCorners(this)) {
+        await this.advancePhase('MiddleEdges')
+      } else {
+        await solveYellowCorners(this)
+      }
+    },
+    MiddleEdges: async () => {
+      if (isMiddleLayerSolved('top', this.rubiks)) {
+        await this.advancePhase('WhiteFaceEdges')
+      } else {
+        await solveMiddleEdges(this)
+      }
+    },
+    WhiteFaceEdges: async () => {
+      if (hasSolvedWhiteFaceEdges(this)) {
+        await this.advancePhase('WhiteFaceCorners')
+      } else {
+        await solveWhiteFaceEdges(this)
+      }
+    },
+    WhiteFaceCorners: async () => {
+      if (hasSolvedWhiteFaceCorners(this)) {
+        await this.advancePhase('CompleteCorners')
+      } else {
+        await solveWhiteFaceCorners(this)
+      }
+    },
+    CompleteCorners: async () => {
+      if (hasCompletedCorners(this)) {
+        await this.advancePhase('CompleteEdges')
+      } else {
+        await solveFinalCorners(this)
+      }
+    },
+    CompleteEdges: async () => {
+      if (
+        isOutsideLayerSolved('top', this.rubiks) &&
+        isOutsideLayerSolved('bottom', this.rubiks) &&
+        isMiddleLayerSolved('bottom', this.rubiks)
+      ) {
+        await solveFinishedLayers(this)
+      } else {
+        await solveFinalEdges(this)
+      }
+    }
+  }
+
+  private async resume() {
+    await this.Phases[this.solutionPhase]()
   }
 }
