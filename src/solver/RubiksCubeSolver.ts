@@ -1,6 +1,6 @@
 import Cube from '../engine/Cube'
 import RubiksCube from '../engine/RubiksCube'
-import { isRotation, positionMap } from '../utils'
+import { isRotation } from '../utils'
 import {
   hasSolvedWhiteFaceCorners,
   hasSolvedWhiteFaceEdges,
@@ -93,11 +93,8 @@ export default class RubiksCubeSolver {
       : false
 
     if (this.middleLayerSolved) {
-      await this.advancePhase('WhiteFaceEdges', false)
+      await this.advancePhase('WhiteFaceEdges')
     } else {
-      if (this.yellowLayerSolved) {
-        await this.advancePhase('MiddleEdges')
-      }
       if (yellowFaceCube.isInBottomLayer) {
         await this.do('YCW', 'YCW')
       } else if (yellowFaceCube.isInFrontLayer) {
@@ -108,6 +105,9 @@ export default class RubiksCubeSolver {
         await this.do('ZCW')
       } else if (yellowFaceCube.isInRightLayer) {
         await this.do('ZCCW')
+      }
+      if (this.yellowLayerSolved) {
+        await this.advancePhase('MiddleEdges')
       }
     }
   }
@@ -152,28 +152,24 @@ export default class RubiksCubeSolver {
     }
   }
 
-  private async advancePhase(phase: SolutionPhase, shouldRecurse: boolean = true) {
+  private async advancePhase(phase: SolutionPhase) {
     this.solutionPhase = phase
     if (phase === 'MiddleEdges') this.yellowLayerSolved = true
     if (phase === 'WhiteFaceEdges') {
       this.middleLayerSolved = true
       const whiteFace = this.rubiks.cubes.find((cube) => cube.isFace && cube.hasFace('W'))
-      if (!whiteFace) {
-        console.error('Why is there no white face?')
-      } else {
-        if (whiteFace.isInBottomLayer) {
-          await this.do('YCW', 'YCW')
-        } else if (whiteFace.isInLeftLayer) {
-          await this.do('ZCW')
-        } else if (whiteFace.isInRightLayer) {
-          await this.do('ZCCW')
-        } else if (whiteFace.isInFrontLayer) {
-          await this.do('YCW')
-        } else if (whiteFace.isInBackLayer) {
-          await this.do('YCCW')
-        }
+      if (whiteFace?.isInBottomLayer) {
+        await this.do('YCW', 'YCW')
+      } else if (whiteFace?.isInLeftLayer) {
+        await this.do('ZCW')
+      } else if (whiteFace?.isInRightLayer) {
+        await this.do('ZCCW')
+      } else if (whiteFace?.isInFrontLayer) {
+        await this.do('YCW')
+      } else if (whiteFace?.isInBackLayer) {
+        await this.do('YCCW')
       }
     }
-    if (shouldRecurse) this.updateSolutionStatus()
+    this.updateSolutionStatus()
   }
 }

@@ -146,6 +146,22 @@ function whiteCornersSolved(): boolean {
   return [1, 3, 7, 9].every((i) => get(i)?.orientation.top === 'W')
 }
 
+// Flip the white face to the top — the reorientation the solver's advancePhase('WhiteFaceEdges')
+// performs before the last-layer phases. The harness does it directly rather than calling
+// advancePhase, because that method unconditionally recurses into updateSolutionStatus (firing an
+// un-awaited subroutine that interleaves with, and corrupts, the harness's own phase loops). The
+// harness only needs the physical flip; it drives the white phases itself. Mirror of the solver's
+// own flip logic — keep in sync if that changes.
+async function flipWhiteToTop() {
+  const whiteFace = rubiks.cubes.find((cube) => cube.isFace && cube.hasFace('W'))
+  if (!whiteFace) throw new Error('no white face cube')
+  if (whiteFace.isInBottomLayer) await solver.do('YCW', 'YCW')
+  else if (whiteFace.isInLeftLayer) await solver.do('ZCW')
+  else if (whiteFace.isInRightLayer) await solver.do('ZCCW')
+  else if (whiteFace.isInFrontLayer) await solver.do('YCW')
+  else if (whiteFace.isInBackLayer) await solver.do('YCCW')
+}
+
 const MOVES = [
   'rotateTopCW',
   'rotateTopCCW',
@@ -209,16 +225,13 @@ async function runSeq(seq: string[]): Promise<Outcome> {
       await solveMiddleEdges(solver)
       if (++g > 80) return 'middle-stuck'
     }
-    // Assert the yellow-side checks agree while yellow is still on top — advancePhase
-    // below flips white up, after which the yellow-oriented ground truths no longer apply.
+    // Assert the yellow-side checks agree while yellow is still on top — the flip
+    // below reorients white up, after which the yellow-oriented ground truths no longer apply.
     if (!hasSolvedYellowEdges(solver) || !hasSolvedYellowCorners(solver)) return 'checks-disagree'
     if (!isMiddleLayerSolved('top', rubiks)) return 'checks-disagree'
 
     // Final layer: flip the white face to the top (as run() does), then form the white cross.
-    // advancePhase('WhiteFaceEdges') performs this flip; pass shouldRecurse=false so it does
-    // ONLY the flip — the harness drives the white phases itself below. (Letting it recurse
-    // spawns a dangling, un-awaited solveWhiteFaceEdges that interleaves with our own loop.)
-    await (solver as any).advancePhase('WhiteFaceEdges', false)
+    await flipWhiteToTop()
     g = 0
     while (!whiteCrossSolved()) {
       if (hasSolvedWhiteFaceEdges(solver)) return 'white-edge-check-early'
@@ -310,9 +323,9 @@ async function trace(seq: string[]) {
     if (!flipped) {
       if (edgesSolved() && cornersSolved() && middleEdgesSolved()) {
         moveLog.length = 0
-        await (solver as any).advancePhase('WhiteFaceEdges', false)
+        await flipWhiteToTop()
         flipped = true
-        console.log(`\n--- flip white to top (advancePhase('WhiteFaceEdges', false)) ---`)
+        console.log(`\n--- flip white to top ---`)
         console.log('  moves:', moveLog.join(' ') || '(none — white already on top)')
         console.log(snap())
         continue
