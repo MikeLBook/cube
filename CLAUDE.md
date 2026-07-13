@@ -10,13 +10,15 @@ This project is a **coding puzzle/challenge**: engineering the cube and its solv
 whole point. Using AI to design the cube engine or to write the solver would defeat that
 purpose, so AI assistance is **restricted** to a narrow perimeter:
 
-- **`src/presentations/3DWeb/`** — the 3D view (`3DWeb.ts`/`.html`/`.css`).
+- **`src/presentations/3DWeb/`** — the 3D view (everything in the folder: the `3DWeb.ts` entry
+  point, its supporting modules, and the `.html`/`.css`).
 - **The verification harness** — everything under `src/solver/verification/`.
 - **Miscellaneous tooling** — build/config plumbing such as `package.json` scripts and
   `build.mjs`.
 
 **Every other TypeScript file is human-authored and off-limits to AI.** Concretely, the only
-`.ts` files AI may edit are `3DWeb.ts` and the verification harness
+`.ts` files AI may edit are the 3D view's modules (everything under `src/presentations/3DWeb/`)
+and the verification harness
 (`src/solver/verification/Harness.ts`) — the engine (`src/engine/`), the rest of the solver
 (everything in `src/solver/` _outside_ `verification/`, including all subroutines and status
 checks), the shared interfaces (`src/interfaces/`), the 2D view (`src/presentations/2DWeb/`), and
@@ -104,6 +106,10 @@ depends on nothing.
   `solver.do(...)`.
 - `src/presentations/2DWeb/` / `src/presentations/3DWeb/` — the two representations. Each
   folder holds its `.ts` (logic), `.html`, and `.css`; the build flattens them into `build/`.
+  The 3D view's logic is split into modules: `3DWeb.ts` (the entry point — the stateful
+  `CubeView` core owning the pacing/driver/animation invariants), plus `types.ts`, `config.ts`
+  (static tables + derived move→animation lookups), `cubieDom.ts` (cubie DOM build/repaint),
+  `dragTurn.ts` (drag-to-turn math), `scramble.ts`, and `panel.ts` (control-panel DOM).
 
 ## The observer + pacing contract
 

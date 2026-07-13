@@ -9,9 +9,9 @@ there's hardware.
 > solver by hand is the point, and using AI to represent or solve the cube would be antithetical
 > to its spirit. AI involvement is therefore restricted to the **3D view**
 > (`src/presentations/3DWeb/`), the **verification harness** (`src/solver/verification/`), and
-> **miscellaneous tooling** (e.g. `package.json` scripts). Every TypeScript file except `3DWeb.ts`
-> and the harness's `Harness.ts` — the engine, the rest of the solver, the 2D view, and
-> `utils.ts` — is human-authored.
+> **miscellaneous tooling** (e.g. `package.json` scripts). Every TypeScript file except the 3D
+> view's modules (everything under `src/presentations/3DWeb/`) and the harness's `Harness.ts` —
+> the engine, the rest of the solver, the 2D view, and `utils.ts` — is human-authored.
 
 ## Layers
 
@@ -149,7 +149,15 @@ src/
     subroutines/            per-phase solving routines (solveYellowEdges, solveYellowCorners, solveMiddleEdges, …)
   presentations/
     2DWeb/                  2DWeb.ts/.html/.css   — 2D net view (observer)
-    3DWeb/                  3DWeb.ts/.html/.css   — 3D interactive view (observer + IMovePacer)
+    3DWeb/                  3D interactive view (observer + IMovePacer):
+      3DWeb.ts              entry point — the stateful CubeView core (pacing, drivers, animation)
+      types.ts              the view's shared types
+      config.ts             static tables + derived move→animation lookups
+      cubieDom.ts           cubie DOM construction and repainting
+      dragTurn.ts           drag-to-turn projection math
+      scramble.ts           scramble sequence generation
+      panel.ts              control-panel DOM (stats, status pill, button states)
+      3DWeb.html/.css       page + styles
 build.mjs                   esbuild build → build/
 ```
 

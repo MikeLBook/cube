@@ -1,157 +1,26 @@
 import RubiksCube from '../../engine/RubiksCube'
-import Cube from '../../engine/Cube'
-import { Face, LayerMove, Orientation, Rotation } from '../../engine/types'
+import { LayerMove, Rotation } from '../../engine/types'
 import { isRotation } from '../../utils'
 import RubiksCubeSolver from '../../solver/RubiksCubeSolver'
 import IRubiksCubeObserver from '../../interfaces/IRubiksCubeObserver'
 import { IMovePacer } from '../../interfaces/IMovePacer'
-
-type Axis = 'X' | 'Y' | 'Z'
-type Status = 'free' | 'ready' | 'scrambling' | 'solving' | 'solved'
-
-interface Vec3 {
-  X: number
-  Y: number
-  Z: number
-}
-
-// A layer turn: which engine layer it selects (axis + coordinate) and the engine methods for
-// each direction. The engine position axis is also the CSS rotation axis (X→rotateX, …).
-interface MoveDef {
-  axis: Axis
-  layer: number
-  cw: LayerMove
-  ccw: LayerMove
-}
-
-// A whole-cube re-orientation: the engine rotation and the matching world spin.
-interface CubeMoveDef {
-  rotation: Rotation
-  axis: Axis
-  angle: number
-}
-
-// One rendered cubie: the engine Cube it mirrors, its DOM element, and its six sticker elements.
-interface CubieEntry {
-  cube: Cube
-  el: HTMLElement
-  stickers: Record<keyof Orientation, HTMLElement>
-}
-
-// ---------- static config ----------
-
-const DEFAULT_YAW = -28
-const DEFAULT_PITCH = -19
-
-// sticker colours (reuse the index.css palette)
-const COLORS: Record<Face, string> = {
-  Y: '#ffd43b',
-  R: '#d92b3c',
-  B: '#2256d6',
-  G: '#1eaa5b',
-  O: '#ff7a18',
-  W: '#f4f4f0'
-}
-const DIRS: (keyof Orientation)[] = ['front', 'back', 'right', 'left', 'top', 'bottom']
-
-// geometry (px)
-const SIZE = 58 // cubie face size
-const HALF = 29
-const UNIT = 63 // grid pitch between cubie centers
-
-// calibration signs (flip if a turn animates the wrong way)
-const ANIM_SIGN: Record<Axis, number> = { X: 1, Y: -1, Z: 1 }
-const CW_SIGN: Record<Axis, number> = { X: -1, Y: -1, Z: -1 }
-
-// Singmaster-style face notation -> engine methods + layer-selection metadata.
-const MOVES = {
-  U: { axis: 'Y', layer: 1, cw: 'rotateTopCW', ccw: 'rotateTopCCW' },
-  E: { axis: 'Y', layer: 0, cw: 'rotateXMidCW', ccw: 'rotateXMidCCW' },
-  D: { axis: 'Y', layer: -1, cw: 'rotateBottomCW', ccw: 'rotateBottomCCW' },
-  L: { axis: 'X', layer: -1, cw: 'rotateLeftCW', ccw: 'rotateLeftCCW' },
-  M: { axis: 'X', layer: 0, cw: 'rotateYMidCW', ccw: 'rotateYMidCCW' },
-  R: { axis: 'X', layer: 1, cw: 'rotateRightCW', ccw: 'rotateRightCCW' },
-  B: { axis: 'Z', layer: -1, cw: 'rotateBackCW', ccw: 'rotateBackCCW' },
-  S: { axis: 'Z', layer: 0, cw: 'rotateZMidCW', ccw: 'rotateZMidCCW' },
-  F: { axis: 'Z', layer: 1, cw: 'rotateFrontCW', ccw: 'rotateFrontCCW' }
-} as const satisfies Record<string, MoveDef>
-type MoveKey = keyof typeof MOVES
-
-// LayerMove -> the layer to spin and the signed CSS angle, derived once from MOVES so
-// onMove can present any engine move without searching.
-const LAYER_ANIM = new Map<LayerMove, { def: MoveDef; angle: number }>()
-for (const def of Object.values(MOVES)) {
-  const base = ANIM_SIGN[def.axis] * 90
-  LAYER_ANIM.set(def.cw, { def, angle: base })
-  LAYER_ANIM.set(def.ccw, { def, angle: -base })
-}
-
-// whole-cube re-orientation -> engine rotation + matching world animation
-const CUBE_MOVES: Record<string, CubeMoveDef> = {
-  spinRight: { rotation: 'XCW', axis: 'Y', angle: -90 },
-  spinLeft: { rotation: 'XCCW', axis: 'Y', angle: 90 },
-  rollUp: { rotation: 'YCW', axis: 'X', angle: 90 },
-  rollDown: { rotation: 'YCCW', axis: 'X', angle: -90 },
-  tiltRight: { rotation: 'ZCW', axis: 'Z', angle: 90 },
-  tiltLeft: { rotation: 'ZCCW', axis: 'Z', angle: -90 }
-}
-const ROTATION_ANIM = new Map(Object.values(CUBE_MOVES).map((c) => [c.rotation, c]))
-
-// panel buttons that trigger whole-cube re-orientations
-const CUBE_MOVE_BUTTONS: Record<string, string> = {
-  'btn-roll-up': 'rollUp',
-  'btn-roll-down': 'rollDown',
-  'btn-spin-left': 'spinLeft',
-  'btn-spin-right': 'spinRight',
-  'btn-tilt-left': 'tiltLeft',
-  'btn-tilt-right': 'tiltRight'
-}
-
-// keyboard: wasd re-orients the whole cube (exact case; shifted keys do nothing),
-// letter keys map to face turns (shift = counter-clockwise), space recenters the view
-const KEY_CUBE_MOVES: Record<string, string> = {
-  a: 'spinLeft',
-  d: 'spinRight',
-  w: 'rollUp',
-  s: 'rollDown'
-}
-const KEY_FACE_MOVES: Record<string, MoveKey> = {
-  t: 'U',
-  b: 'D',
-  l: 'L',
-  r: 'R',
-  f: 'F',
-  q: 'B',
-  y: 'M',
-  x: 'E',
-  z: 'S'
-}
-
-const NORMALS: Record<keyof Orientation, Vec3> = {
-  right: { X: 1, Y: 0, Z: 0 },
-  left: { X: -1, Y: 0, Z: 0 },
-  top: { X: 0, Y: 1, Z: 0 },
-  bottom: { X: 0, Y: -1, Z: 0 },
-  front: { X: 0, Y: 0, Z: 1 },
-  back: { X: 0, Y: 0, Z: -1 }
-}
-
-const FACE_TRANSFORMS: Record<keyof Orientation, string> = {
-  front: `translateZ(${HALF}px)`,
-  back: `rotateY(180deg) translateZ(${HALF}px)`,
-  right: `rotateY(90deg) translateZ(${HALF}px)`,
-  left: `rotateY(-90deg) translateZ(${HALF}px)`,
-  top: `rotateX(90deg) translateZ(${HALF}px)`,
-  bottom: `rotateX(-90deg) translateZ(${HALF}px)`
-}
-
-const STATUS_META: Record<Status, { label: string; color: string }> = {
-  free: { label: 'Free Play', color: 'var(--text)' },
-  ready: { label: 'Ready', color: 'var(--text)' },
-  scrambling: { label: 'Scrambling…', color: 'var(--accent-x)' },
-  solving: { label: 'Solving…', color: 'var(--accent-z)' },
-  solved: { label: 'Solved!', color: 'var(--accent-y)' }
-}
+import { CubeMoveDef, CubieEntry, MoveDef, Status } from './types'
+import {
+  CUBE_MOVES,
+  CUBE_MOVE_BUTTONS,
+  DEFAULT_PITCH,
+  DEFAULT_YAW,
+  KEY_CUBE_MOVES,
+  KEY_FACE_MOVES,
+  LAYER_ANIM,
+  MOVES,
+  MoveKey,
+  ROTATION_ANIM
+} from './config'
+import { createCubie, renderCubies } from './cubieDom'
+import { pickTurn } from './dragTurn'
+import { buildScramble, ScrambleTurn } from './scramble'
+import { updateControls, updateStats, updateStatus } from './panel'
 
 /**
  * 3D Rubik's cube view. Pure presentation + interaction (CSS-3D transforms, drag-to-turn,
@@ -162,6 +31,11 @@ const STATUS_META: Record<Status, { label: string; color: string }> = {
  * onMove, and we animate the change *after the fact*. So that the engine never runs ahead of
  * the animation, every source is paced: the solver and scramble are async "drivers" that
  * mutate then await settled(); discrete manual turns only apply while the view is idle.
+ *
+ * This file is deliberately the whole stateful core — the pacing/driver/animation invariants
+ * live together here. The peripherals it composes are split out: static tables (config),
+ * cubie DOM (cubieDom), drag math (dragTurn), scramble generation (scramble), and the
+ * control panel (panel).
  */
 class CubeView implements IRubiksCubeObserver, IMovePacer {
   private rubiks = RubiksCube.getInstance()
@@ -181,8 +55,6 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
   private sceneEl: HTMLElement
   private worldEl!: HTMLElement
   private entries: CubieEntry[] = []
-  // sticker face element -> its cubie, for drag hit-testing
-  private faceEntries = new WeakMap<HTMLElement, CubieEntry>()
 
   private animating = false
 
@@ -231,7 +103,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     const saved = localStorage.getItem('cubeState')
     if (saved) this.rubiks.setState(saved)
 
-    this.entries = this.rubiks.cubes.map((c) => this.createCubie(c))
+    this.entries = this.rubiks.cubes.map((c) => createCubie(c))
     this.entries.forEach((e) => this.worldEl.appendChild(e.el))
 
     // Every change flows through onMove: a source calls an engine method, the engine notifies
@@ -240,9 +112,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
 
     this.applyView(false)
     this.renderCube()
-    this.updateStats()
-    this.updateStatus()
-    this.updateControls()
+    this.updatePanel()
 
     const sc = this.sceneEl
     sc.addEventListener('pointerdown', (e) => this.onDown(e))
@@ -251,47 +121,27 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     sc.addEventListener('pointercancel', (e) => this.onUp(e))
   }
 
-  // ---------- rendering ----------
-  private createCubie(cube: Cube): CubieEntry {
-    const el = document.createElement('div')
-    el.style.cssText = `position:absolute; left:0; top:0; width:${SIZE}px; height:${SIZE}px; transform-style:preserve-3d;`
-    const stickers = {} as Record<keyof Orientation, HTMLElement>
-    const entry: CubieEntry = { cube, el, stickers }
-    for (const dir of DIRS) {
-      const face = document.createElement('div')
-      face.className = 'face'
-      face.dataset.dir = dir
-      this.faceEntries.set(face, entry)
-      face.style.cssText =
-        `position:absolute; left:0; top:0; width:${SIZE}px; height:${SIZE}px; ` +
-        `background:#14141b; border-radius:9px; transform:${FACE_TRANSFORMS[dir]}; ` +
-        '-webkit-backface-visibility:hidden; backface-visibility:hidden;'
-      const st = document.createElement('div')
-      st.style.cssText =
-        'position:absolute; inset:5px; border-radius:7px; box-shadow: inset 0 2px 5px rgba(255,255,255,.18), inset 0 -3px 6px rgba(0,0,0,.4);'
-      face.appendChild(st)
-      el.appendChild(face)
-      stickers[dir] = st
-    }
-    return entry
+  // ---------- rendering / panel ----------
+  private renderCube() {
+    renderCubies(this.entries)
   }
 
-  private renderCube() {
-    this.entries.forEach((e) => {
-      const p = e.cube.position
-      // engine pos -> CSS: X = right(+), Y = up(+) so screen-down is -Y, Z = front(+) toward viewer
-      e.el.style.transform = `translate3d(${p.X * UNIT - HALF}px,${-p.Y * UNIT - HALF}px,${p.Z * UNIT}px)`
-      DIRS.forEach((dir) => {
-        const col = e.cube.orientation[dir]
-        const st = e.stickers[dir]
-        if (col) {
-          st.style.display = 'block'
-          st.style.background = COLORS[col]
-        } else {
-          st.style.display = 'none'
-        }
-      })
-    })
+  private updateStats() {
+    updateStats(this.elapsed, this.moveCount)
+  }
+
+  private updateStatus() {
+    updateStatus(this.status)
+  }
+
+  private updateControls() {
+    updateControls(this.solverActive, this.aborting)
+  }
+
+  private updatePanel() {
+    this.updateStats()
+    this.updateStatus()
+    this.updateControls()
   }
 
   // Write engine state to the localStorage key shared with the 2D page.
@@ -565,7 +415,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     if (this.animating || this.driving) return
     if (this.timer) clearInterval(this.timer)
     this.running = false
-    const seq = this.buildScramble()
+    const seq = buildScramble()
     this.scrambleLeft = seq.length
     this.hasScrambled = true
     this.moveCount = 0
@@ -576,26 +426,8 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     this.runSequence((signal) => this.runScramble(seq, signal))
   }
 
-  // A non-trivial random sequence: no two consecutive turns on the same axis.
-  private buildScramble(): Array<{ f: MoveKey; prime: boolean }> {
-    const faces: MoveKey[] = ['U', 'D', 'L', 'R', 'F', 'B']
-    const seq: Array<{ f: MoveKey; prime: boolean }> = []
-    let lastAxis: Axis | '' = ''
-    for (let i = 0; i < 24; i++) {
-      let f: MoveKey
-      let guard = 0
-      do {
-        f = faces[Math.floor(Math.random() * faces.length)]
-        guard++
-      } while (MOVES[f].axis === lastAxis && guard < 8)
-      lastAxis = MOVES[f].axis
-      seq.push({ f, prime: Math.random() < 0.5 })
-    }
-    return seq
-  }
-
   // A driver: apply each scramble turn (fast), then await its presentation before the next.
-  private async runScramble(seq: Array<{ f: MoveKey; prime: boolean }>, signal: AbortSignal) {
+  private async runScramble(seq: ScrambleTurn[], signal: AbortSignal) {
     for (const mv of seq) {
       if (signal.aborted) return
       this.applyMove(mv.f, mv.prime, true)
@@ -636,9 +468,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     this.aborting = false
     this.moveCount = 0
     this.elapsed = 0
-    this.updateStatus()
-    this.updateStats()
-    this.updateControls()
+    this.updatePanel()
   }
 
   // ---------- view ----------
@@ -670,7 +500,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     if (this.dragFace) {
       if (!this.turnCommitted && Math.hypot(dx, dy) > 14) {
         this.turnCommitted = true
-        const mv = this.pickTurn(this.dragFace, dx, dy)
+        const mv = pickTurn(this.dragFace, dx, dy, this.pitch, this.yaw)
         if (mv) this.userMove(mv.face, mv.prime)
       }
     } else {
@@ -684,60 +514,6 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     this.dragging = false
     this.dragFace = null
     this.sceneEl.style.cursor = 'grab'
-  }
-
-  private projectAxis(v: Vec3) {
-    // position-space vector -> css-space (cssX=X, cssY=-Y, cssZ=Z) -> screen via Rx(pitch)Ry(yaw)
-    const a = (this.pitch * Math.PI) / 180,
-      b = (this.yaw * Math.PI) / 180
-    const x = v.X,
-      y = -v.Y,
-      z = v.Z
-    const x1 = x * Math.cos(b) + z * Math.sin(b)
-    const z1 = -x * Math.sin(b) + z * Math.cos(b)
-    const y2 = y * Math.cos(a) - z1 * Math.sin(a)
-    return { x: x1, y: y2 }
-  }
-
-  private pickTurn(
-    faceEl: HTMLElement,
-    dx: number,
-    dy: number
-  ): { face: MoveKey; prime: boolean } | null {
-    const entry = this.faceEntries.get(faceEl)
-    const dir = faceEl.dataset.dir as keyof Orientation | undefined
-    if (!entry || !dir) return null
-    const normal = NORMALS[dir]
-    const normalAxis: Axis = normal.X ? 'X' : normal.Y ? 'Y' : 'Z'
-    // Of the face's two in-plane axes, take the one whose screen projection best matches the drag.
-    let best: { axis: Axis; sign: number; score: number } | null = null
-    for (const axis of ['X', 'Y', 'Z'] as Axis[]) {
-      if (axis === normalAxis) continue
-      const vec: Vec3 = { X: 0, Y: 0, Z: 0 }
-      vec[axis] = 1
-      const proj = this.projectAxis(vec)
-      const dot = dx * proj.x + dy * proj.y
-      if (!best || Math.abs(dot) > best.score) {
-        best = { axis, sign: dot >= 0 ? 1 : -1, score: Math.abs(dot) }
-      }
-    }
-    if (!best) return null
-    const m: Vec3 = { X: 0, Y: 0, Z: 0 }
-    m[best.axis] = best.sign
-    // turn axis r = face normal × drag direction
-    const r: Vec3 = {
-      X: normal.Y * m.Z - normal.Z * m.Y,
-      Y: normal.Z * m.X - normal.X * m.Z,
-      Z: normal.X * m.Y - normal.Y * m.X
-    }
-    const rAxis: Axis = Math.abs(r.X) > 0.5 ? 'X' : Math.abs(r.Y) > 0.5 ? 'Y' : 'Z'
-    const rSign = r[rAxis] >= 0 ? 1 : -1
-    const layer = entry.cube.position[rAxis]
-    const face = (Object.keys(MOVES) as MoveKey[]).find(
-      (k) => MOVES[k].axis === rAxis && MOVES[k].layer === layer
-    )
-    if (!face) return null
-    return { face, prime: rSign !== CW_SIGN[rAxis] }
   }
 
   // ---------- keyboard ----------
@@ -763,60 +539,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     }
   }
 
-  // ---------- panel DOM ----------
-  private timeText(): string {
-    const ms = this.elapsed || 0
-    const total = ms / 1000
-    const mm = Math.floor(total / 60)
-    const ss = Math.floor(total % 60)
-    const t = Math.floor((ms % 1000) / 100)
-    const ssStr = (mm > 0 && ss < 10 ? '0' : '') + ss
-    return (mm > 0 ? mm + ':' : '') + ssStr + '.' + t
-  }
-
-  private updateStats() {
-    const time = document.getElementById('stat-time')
-    const moves = document.getElementById('stat-moves')
-    if (time) time.textContent = this.timeText()
-    if (moves) moves.textContent = String(this.moveCount)
-  }
-
-  private updateStatus() {
-    const st = STATUS_META[this.status]
-    const pill = document.getElementById('status-pill')
-    const dot = document.getElementById('status-dot')
-    const label = document.getElementById('status-label')
-    if (dot) {
-      dot.style.background = st.color
-      dot.style.boxShadow = '0 0 10px ' + st.color
-    }
-    if (label) {
-      label.textContent = st.label
-      label.style.color = st.color
-    }
-    if (pill) pill.style.borderColor = st.color
-  }
-
-  // While the solver is active, every control is locked except Abort. Abort is live only during a
-  // solve and shows a spinner + "Aborting…" while the abort unwinds (which isn't instant).
-  private updateControls() {
-    const solving = this.solverActive
-    const setDisabled = (id: string, disabled: boolean) => {
-      const el = document.getElementById(id) as HTMLButtonElement | null
-      if (el) el.disabled = disabled
-    }
-    const lockable = ['btn-scramble', 'btn-reset', 'solve', 'btn-recenter'].concat(
-      Object.keys(CUBE_MOVE_BUTTONS)
-    )
-    lockable.forEach((id) => setDisabled(id, solving))
-    const abort = document.getElementById('abort-solve') as HTMLButtonElement | null
-    if (abort) {
-      abort.disabled = !solving || this.aborting
-      abort.classList.toggle('btn--busy', this.aborting)
-      abort.textContent = this.aborting ? 'Aborting…' : 'Abort'
-    }
-  }
-
+  // ---------- panel wiring ----------
   private wireControls() {
     const bind = (id: string, fn: () => void) =>
       document.getElementById(id)?.addEventListener('click', fn)
