@@ -106,10 +106,10 @@ that's how the runaway loop's state was captured. Remove it afterward.
 - **The cubie rotation method names don't match the geometric axis.** On `Cube`,
   `rotateXCW` keeps top/bottom fixed (it's a spin about the **vertical** axis);
   `rotateYCW` keeps left/right fixed (spin about the **left-right** axis). Track
-  _stickers_, not the letters. `rotateRubiksCube("XCCW")` brings the **left** face
+  _stickers_, not the letters. `execute("XCCW")` brings the **left** face
   to the **front**; `"XCW"` brings the **right** face to the front.
 - **The alignment loops keep the bottom layer fixed while spinning the rest.** A
-  `rotateBottomCW()` immediately followed by `rotateRubiksCube("XCCW")` cancels out
+  `execute("rotateBottomCW")` immediately followed by `execute("XCCW")` cancels out
   for bottom-layer cubies (`rotateXCW` then `rotateXCCW` = identity) but rotates the
   top+middle. That's _why_ naive left/right mirroring of a subroutine is wrong (see
   below) — the loop reorients the whole cube differently on each side.
@@ -121,7 +121,7 @@ between a working **Left** routine and its **Right** twin is **not** a plain
 reflection. It is:
 
 > swap `Left`↔`Right` **keeping** CW/CCW sense · **reverse** every `Bottom` turn ·
-> swap `rotateRubiksCube("XCW")`↔`"XCCW")` · `Front` reversed · swap `solveBottomLeft`↔`solveBottomRight`.
+> swap `execute("XCW")`↔`"XCCW"` · `Front` reversed · swap `solveBottomLeft`↔`solveBottomRight`.
 
 Verified: `T` maps `solveBottomLeft` (loop **and** insert) exactly onto
 `solveBottomRight`, and `solveFrontLeftCorner` exactly onto `solveFrontRightCorner`.

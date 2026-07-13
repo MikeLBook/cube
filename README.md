@@ -37,10 +37,10 @@ ones beneath it.
 - **`src/engine/Cube.ts`** — a single cubie. Knows its position and which colour faces which
   way, and how to rotate itself about each axis.
 - **`src/engine/RubiksCube.ts`** — the whole cube and the **single source of truth** for state.
-  A singleton (`getInstance`) so every presentation on a page sees the same cube. It exposes
-  the moves (`rotateTopCW`, … , `rotateRubiksCube`, `reset`), `isSolved`, and
-  `setState`/serialization. It is **pure and synchronous** — it knows nothing about animation,
-  timing, pixels, or motors.
+  A singleton (`getInstance`) so every presentation on a page sees the same cube. Its whole move
+  vocabulary lives in one `Moves` table (keyed by `LayerMove`/`Rotation`), applied through a single
+  `execute(move)` dispatcher; it also exposes `reset`, `isSolved`, and `setState`/serialization. It
+  is **pure and synchronous** — it knows nothing about animation, timing, pixels, or motors.
 
 This inner core was built and validated first; everything outside it is a consumer.
 
@@ -146,7 +146,7 @@ src/
     IMovePacer.ts               pacing interface (settled) the solver depends on
   utils.ts                  (de)serialization guards, position map, isRotation
   solver/
-    RubiksCubeSolver.ts     the "person"; async, paced via IMovePacer
+    RubiksCubeSolver.ts     the solution algorithm entry point; async, paced via IMovePacer
     solutionStatusChecks.ts predicates: is a given layer/phase solved?
     subroutines/            per-phase solving routines (solveYellowEdges, solveYellowCorners, solveMiddleEdges, …)
   presentations/

@@ -1,24 +1,17 @@
 import { JSONEquals } from '../../utils'
-import { FACES, LAYER_MOVES, Orientation, ROTATIONS } from '../../engine/types'
+import { FACES, LAYER_MOVES, LayerMove, Orientation, Rotation, ROTATIONS } from '../../engine/types'
 import RubiksCube from '../../engine/RubiksCube'
 
 const rubiksCube = RubiksCube.getInstance()
 const cubeState = localStorage.getItem('cubeState')
 if (cubeState) rubiksCube.setState(cubeState)
 
-LAYER_MOVES.forEach((move) => {
-  document.getElementById(move)?.addEventListener('click', () => rubiksCube[move]())
-})
+const moves: (LayerMove | Rotation)[] = [...LAYER_MOVES, ...ROTATIONS]
+moves.forEach((move) =>
+  document.getElementById(move)?.addEventListener('click', () => rubiksCube.execute(move))
+)
 
-ROTATIONS.forEach((rotation) => {
-  document
-    .getElementById(rotation)
-    ?.addEventListener('click', () => rubiksCube.rotateRubiksCube(rotation))
-})
-
-document.querySelector('#reset')?.addEventListener('click', () => {
-  rubiksCube.reset()
-})
+document.querySelector('#reset')?.addEventListener('click', () => rubiksCube.reset())
 
 function renderCube() {
   document.querySelectorAll('.cube').forEach((el) => {

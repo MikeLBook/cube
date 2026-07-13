@@ -272,7 +272,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
   private applyMove(face: MoveKey, prime: boolean, fast = false) {
     const m = MOVES[face]
     this.movePresentation = { fast }
-    this.rubiks[prime ? m.ccw : m.cw]()
+    this.rubiks.execute(prime ? m.ccw : m.cw)
   }
 
   // A discrete user turn (drag / keyboard / button). Only fires while idle so the engine never
@@ -289,7 +289,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     if (this.animating || this.driving) return
     const c = CUBE_MOVES[key]
     if (!c) return
-    this.rubiks.rotateRubiksCube(c.rotation)
+    this.rubiks.execute(c.rotation)
   }
 
   // Timing/counting only run during a scramble-initiated solve attempt; casual play on an

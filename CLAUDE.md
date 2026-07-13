@@ -94,9 +94,11 @@ depends on nothing.
   (`isInTopLayer = orientation.top !== undefined`), and `rotate()` recomputes `position` from the
   new orientation. Don't "fix" this to be position-based; it's intentional.
 - `src/engine/RubiksCube.ts` — the 27 cubies; the singleton source of truth (`getInstance`).
-  Exposes the moves, `isSolved` (a getter), `setState`/serialization, and the observer registry.
-  **Pure and synchronous** — no DOM, timing, animation, or async. Each move method mutates the
-  cubies in place and then calls the private `onMove(move)` to notify observers.
+  Exposes `isSolved` (a getter), `setState`/serialization, the observer registry, and the whole
+  move vocabulary as a `Moves` table (keyed by `LayerMove`/`Rotation`) applied through one public
+  `execute(move)` dispatcher. **Pure and synchronous** — no DOM, timing, animation, or async.
+  `execute` mutates the cubies in place (via the `Moves` entry) and then calls the private
+  `onMove(move)` to notify observers.
 - `src/solver/RubiksCubeSolver.ts` — the solver; depends on `IMovePacer`
   (`src/interfaces/IMovePacer.ts`). Its `do(...moves)` helper applies a sequence of moves,
   `await`ing the pacer between each.

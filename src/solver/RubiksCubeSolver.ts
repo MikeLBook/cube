@@ -1,6 +1,5 @@
 import Cube from '../engine/Cube'
 import RubiksCube from '../engine/RubiksCube'
-import { isRotation } from '../utils'
 import {
   hasCompletedCorners,
   hasSolvedWhiteFaceCorners,
@@ -52,11 +51,7 @@ export default class RubiksCubeSolver {
   // paces the solver. Rotations reorient the whole cube; everything else is a layer move.
   public async do(...moves: (LayerMove | Rotation)[]) {
     for (const move of moves) {
-      if (isRotation(move)) {
-        this.rubiks.rotateRubiksCube(move)
-      } else {
-        this.rubiks[move]()
-      }
+      this.rubiks.execute(move)
       await this.pacer.settled()
     }
   }

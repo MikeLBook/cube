@@ -19,6 +19,7 @@
 // so a bug in a completion check surfaces as a disagreement instead of hiding.
 
 import RubiksCube from '../../engine/RubiksCube'
+import { LayerMove, Rotation } from '../../engine/types'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 import solveYellowEdges from '../subroutines/solveYellowEdges'
 import solveYellowCorners from '../subroutines/solveYellowCorners'
@@ -52,16 +53,14 @@ const pacer = {
 const solver = new RubiksCubeSolver(rubiks, pacer as any)
 
 // ---- Move log (populated only while `logging` is true), for the trace tool. ----
+// Every move now flows through the engine's single `execute(move)` dispatcher, so we wrap
+// that one method and log the move identity it's handed (e.g. `rotateTopCW`, `XCW`).
 const moveLog: string[] = []
 let logging = false
-for (const k of Object.getOwnPropertyNames(Object.getPrototypeOf(rubiks))) {
-  if (k.startsWith('rotate')) {
-    const orig = (rubiks as any)[k].bind(rubiks)
-    ;(rubiks as any)[k] = (...a: any[]) => {
-      if (logging) moveLog.push(a.length ? `${k}(${a[0]})` : k)
-      return orig(...a)
-    }
-  }
+const origExecute = rubiks.execute.bind(rubiks)
+;(rubiks as any).execute = (move: LayerMove | Rotation) => {
+  if (logging) moveLog.push(move)
+  return origExecute(move)
 }
 
 // @ts-ignore
@@ -233,7 +232,7 @@ async function runSeq(seq: string[]): Promise<Outcome> {
   // and hang, reporting a fabricated `budget`. Reset here so every run starts from a clean solver.
   solver.reset()
   moveBudget = 1e9
-  for (const m of seq) (rubiks as any)[m]()
+  for (const m of seq) rubiks.execute(m as LayerMove | Rotation)
   moveBudget = 5000 // generous per-solve cap; a healthy solve uses well under this
 
   try {
@@ -314,7 +313,7 @@ async function runReal(seq: string[]): Promise<string> {
   rubiks.reset()
   solver.reset()
   moveBudget = 1e9
-  for (const m of seq) (rubiks as any)[m]()
+  for (const m of seq) rubiks.execute(m as LayerMove | Rotation)
   moveBudget = 5000
   try {
     await solver.run()
@@ -404,7 +403,7 @@ async function trace(seq: string[]) {
   // and hang, reporting a fabricated `budget`. Reset here so every run starts from a clean solver.
   solver.reset()
   moveBudget = 1e9
-  for (const m of seq) (rubiks as any)[m]()
+  for (const m of seq) rubiks.execute(m as LayerMove | Rotation)
   moveBudget = 5000
   await (solver as any).performInitialInspection()
   logging = true
