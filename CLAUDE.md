@@ -41,6 +41,8 @@ README):
 
 ```sh
 npm run verify                       # node src/solver/verification/run.mjs count — tally outcomes over random scrambles
+node src/solver/verification/run.mjs realcount <N>    # solve rate driving the real solver.run() (production path)
+node src/solver/verification/run.mjs solve '<json>'   # run one scramble through solver.run()
 node src/solver/verification/run.mjs repro <outcome>  # shortest scramble producing an outcome
 node src/solver/verification/run.mjs trace '<json>'   # step through one scramble
 ```
@@ -184,20 +186,28 @@ These are load-bearing. Breaking them brings back the "animate then teleport" bu
   drops the extra (drag already behaved this way). This is the trade for a single animation path.
 - **Manual input is locked out during a scramble or solve.** ("Don't grab the cube while the robot
   turns it.")
-- Session bookkeeping (timer, move count, solved detection) lives in `afterUserMove` — it runs for
-  user turns only, so scramble and solver moves don't count.
+- Session bookkeeping for manual turns (timer, move count, solved detection) lives in
+  `afterUserMove` — it runs for user turns only. The solver's layer turns are counted in `onMove`
+  while a timed attempt is in the `solving` state (gated on `solverActive`); scramble moves and
+  whole-cube rotations never count.
 
 ## Status
 
-`RubiksCubeSolver.run()` is a real **layer-by-layer solve** (yellow face first), **under active
-development**. It inspects the cube, orients yellow to the top, then advances a `solutionPhase`
-field through the `SolutionPhase` phases. All five phases — yellow-edge, yellow-corner,
-middle-edge, white-face-edge, and white-face-corner — are implemented in `subroutines/`. The
-white-face-corner phase only *orients* the last-layer corners white-up; the top layer's side
-stickers (left/right/front/back) aren't placed yet, so the solve currently stops short of a fully
-solved cube. `run()` also still takes one phase step per call rather than looping to a finished
-cube. Finishing this out should require **no changes** to the engine or the representations —
-that's the test of whether the decoupling held.
+`RubiksCubeSolver.run()` is a real **layer-by-layer solve** (yellow face first). It inspects the
+cube, orients yellow to the top, then advances a `solutionPhase` field through the `SolutionPhase`
+phases, **looping until `rubiks.isSolved`**. All seven phases are implemented in `subroutines/`:
+yellow-edge, yellow-corner, middle-edge, white-face-edge, white-face-corner, and the two
+last-layer phases — `CompleteCorners` (`solveFinalCorners`, permute the top corners into their
+solved slots, gated by `hasCompletedCorners`) and `CompleteEdges` (`solveFinalEdges`, permute the
+top edges, gated by `rubiks.isSolved`). The last two place the top layer's side stickers, so the
+solve now runs through to a fully solved cube. Building this out required **no changes** to the
+engine or the representations — that's the test of whether the decoupling held.
+
+The headless verification harness (`src/solver/verification/`) drives the full pipeline to
+`rubiks.isSolved` over thousands of random scrambles and the solver **solves all of them** —
+confirmed both by `count` (a hand-rolled phase loop with independent per-phase checks) and by
+`realcount`/`solve` (which drive the real `solver.run()`, the production path). Re-run
+`npm run verify` after any `src/solver/**` change and expect `✅ all N scrambles solved`.
 
 When adding solve logic, drive every move through `solver.do(...)` (one move per `await settled()`)
 rather than calling engine methods directly — that's what keeps the solver paced against the

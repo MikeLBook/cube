@@ -10,9 +10,22 @@ scrambles with a mock, instant `IMovePacer`.
 ```sh
 npm run verify                       # tally outcomes over 5000 random scrambles
 node src/solver/verification/run.mjs count 20000      # ...over N scrambles
+node src/solver/verification/run.mjs realcount 20000  # solve rate driving the REAL solver.run()
+node src/solver/verification/run.mjs solve '["rotateRightCCW","rotateTopCW"]'  # one scramble via solver.run()
 node src/solver/verification/run.mjs repro <outcome>  # find the SHORTEST scramble with that outcome
 node src/solver/verification/run.mjs trace '["rotateBackCCW"]'   # step through one scramble
 ```
+
+**`count` vs `realcount` — two lenses, both required.** `count` drives the phases itself with
+*independent* per-phase ground-truth checks (compare stickers to centers), so it catches a
+completion check that lies — a phase reporting "done" too early surfaces as `*-check-early` /
+`checks-disagree`. `realcount` (and `solve`) instead run the actual `solver.run()` state machine —
+the production code path — and judge only by `rubiks.isSolved`; this is the authoritative measure
+of whether the solver *actually* solves, with no hand-rolled loop that could steer a subroutine
+into a state production never reaches. When the two disagree, that gap is itself the bug. Each run
+(both paths) resets the engine **and** `solver.reset()` first: the solver instance is reused across
+runs and only self-resets on a normal `run()` exit, so without this a runaway's leaked
+`solutionPhase` would corrupt the next scramble.
 
 The harness lives in `src/solver/verification/` (`Harness.ts` + `run.mjs`). `build/` is
 git-ignored and wiped by `npm run build`, so `run.mjs` bundles to a git-ignored `dist/`
@@ -23,30 +36,36 @@ check rather than breaking it.
 
 ## Latest verification result
 
-The yellow layer (edges → corners), the middle-layer edges, the final-layer white cross,
-**and** orienting the white corners white-up all succeed on **every** scramble:
+The **full solve** runs end to end — yellow layer (edges → corners), middle-layer edges, the white
+cross, the white corners, and the two last-layer phases that permute the corners and edges into
+their slots — driven all the way to `rubiks.isSolved`. Over 20000 random scrambles **every**
+scramble solves, confirmed two independent ways:
 
 ```
-full pipeline (edges + corners + middle edges + white cross + white corners): 20000 / 20000  ok
+count     (hand-rolled phase loop + independent per-phase checks):  20000 / 20000  ok
+realcount (drives the real solver.run() — the production code path): 20000 / 20000  ok
 ```
 
-Re-run `npm run verify` after any change to `src/solver/**` and expect
-`✅ all N scrambles solved`. Anything else is a regression.
+Re-run `npm run verify` after any change to `src/solver/**` and expect `✅ all N scrambles solved`.
+`ok` is the only success; **both** `count` and `realcount` must report it for every scramble, and
+any `*-stuck`, `*-check-early`, `checks-disagree`, or `budget` is a regression.
 
-> Scope note: the solver currently solves through the **white-face corners** (all five phases:
-> `YellowEdges`, `YellowCorners`, `MiddleEdges`, `WhiteFaceEdges`, `WhiteFaceCorners`). After the
-> middle layer, the harness calls `moveToFinalLayer()` — flipping white on top, as `run()` does —
-> then drives `solveWhiteFaceEdges` until the cross is formed and `solveWhiteFaceCorners` until
-> all four top corners show white up. That white-corner orientation is the last implemented step:
-> the top layer's side stickers (left/right/front/back) are **not** yet placed, so the cube is
-> not fully solved and the harness deliberately does **not** assert `rubiks.isSolved`.
+> Scope note: the solver runs all seven phases (`YellowEdges`, `YellowCorners`, `MiddleEdges`,
+> `WhiteFaceEdges`, `WhiteFaceCorners`, `CompleteCorners`, `CompleteEdges`). After the middle layer
+> the harness calls `flipWhiteToTop()` — flipping white on top, as `run()` does — then drives
+> `solveWhiteFaceEdges` until the cross is formed, `solveWhiteFaceCorners` until the top corners are
+> white-up, `solveFinalCorners` until the corners are permuted into their solved ring
+> (`lastCornersPlaced`), and `solveFinalEdges` until `rubiks.isSolved`. That engine-level
+> all-faces-uniform check is the harness's final ground truth — fully **independent** of the
+> solver's own `solutionStatusChecks`, and orientation-agnostic (the last-layer algorithms leave the
+> solved cube in whatever orientation their whole-cube rotations land on).
 >
-> Orientation-flip note: the `edges/corners/middle` ground truths are defined
-> **yellow-on-top** and stop applying once `moveToFinalLayer()` flips white up. Both
-> `runSeq` and `trace` assert (or gate) the yellow-side checks _before_ the flip, then switch
-> to `whiteCrossSolved()` / `whiteCornersSolved()` afterward. Both white checks are
-> orientation-only (each top edge/corner shows white up) — that is genuinely all those phases
-> target, so they are not permutation-matched.
+> Orientation-flip note: the `edges/corners/middle` ground truths are defined **yellow-on-top** and
+> stop applying once `flipWhiteToTop()` flips white up. Both `runSeq` and `trace` assert (or gate)
+> the yellow-side checks _before_ the flip, then switch to `whiteCrossSolved()` →
+> `whiteCornersSolved()` → `lastCornersPlaced()` → `rubiks.isSolved` afterward. The white
+> orientation checks are orientation-only (each top edge/corner shows white up); `lastCornersPlaced`
+> additionally requires the four adjacent-corner side stickers to agree (the corners' solved ring).
 >
 > Middle-edge coverage note: the harder branch — all four bottom edges carry white, so
 > a misplaced equator edge must first be _extracted_ to the bottom before re-inserting —
@@ -62,8 +81,8 @@ three tools in order:
 1. **`count`** — classify the failure. Each outcome is a distinct failure mode:
    | outcome | meaning |
    |---|---|
-   | `ok` | solved through the white corners (cross formed + top corners white-up; only success) |
-   | `edges-stuck` / `corners-stuck` / `middle-stuck` / `white-edges-stuck` / `white-corners-stuck` | subroutine returned making **no progress**, solver spun in place |
+   | `ok` | cube **fully solved** (`rubiks.isSolved`); the only success |
+   | `edges-stuck` / `corners-stuck` / `middle-stuck` / `white-edges-stuck` / `white-corners-stuck` / `final-corners-stuck` / `final-edges-stuck` | subroutine returned making **no progress**, solver spun in place (`final-edges-stuck` = cube never reached `rubiks.isSolved`) |
    | `edge-check-early` / `corner-check-early` / `middle-check-early` / `white-edge-check-early` / `white-corner-check-early` | a completion check reported "done" while the layer/cross/corners were **not** actually solved → phase advanced too early |
    | `checks-disagree` | ground truth says solved but a completion check disagrees |
    | `budget` | a subroutine **infinite-looped** (a `while`/`do-while` whose exit condition can never be met) |
@@ -144,3 +163,13 @@ slot its alignment loop set up:
    edge whose front color already matched its center was never inserted. Fixed by
    making the alignment a `while` (0+ turns) with the `F2` always running.
    → surfaced as `edges-stuck`.
+4. **`solveFinalCorners` spun forever on the no-headlights corner case** — its fallback loop
+   yawed the whole cube (`XCW`) looking for a top corner whose left/back sticker matched its
+   center. But `XCW` rotates the centers along with the corners, so it only re-views the *same*
+   permutation from four angles; in the double-swap-with-no-headlights case no corner ever matches
+   and it cycled forever (repro: `["rotateRightCCW","rotateTopCW"]`). Fixed by turning the top layer
+   as it searches — `rotateTopCW, XCCW` instead of `XCW` — which actually re-permutes the top
+   corners relative to the (now stationary) centers, so an alignable corner always appears and the
+   loop terminates. This was the **last** non-solving case; the solver now solves 20000 / 20000.
+   → surfaced as `budget`; confirmed real (not a harness artifact) with `solve` — the actual
+   `solver.run()` hit the same hang.

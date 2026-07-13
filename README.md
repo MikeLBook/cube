@@ -153,12 +153,12 @@ src/
 build.mjs                   esbuild build → build/
 ```
 
-`RubiksCubeSolver.run()` implements a **layer-by-layer solve** (yellow face first). It's
-**under active development**: all five phases (yellow-edge, yellow-corner, middle-edge,
-white-face-edge, white-face-corner) are implemented. The final white-face-corner phase orients
-the last-layer corners white-up but does not yet place the top layer's side stickers, so the cube
-isn't fully solved. Finishing it out requires no changes to the engine or the representations —
-the decoupling is the point.
+`RubiksCubeSolver.run()` implements a **layer-by-layer solve** (yellow face first) and loops until
+the cube is solved. All seven phases are implemented (yellow-edge, yellow-corner, middle-edge,
+white-face-edge, white-face-corner, and the two last-layer phases — complete-corners and
+complete-edges — that permute the top layer into place). It solves every scramble in the headless
+verification harness (`src/solver/verification/`). Building it out required no changes to the
+engine or the representations — the decoupling is the point.
 
 Solver routines never call an engine move directly; they apply moves through `solver.do(...)`,
 which runs each move and `await`s the pacer between them, so a whole algorithm is one paced call:
@@ -186,6 +186,8 @@ the real engine + solver and drives them over thousands of random scrambles with
 
 ```sh
 npm run verify                       # tally outcomes over random scrambles
+node src/solver/verification/run.mjs realcount <N>    # solve rate driving the real solver.run()
+node src/solver/verification/run.mjs solve '<json>'   # run one scramble through solver.run()
 node src/solver/verification/run.mjs repro <outcome>  # find the shortest scramble producing an outcome
 node src/solver/verification/run.mjs trace '<json>'   # step through one scramble
 ```

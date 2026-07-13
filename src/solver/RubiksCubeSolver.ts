@@ -19,6 +19,7 @@ import solveWhiteFaceCorners from './subroutines/solveWhiteFaceCorners'
 import solveWhiteFaceEdges from './subroutines/solveWhiteFaceEdges'
 import solveFinalCorners from './subroutines/solveFinalCorners'
 import solveFinalEdges from './subroutines/solveFinalEdges'
+import solveFinishedLayers from './subroutines/solveFinishedLayers'
 
 type SolutionPhase =
   | 'YellowEdges'
@@ -70,25 +71,19 @@ export default class RubiksCubeSolver {
   // before continuing. The finished solver will loop until the cube is solved;
   // This placeholder is under active development
   public async run(signal?: AbortSignal) {
-    if (!this.rubiks.isSolved && !signal?.aborted) {
-      this.determineNextMove()
+    while (!signal?.aborted && !this.rubiks.isSolved) {
+      if (this.yellowLayerSolved === undefined) {
+        await this.performInitialInspection()
+      } else {
+        await this.updateSolutionStatus()
+      }
     }
-  }
-
-  private async determineNextMove() {
-    if (this.yellowLayerSolved === undefined) {
-      this.performInitialInspection()
-    } else {
-      this.updateSolutionStatus()
-    }
+    this.reset()
   }
 
   private async performInitialInspection() {
     const yellowFaceCube = this.rubiks.cubes.find((cube) => cube.isFace && cube.hasFace('Y'))
-    if (!yellowFaceCube) throw new Error('Unable to locate Yellow Face Cube')
-
-    const orientation = yellowFaceCube.getFaceOrientation('Y')
-    if (!orientation) throw new Error('Unable to determine Yellow Face Cube Orientation')
+    const orientation = yellowFaceCube?.getFaceOrientation('Y')!
 
     this.yellowLayerSolved = isOutsideLayerSolved(orientation, this.rubiks)
     this.middleLayerSolved = this.yellowLayerSolved
@@ -98,20 +93,20 @@ export default class RubiksCubeSolver {
     if (this.middleLayerSolved) {
       await this.advancePhase('WhiteFaceEdges')
     } else {
-      if (yellowFaceCube.isInBottomLayer) {
+      if (yellowFaceCube?.isInBottomLayer) {
         await this.do('YCW', 'YCW')
-      } else if (yellowFaceCube.isInFrontLayer) {
+      } else if (yellowFaceCube?.isInFrontLayer) {
         await this.do('YCW')
-      } else if (yellowFaceCube.isInBackLayer) {
+      } else if (yellowFaceCube?.isInBackLayer) {
         await this.do('YCCW')
-      } else if (yellowFaceCube.isInLeftLayer) {
+      } else if (yellowFaceCube?.isInLeftLayer) {
         await this.do('ZCW')
-      } else if (yellowFaceCube.isInRightLayer) {
+      } else if (yellowFaceCube?.isInRightLayer) {
         await this.do('ZCCW')
       }
       if (this.yellowLayerSolved) {
         await this.advancePhase('MiddleEdges')
-      } else this.updateSolutionStatus()
+      } else await this.updateSolutionStatus()
     }
   }
 
@@ -121,46 +116,54 @@ export default class RubiksCubeSolver {
         if (hasSolvedYellowEdges(this)) {
           await this.advancePhase('YellowCorners')
         } else {
-          solveYellowEdges(this)
+          await solveYellowEdges(this)
         }
         break
       case 'YellowCorners':
         if (hasSolvedYellowCorners(this)) {
           await this.advancePhase('MiddleEdges')
         } else {
-          solveYellowCorners(this)
+          await solveYellowCorners(this)
         }
         break
       case 'MiddleEdges':
         if (isMiddleLayerSolved('top', this.rubiks)) {
           await this.advancePhase('WhiteFaceEdges')
         } else {
-          solveMiddleEdges(this)
+          await solveMiddleEdges(this)
         }
         break
       case 'WhiteFaceEdges':
         if (hasSolvedWhiteFaceEdges(this)) {
           await this.advancePhase('WhiteFaceCorners')
         } else {
-          solveWhiteFaceEdges(this)
+          await solveWhiteFaceEdges(this)
         }
         break
       case 'WhiteFaceCorners':
         if (hasSolvedWhiteFaceCorners(this)) {
           await this.advancePhase('CompleteCorners')
         } else {
-          solveWhiteFaceCorners(this)
+          await solveWhiteFaceCorners(this)
         }
         break
       case 'CompleteCorners':
         if (hasCompletedCorners(this)) {
           await this.advancePhase('CompleteEdges')
         } else {
-          solveFinalCorners(this)
+          await solveFinalCorners(this)
         }
         break
       case 'CompleteEdges':
-        solveFinalEdges(this)
+        if (
+          isOutsideLayerSolved('top', this.rubiks) &&
+          isOutsideLayerSolved('bottom', this.rubiks) &&
+          isMiddleLayerSolved('bottom', this.rubiks)
+        ) {
+          await solveFinishedLayers(this)
+        } else {
+          await solveFinalEdges(this)
+        }
         break
     }
   }
@@ -183,6 +186,6 @@ export default class RubiksCubeSolver {
         await this.do('YCCW')
       }
     }
-    this.updateSolutionStatus()
+    await this.updateSolutionStatus()
   }
 }

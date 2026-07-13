@@ -1,4 +1,4 @@
-import { positionMap } from '../../utils'
+import { cubesShareFace, positionMap } from '../../utils'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 
 export default async function solveYellowCorners(solver: RubiksCubeSolver) {
@@ -12,8 +12,8 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     backLeft?.hasFace('Y') &&
     !(
       backLeft?.orientation.top === 'Y' &&
-      backLeft?.orientation.left === leftEdge?.orientation.left &&
-      backLeft?.orientation.back === backEdge?.orientation.back
+      cubesShareFace('left', backLeft, leftEdge) &&
+      cubesShareFace('back', backLeft, backEdge)
     )
   ) {
     await solver.do('XCCW')
@@ -27,8 +27,8 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     backRight?.hasFace('Y') &&
     !(
       backRight?.orientation.top === 'Y' &&
-      backRight?.orientation.right === rightEdge?.orientation.right &&
-      backRight?.orientation.back === backEdge?.orientation.back
+      cubesShareFace('right', backRight, rightEdge) &&
+      cubesShareFace('back', backRight, backEdge)
     )
   ) {
     await solver.do('XCW')
@@ -42,8 +42,8 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     frontLeft?.hasFace('Y') &&
     !(
       frontLeft?.orientation.top === 'Y' &&
-      frontLeft?.orientation.left === leftEdge?.orientation.left &&
-      frontLeft?.orientation.front === frontEdge?.orientation.front
+      cubesShareFace('left', frontLeft, leftEdge) &&
+      cubesShareFace('front', frontLeft, frontEdge)
     )
   ) {
     await solveFrontLeftCorner(solver)
@@ -55,8 +55,8 @@ export default async function solveYellowCorners(solver: RubiksCubeSolver) {
     frontRight?.hasFace('Y') &&
     !(
       frontRight?.orientation.top === 'Y' &&
-      frontRight?.orientation.right === rightEdge?.orientation.right &&
-      frontRight?.orientation.front === frontEdge?.orientation.front
+      cubesShareFace('right', frontRight, rightEdge) &&
+      cubesShareFace('front', frontRight, frontEdge)
     )
   ) {
     await solveFrontRightCorner(solver)
@@ -164,8 +164,8 @@ async function solveBottomLeftFaceDown(solver: RubiksCubeSolver) {
     const topFrontEdge = solver.cubeMap.get(positionMap[8])
     if (
       topLeftCorner?.orientation.top !== 'Y' ||
-      topLeftCorner.orientation.left !== topLeftEdge?.orientation.left ||
-      topLeftCorner.orientation.front !== topFrontEdge?.orientation.front
+      !cubesShareFace('left', topLeftCorner, topLeftEdge) ||
+      !cubesShareFace('front', topLeftCorner, topFrontEdge)
     ) {
       unsolvedWorkingCube = true
     } else {
@@ -195,8 +195,8 @@ async function solveBottomRightFaceDown(solver: RubiksCubeSolver) {
     const topFrontEdge = solver.cubeMap.get(positionMap[8])
     if (
       topRightCorner?.orientation.top !== 'Y' ||
-      topRightCorner.orientation.right !== topRightEdge?.orientation.right ||
-      topRightCorner.orientation.front !== topFrontEdge?.orientation.front
+      !cubesShareFace('right', topRightCorner, topRightEdge) ||
+      !cubesShareFace('front', topRightCorner, topFrontEdge)
     ) {
       unsolvedWorkingCube = true
     } else {
@@ -220,7 +220,7 @@ async function solveBottomRightFaceDown(solver: RubiksCubeSolver) {
 
 async function solveBottomLeft(solver: RubiksCubeSolver) {
   const cube = solver.cubeMap.get(positionMap[25])
-  while (cube?.orientation.left !== solver.cubeMap.get(positionMap[13])?.orientation.left) {
+  while (!cubesShareFace('left', cube, solver.cubeMap.get(positionMap[13]))) {
     await solver.do('rotateBottomCW', 'XCCW')
   }
   await solver.do('rotateBottomCCW', 'rotateLeftCCW', 'rotateBottomCW', 'rotateLeftCW')
@@ -229,7 +229,7 @@ async function solveBottomLeft(solver: RubiksCubeSolver) {
 
 async function solveBottomRight(solver: RubiksCubeSolver) {
   const cube = solver.cubeMap.get(positionMap[27])
-  while (cube?.orientation.right !== solver.cubeMap.get(positionMap[15])?.orientation.right) {
+  while (!cubesShareFace('right', cube, solver.cubeMap.get(positionMap[15]))) {
     await solver.do('rotateBottomCCW', 'XCW')
   }
   await solver.do('rotateBottomCW', 'rotateRightCCW', 'rotateBottomCCW', 'rotateRightCW')

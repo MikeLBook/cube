@@ -1,15 +1,13 @@
 import Cube from '../engine/Cube'
 import { OrientationKey } from '../engine/types'
 import RubiksCube from '../engine/RubiksCube'
-import { JSONEquals, positionMap } from '../utils'
+import { cubesShareFace, JSONEquals, positionMap } from '../utils'
 import RubiksCubeSolver from './RubiksCubeSolver'
 
 export function isOutsideLayerSolved(orientation: OrientationKey, rubiks: RubiksCube): boolean {
   const cubesInLayer = rubiks.cubes.filter((cube) => cube.orientation[orientation] !== undefined)
 
-  const allFacesMatch = cubesInLayer.every(
-    (cube, _, cubes) => cube.orientation[orientation] === cubes[0].orientation[orientation]
-  )
+  const allFacesMatch = cubesShareFace(orientation, ...cubesInLayer)
   if (!allFacesMatch) return false
 
   const otherOrientationKeys: OrientationKey[] = []
@@ -28,9 +26,7 @@ export function isOutsideLayerSolved(orientation: OrientationKey, rubiks: Rubiks
     const row = cubesInLayer
       .filter((cube) => !cube.isFace)
       .filter((cube) => cube.orientation[orientation] !== undefined)
-    return row.every((cube) =>
-      JSONEquals(cube.orientation[orientation], row[0].orientation[orientation])
-    )
+    return cubesShareFace(orientation, ...row)
   })
 }
 
@@ -69,9 +65,7 @@ export function isMiddleLayerSolved(
     const row = cubesInLayer
       .filter((cube) => !JSONEquals(cube.position, { X: 0, Y: 0, Z: 0 }))
       .filter((cube) => cube.orientation[orientation] !== undefined)
-    return row.every((cube) =>
-      JSONEquals(cube.orientation[orientation], row[0].orientation[orientation])
-    )
+    return cubesShareFace(orientation, ...row)
   })
 }
 
@@ -91,10 +85,10 @@ export function hasSolvedYellowEdges(solver: RubiksCubeSolver): boolean {
   const rightFace = solver.cubeMap.get(positionMap[15])
   const backFace = solver.cubeMap.get(positionMap[11])
 
-  if (frontEdge?.orientation.front !== frontFace?.orientation.front) return false
-  if (leftEdge?.orientation.left !== leftFace?.orientation.left) return false
-  if (backEdge?.orientation.back !== backFace?.orientation.back) return false
-  if (rightEdge?.orientation.right !== rightFace?.orientation.right) return false
+  if (!cubesShareFace('front', frontEdge, frontFace)) return false
+  if (!cubesShareFace('left', leftEdge, leftFace)) return false
+  if (!cubesShareFace('back', backEdge, backFace)) return false
+  if (!cubesShareFace('right', rightEdge, rightFace)) return false
   return true
 }
 
@@ -113,26 +107,26 @@ export function hasSolvedYellowCorners(solver: RubiksCubeSolver): boolean {
   const frontEdge = solver.cubeMap.get(positionMap[8])
 
   if (
-    backLeft?.orientation.left !== leftEdge?.orientation.left ||
-    backLeft?.orientation.back !== backEdge?.orientation.back
+    !cubesShareFace('left', backLeft, leftEdge) ||
+    !cubesShareFace('back', backLeft, backEdge)
   )
     return false
 
   if (
-    backRight?.orientation.right !== rightEdge?.orientation.right ||
-    backRight?.orientation.back !== backEdge?.orientation.back
+    !cubesShareFace('right', backRight, rightEdge) ||
+    !cubesShareFace('back', backRight, backEdge)
   )
     return false
 
   if (
-    frontLeft?.orientation.left !== leftEdge?.orientation.left ||
-    frontLeft?.orientation.front !== frontEdge?.orientation.front
+    !cubesShareFace('left', frontLeft, leftEdge) ||
+    !cubesShareFace('front', frontLeft, frontEdge)
   )
     return false
 
   if (
-    frontRight?.orientation.right !== rightEdge?.orientation.right ||
-    frontRight?.orientation.front !== frontEdge?.orientation.front
+    !cubesShareFace('right', frontRight, rightEdge) ||
+    !cubesShareFace('front', frontRight, frontEdge)
   )
     return false
 
@@ -167,9 +161,9 @@ export function hasCompletedCorners(solver: RubiksCubeSolver): boolean {
     [backLeft, backRight, frontLeft, frontRight].every(
       (corner) => corner?.orientation.top === 'W'
     ) &&
-    backLeft?.orientation.back === backRight?.orientation.back &&
-    backLeft?.orientation.left === frontLeft?.orientation.left &&
-    frontLeft?.orientation.front === frontRight?.orientation.front &&
-    frontRight?.orientation.right === backRight?.orientation.right
+    cubesShareFace('back', backLeft, backRight) &&
+    cubesShareFace('left', backLeft, frontLeft) &&
+    cubesShareFace('front', frontLeft, frontRight) &&
+    cubesShareFace('right', frontRight, backRight)
   )
 }

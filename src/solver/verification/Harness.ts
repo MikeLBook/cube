@@ -9,14 +9,14 @@
 // bugs tractable — see README.md alongside this file for the full playbook.
 //
 //   node src/solver/verification/run.mjs count            # tally outcomes over N scrambles
+//   node src/solver/verification/run.mjs realcount <N>    # solve rate driving the real solver.run()
+//   node src/solver/verification/run.mjs solve '<json>'   # run one scramble through solver.run()
 //   node src/solver/verification/run.mjs repro <outcome>  # find the SHORTEST scramble with that outcome
 //   node src/solver/verification/run.mjs trace '<json>'   # step through one scramble, logging every move
 //
 // The independent `edgesSolved`/`cornersSolved` checkers below compare stickers to
 // the *centers* and are deliberately NOT the solver's own solutionStatusChecks —
 // so a bug in a completion check surfaces as a disagreement instead of hiding.
-
-console.error = () => {} // solver logs a diagnostic on its dead-end path; silence the spam.
 
 import RubiksCube from '../../engine/RubiksCube'
 import RubiksCubeSolver from '../RubiksCubeSolver'
@@ -25,11 +25,14 @@ import solveYellowCorners from '../subroutines/solveYellowCorners'
 import solveMiddleEdges from '../subroutines/solveMiddleEdges'
 import solveWhiteFaceEdges from '../subroutines/solveWhiteFaceEdges'
 import solveWhiteFaceCorners from '../subroutines/solveWhiteFaceCorners'
+import solveFinalCorners from '../subroutines/solveFinalCorners'
+import solveFinalEdges from '../subroutines/solveFinalEdges'
 import {
   hasSolvedYellowEdges,
   hasSolvedYellowCorners,
   hasSolvedWhiteFaceEdges,
   hasSolvedWhiteFaceCorners,
+  hasCompletedCorners,
   isMiddleLayerSolved
 } from '../solutionStatusChecks'
 import { positionMap } from '../../utils'
@@ -138,12 +141,32 @@ function middleEdgesSolved(): boolean {
 function whiteCrossSolved(): boolean {
   return [2, 4, 6, 8].every((i) => get(i)?.orientation.top === 'W')
 }
-// Independent ground truth for the white-corners phase (the last implemented phase). Its goal,
-// like the cross, is orientation only: each of the 4 top corners shows white up. It does NOT
-// place the top layer's side stickers — the cube is not fully solved at this point, so this is
-// deliberately *not* `rubiks.isSolved`. Mirrors the solver's own hasSolvedWhiteFaceCorners.
+// Independent ground truth for the white-corners phase. Its goal, like the cross, is
+// orientation only: each of the 4 top corners shows white up. It does NOT yet place the
+// corners into their solved slots — that's the CompleteCorners phase below. Mirrors the
+// solver's own hasSolvedWhiteFaceCorners.
 function whiteCornersSolved(): boolean {
   return [1, 3, 7, 9].every((i) => get(i)?.orientation.top === 'W')
+}
+// Independent ground truth for the CompleteCorners phase: all 4 top corners are white-up AND
+// the side stickers shared by adjacent corners agree — i.e. the corners are permuted into their
+// correct relative arrangement (a white-up cube with a consistent corner ring). This mirrors the
+// phase's own goal (hasCompletedCorners) but is coded independently so a bug in that check
+// surfaces as a disagreement. It intentionally does NOT assert center-alignment of the whole top
+// layer; that (and the edges) is the CompleteEdges phase's job, verified by the terminal
+// `rubiks.isSolved`.
+function lastCornersPlaced(): boolean {
+  const c1 = get(1),
+    c3 = get(3),
+    c7 = get(7),
+    c9 = get(9)
+  return !!(
+    [c1, c3, c7, c9].every((c) => c?.orientation.top === 'W') &&
+    c1?.orientation.back === c3?.orientation.back &&
+    c1?.orientation.left === c7?.orientation.left &&
+    c7?.orientation.front === c9?.orientation.front &&
+    c9?.orientation.right === c3?.orientation.right
+  )
 }
 
 // Flip the white face to the top — the reorientation the solver's advancePhase('WhiteFaceEdges')
@@ -191,6 +214,8 @@ type Outcome =
   | 'middle-stuck' // middle-edge phase made no progress
   | 'white-edges-stuck' // white-cross phase made no progress
   | 'white-corners-stuck' // white-corners phase made no progress
+  | 'final-corners-stuck' // CompleteCorners phase made no progress
+  | 'final-edges-stuck' // CompleteEdges phase made no progress (cube never fully solved)
   | 'edge-check-early' // hasSolvedYellowEdges said done while edges NOT actually solved
   | 'corner-check-early' // hasSolvedYellowCorners said done while corners NOT actually solved
   | 'middle-check-early' // isMiddleLayerSolved said done while equator NOT actually solved
@@ -201,6 +226,12 @@ type Outcome =
 
 async function runSeq(seq: string[]): Promise<Outcome> {
   rubiks.reset()
+  // Isolate each run. The solver instance is reused across thousands of scrambles, and its
+  // self-reset (run() line 80) only fires on a normal loop exit — a runaway throws BUDGET out of
+  // run() and skips it, leaking solutionPhase into the next scramble. Without this, a prior
+  // runaway makes performInitialInspection dispatch a late-phase subroutine onto a fresh scramble
+  // and hang, reporting a fabricated `budget`. Reset here so every run starts from a clean solver.
+  solver.reset()
   moveBudget = 1e9
   for (const m of seq) (rubiks as any)[m]()
   moveBudget = 5000 // generous per-solve cap; a healthy solve uses well under this
@@ -240,7 +271,7 @@ async function runSeq(seq: string[]): Promise<Outcome> {
     }
     if (!hasSolvedWhiteFaceEdges(solver)) return 'checks-disagree'
 
-    // White-face corners: orient all 4 top corners white-up (the last implemented phase).
+    // White-face corners: orient all 4 top corners white-up.
     g = 0
     while (!whiteCornersSolved()) {
       if (hasSolvedWhiteFaceCorners(solver)) return 'white-corner-check-early'
@@ -248,10 +279,49 @@ async function runSeq(seq: string[]): Promise<Outcome> {
       if (++g > 80) return 'white-corners-stuck'
     }
     if (!hasSolvedWhiteFaceCorners(solver)) return 'checks-disagree'
+
+    // CompleteCorners: permute the top corners into their solved arrangement.
+    g = 0
+    while (!lastCornersPlaced()) {
+      await solveFinalCorners(solver)
+      if (++g > 80) return 'final-corners-stuck'
+    }
+    if (!hasCompletedCorners(solver)) return 'checks-disagree'
+
+    // CompleteEdges: permute the top edges — this places the last layer and finishes the cube.
+    // `rubiks.isSolved` is the engine's own all-faces-uniform check: the strongest, fully
+    // independent ground truth, and orientation-agnostic (the final algorithms leave the solved
+    // cube in whatever orientation the whole-cube rotations landed on).
+    g = 0
+    while (!rubiks.isSolved) {
+      await solveFinalEdges(solver)
+      if (++g > 80) return 'final-edges-stuck'
+    }
     return 'ok'
   } catch (e: any) {
     if (e.message === 'BUDGET') return 'budget'
     throw e
+  }
+}
+
+// Drive the REAL solver exactly as production does — `solver.run()` over the mock pacer — and
+// judge it only by what the engine can see. This is the authoritative measure of the solver's
+// ability: no hand-rolled phase loop and no independent checks that could push a subroutine into a
+// state the real state machine never reaches. `ok` iff the cube ends solved; `budget` iff a
+// subroutine ran away. (`unsolved` can't normally happen — run()'s loop only exits on isSolved —
+// but is reported rather than hidden if it ever does.)
+async function runReal(seq: string[]): Promise<string> {
+  rubiks.reset()
+  solver.reset()
+  moveBudget = 1e9
+  for (const m of seq) (rubiks as any)[m]()
+  moveBudget = 5000
+  try {
+    await solver.run()
+    return rubiks.isSolved ? 'ok' : 'unsolved'
+  } catch (e: any) {
+    if (e.message === 'BUDGET') return 'budget'
+    return 'threw:' + e.message
   }
 }
 
@@ -273,6 +343,24 @@ async function count(n: number) {
     console.log(
       `\n❌ ${n - (tally['ok'] ?? 0)} / ${n} did not solve — use \`repro\` on a failing outcome`
     )
+}
+
+// Authoritative solve rate: drive the real `solver.run()` over N scrambles.
+async function realCount(n: number) {
+  const tally: Record<string, number> = {}
+  for (let i = 0; i < n; i++) {
+    const r = await runReal(randSeq(50))
+    tally[r] = (tally[r] || 0) + 1
+  }
+  console.log(JSON.stringify(tally, null, 2))
+  if ((tally['ok'] ?? 0) === n) console.log(`\n✅ solver.run() solved all ${n} scrambles`)
+  else console.log(`\n❌ solver.run() left ${n - (tally['ok'] ?? 0)} / ${n} unsolved`)
+}
+
+// Drive the real `solver.run()` on ONE scramble — cross-check a repro against production behavior.
+async function solve(seq: string[]) {
+  const r = await runReal(seq)
+  console.log(`solver.run() → ${r}  (isSolved=${rubiks.isSolved})`)
 }
 
 async function repro(want: string) {
@@ -309,16 +397,22 @@ async function trace(seq: string[]) {
   }
 
   rubiks.reset()
+  // Isolate each run. The solver instance is reused across thousands of scrambles, and its
+  // self-reset (run() line 80) only fires on a normal loop exit — a runaway throws BUDGET out of
+  // run() and skips it, leaking solutionPhase into the next scramble. Without this, a prior
+  // runaway makes performInitialInspection dispatch a late-phase subroutine onto a fresh scramble
+  // and hang, reporting a fabricated `budget`. Reset here so every run starts from a clean solver.
+  solver.reset()
   moveBudget = 1e9
   for (const m of seq) (rubiks as any)[m]()
-  moveBudget = 600
+  moveBudget = 5000
   await (solver as any).performInitialInspection()
   logging = true
 
   // The yellow-oriented ground truths (edges/corners/middle) are valid only until the cube
-  // is flipped white-on-top; after that, drive by whiteCrossSolved(). `flipped` gates the two.
+  // is flipped white-on-top; after that, drive the white + final phases. `flipped` gates the two.
   let flipped = false
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 120; i++) {
     let phase: string
     if (!flipped) {
       if (edgesSolved() && cornersSolved() && middleEdgesSolved()) {
@@ -332,8 +426,14 @@ async function trace(seq: string[]) {
       }
       phase = !edgesSolved() ? 'edges' : !cornersSolved() ? 'corners' : 'middle'
     } else {
-      if (whiteCornersSolved()) break
-      phase = !whiteCrossSolved() ? 'white-edges' : 'white-corners'
+      if (rubiks.isSolved) break
+      phase = !whiteCrossSolved()
+        ? 'white-edges'
+        : !whiteCornersSolved()
+          ? 'white-corners'
+          : !lastCornersPlaced()
+            ? 'final-corners'
+            : 'final-edges'
     }
     moveLog.length = 0
     console.log(`\n--- ${phase} call #${i + 1} ---`)
@@ -343,7 +443,9 @@ async function trace(seq: string[]) {
       else if (phase === 'corners') await solveYellowCorners(solver)
       else if (phase === 'middle') await solveMiddleEdges(solver)
       else if (phase === 'white-edges') await solveWhiteFaceEdges(solver)
-      else await solveWhiteFaceCorners(solver)
+      else if (phase === 'white-corners') await solveWhiteFaceCorners(solver)
+      else if (phase === 'final-corners') await solveFinalCorners(solver)
+      else await solveFinalEdges(solver)
     } catch (e: any) {
       console.log('  THREW:', e.message, '(infinite loop — see the repeating tail below)')
       console.log('  moves:', moveLog.slice(0, 40).join(' '), '...')
@@ -354,15 +456,21 @@ async function trace(seq: string[]) {
   console.log(
     `\nFinal: edgesSolved=${edgesSolved()} cornersSolved=${cornersSolved()} ` +
       `middleEdgesSolved=${middleEdgesSolved()} whiteCrossSolved=${whiteCrossSolved()} ` +
-      `whiteCornersSolved=${whiteCornersSolved()}`
+      `whiteCornersSolved=${whiteCornersSolved()} lastCornersPlaced=${lastCornersPlaced()} ` +
+      `isSolved=${rubiks.isSolved}`
   )
 }
 
 async function main() {
   const mode = process.argv[2] ?? 'count'
   if (mode === 'count') await count(Number(process.argv[3]) || 5000)
+  else if (mode === 'realcount') await realCount(Number(process.argv[3]) || 5000)
+  else if (mode === 'solve') await solve(JSON.parse(process.argv[3]))
   else if (mode === 'repro') await repro(process.argv[3] ?? 'edges-stuck')
   else if (mode === 'trace') await trace(JSON.parse(process.argv[3]))
-  else console.log("modes: count [N] | repro <outcome> | trace '<json-move-array>'")
+  else
+    console.log(
+      "modes: count [N] | realcount [N] | solve '<json>' | repro <outcome> | trace '<json-move-array>'"
+    )
 }
 main()

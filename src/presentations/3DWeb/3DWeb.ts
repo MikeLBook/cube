@@ -78,6 +78,10 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
   private status: Status = 'free'
   private running = false
   private hasScrambled = false
+  // A solve driver is running (distinct from `driving`, which is also true for a scramble); gates
+  // the control panel. `aborting` covers the window between an abort click and the driver unwinding.
+  private solverActive = false
+  private aborting = false
   private scrambleLeft = 0
   private timer: number | undefined
   private t0 = 0
@@ -230,6 +234,7 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     this.renderCube()
     this.updateStats()
     this.updateStatus()
+    this.updateControls()
 
     const sc = this.sceneEl
     sc.addEventListener('pointerdown', (e) => this.onDown(e))
@@ -293,6 +298,14 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
   public onMove(move?: LayerMove | Rotation) {
     this.entries.forEach((e, i) => (e.cube = this.rubiks.cubes[i]))
     this.persist()
+    // Count the solver's layer turns while it works a timed attempt — the counterpart to
+    // afterUserMove's manual count. `solverActive` excludes manual turns (counted there) and
+    // scramble moves; the 'solving' status excludes untracked free-play solves; isLayerMove
+    // excludes whole-cube rotations (which never count, just like userCubeMove).
+    if (move && this.solverActive && this.status === 'solving' && this.isLayerMove(move)) {
+      this.moveCount++
+      this.updateStats()
+    }
     const fast = this.movePresentation.fast === true
     this.movePresentation = {}
     // No move (reset) settles instantly. Sources only mutate the engine while idle, so a move
@@ -327,31 +340,75 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     this.renderCube()
   }
 
+  // A layer turn (vs a whole-cube rotation) — i.e. something that counts as a solve move.
+  private isLayerMove(move: LayerMove | Rotation): boolean {
+    return (Object.keys(this.MOVES) as MoveKey[]).some(
+      (k) => this.MOVES[k].cw === move || this.MOVES[k].ccw === move
+    )
+  }
+
   // ---------- drivers (paced move sequences) ----------
   // One click runs the solver's whole sequence. The solver mutates the engine directly (each
   // move fires onMove → animateMove) and awaits settled() between moves, so we present one turn
   // at a time.
   private startSolve() {
-    this.runSequence((signal) => this.solver.run(signal))
+    if (this.driving || this.animating) return
+    this.solverActive = true
+    // A scrambled cube is a timed attempt: start the clock (which flips the status to 'solving').
+    // The person needn't make the first move — afterUserMove covers the manual path. Free play is
+    // untracked, so a solver run there neither times nor changes the status, exactly like manually
+    // solving during free play.
+    if (this.hasScrambled) this.startTimer()
+    this.updateControls()
+    this.runSequence(
+      (signal) => this.solver.run(signal),
+      () => this.onSolveDone()
+    )
   }
 
-  // Abort a running solve (or scramble). Aborting the signal is enough: the driver's loop
-  // checks signal.aborted after the in-flight move settles and unwinds. We don't flushSettled
-  // here — that would wake the waiter mid-animation and let the engine outrun the view.
+  // Abort a running solve. Aborting the signal is enough: the driver's loop checks signal.aborted
+  // after the in-flight move (and the rest of its current subroutine) settles, then unwinds — that
+  // takes a moment, so we show an "aborting" state until onSolveDone hands the controls back. We
+  // don't flushSettled here — that would wake the waiter mid-animation and let the engine outrun
+  // the view.
   private abortSolve() {
+    if (!this.solverActive || this.aborting) return
+    this.aborting = true
+    this.updateControls()
     this.sequenceAbort?.abort()
     this.solver.reset()
   }
 
+  // The solve driver has fully unwound (finished or aborted). Record the result and re-enable the
+  // controls.
+  private onSolveDone() {
+    this.solverActive = false
+    this.aborting = false
+    if (this.rubiks.isSolved && this.hasScrambled) {
+      // A timed attempt completed: stop the clock, mark solved, and disarm so post-solve play
+      // stays idle (mirrors afterUserMove). A free-play solve is untracked — no 'solved'.
+      this.stopTimer()
+      this.hasScrambled = false
+      this.status = 'solved'
+      this.updateStatus()
+      this.updateStats()
+    }
+    // On abort the attempt simply continues by hand (timer + 'solving' left as-is); a free-play
+    // solve leaves the status untouched. Either way, hand the controls back.
+    this.updateControls()
+  }
+
   // Run a paced sequence of engine mutations as the sole active driver. Manual input is locked
-  // out (driving) until it finishes; reset() aborts it via the signal.
-  private runSequence(fn: (signal: AbortSignal) => Promise<void>) {
+  // out (driving) until it finishes; reset() aborts it via the signal. onDone runs once the
+  // driver has fully unwound (normal finish or abort).
+  private runSequence(fn: (signal: AbortSignal) => Promise<void>, onDone?: () => void) {
     if (this.driving || this.animating) return
     this.driving = true
     this.sequenceAbort = new AbortController()
     fn(this.sequenceAbort.signal).finally(() => {
       this.driving = false
       this.sequenceAbort = undefined
+      onDone?.()
     })
   }
 
@@ -610,10 +667,13 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
     this.pitch = DEFAULT_PITCH
     this.applyView(true)
     this.status = 'free'
+    this.solverActive = false
+    this.aborting = false
     this.moveCount = 0
     this.elapsed = 0
     this.updateStatus()
     this.updateStats()
+    this.updateControls()
   }
 
   // ---------- view ----------
@@ -805,6 +865,34 @@ class CubeView implements IRubiksCubeObserver, IMovePacer {
       label.style.color = st.color
     }
     if (pill) pill.style.borderColor = st.color
+  }
+
+  // While the solver is active, every control is locked except Abort. Abort is live only during a
+  // solve and shows a spinner + "Aborting…" while the abort unwinds (which isn't instant).
+  private updateControls() {
+    const solving = this.solverActive
+    const setDisabled = (id: string, disabled: boolean) => {
+      const el = document.getElementById(id) as HTMLButtonElement | null
+      if (el) el.disabled = disabled
+    }
+    ;[
+      'btn-scramble',
+      'btn-reset',
+      'solve',
+      'btn-recenter',
+      'btn-roll-up',
+      'btn-roll-down',
+      'btn-spin-left',
+      'btn-spin-right',
+      'btn-tilt-left',
+      'btn-tilt-right'
+    ].forEach((id) => setDisabled(id, solving))
+    const abort = document.getElementById('abort-solve') as HTMLButtonElement | null
+    if (abort) {
+      abort.disabled = !solving || this.aborting
+      abort.classList.toggle('btn--busy', this.aborting)
+      abort.textContent = this.aborting ? 'Aborting…' : 'Abort'
+    }
   }
 
   private wireControls() {

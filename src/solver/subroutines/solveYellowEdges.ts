@@ -1,4 +1,4 @@
-import { positionMap } from '../../utils'
+import { cubesShareFace, positionMap } from '../../utils'
 import RubiksCubeSolver from '../RubiksCubeSolver'
 
 export default async function solveYellowEdges(solver: RubiksCubeSolver) {
@@ -11,19 +11,19 @@ export default async function solveYellowEdges(solver: RubiksCubeSolver) {
     let solved = true
     if (
       yellowTop.isInLeftLayer &&
-      solver.cubeMap.get(positionMap[13])?.orientation.left !== yellowTop.orientation.left
+      !cubesShareFace('left', solver.cubeMap.get(positionMap[13]), yellowTop)
     ) {
       await solver.do('XCCW')
       solved = false
     } else if (
       yellowTop.isInBackLayer &&
-      solver.cubeMap.get(positionMap[11])?.orientation.back !== yellowTop.orientation.back
+      !cubesShareFace('back', solver.cubeMap.get(positionMap[11]), yellowTop)
     ) {
       await solver.do('XCCW', 'XCCW')
       solved = false
     } else if (
       yellowTop.isInRightLayer &&
-      solver.cubeMap.get(positionMap[15])?.orientation.right !== yellowTop.orientation.right
+      !cubesShareFace('right', solver.cubeMap.get(positionMap[15]), yellowTop)
     ) {
       await solver.do('XCW')
       solved = false
@@ -33,9 +33,7 @@ export default async function solveYellowEdges(solver: RubiksCubeSolver) {
       await solver.do('rotateFrontCW', 'rotateFrontCW')
       do {
         await solver.do('rotateBottomCW', 'XCCW')
-      } while (
-        solver.cubeMap.get(positionMap[17])?.orientation.front !== yellowTop.orientation.front
-      )
+      } while (!cubesShareFace('front', solver.cubeMap.get(positionMap[17]), yellowTop))
       await solver.do('rotateFrontCW', 'rotateFrontCW')
       return
     }
@@ -55,9 +53,7 @@ export default async function solveYellowEdges(solver: RubiksCubeSolver) {
       await solver.do('XCW')
     }
 
-    while (
-      solver.cubeMap.get(positionMap[17])?.orientation.front !== yellowBottom.orientation.front
-    ) {
+    while (!cubesShareFace('front', solver.cubeMap.get(positionMap[17]), yellowBottom)) {
       await solver.do('rotateBottomCW', 'XCCW')
     }
 
@@ -65,58 +61,49 @@ export default async function solveYellowEdges(solver: RubiksCubeSolver) {
     return
   }
 
-  // Solve outward facing yellow edge cubes (one at a time)
   const yellowEdge = solver.rubiks.cubes.find(
     (cube) =>
       cube.isEdge &&
       cube.hasFace('Y') &&
       cube.orientation.top !== 'Y' &&
       cube.orientation.bottom !== 'Y'
-  )
+  )!
 
-  if (yellowEdge) {
-    if (yellowEdge.orientation.left === 'Y') {
-      await solver.do('XCCW')
-    } else if (yellowEdge.orientation.back === 'Y') {
-      await solver.do('XCCW', 'XCCW')
-    } else if (yellowEdge.orientation.right === 'Y') {
-      await solver.do('XCW')
-    }
-
-    if (yellowEdge.isInBottomLayer) {
-      while (
-        solver.cubeMap.get(positionMap[17])?.orientation.front !== yellowEdge.orientation.bottom
-      ) {
-        await solver.do('rotateBottomCW', 'XCCW')
-      }
-      await solver.do('rotateBottomCW', 'rotateYMidCCW', 'rotateBottomCCW', 'rotateYMidCW')
-    } else if (yellowEdge.isInLeftLayer) {
-      await solver.do('rotateLeftCCW', 'rotateBottomCCW', 'rotateLeftCW')
-      while (
-        solver.cubeMap.get(positionMap[17])?.orientation.front !== yellowEdge.orientation.front
-      ) {
-        await solver.do('rotateBottomCW', 'XCCW')
-      }
-      await solver.do('rotateFrontCW', 'rotateFrontCW')
-    } else if (yellowEdge.isInRightLayer) {
-      await solver.do('rotateRightCCW', 'rotateBottomCW', 'rotateRightCW')
-      while (
-        solver.cubeMap.get(positionMap[17])?.orientation.front !== yellowEdge.orientation.front
-      ) {
-        await solver.do('rotateBottomCW', 'XCCW')
-      }
-      await solver.do('rotateFrontCW', 'rotateFrontCW')
-    } else if (yellowEdge.isInTopLayer) {
-      await solver.do('rotateFrontCW', 'rotateFrontCW')
-      while (
-        solver.cubeMap.get(positionMap[17])?.orientation.front !== yellowEdge.orientation.bottom
-      ) {
-        await solver.do('rotateBottomCW', 'XCCW')
-      }
-      await solver.do('rotateBottomCW', 'rotateYMidCCW', 'rotateBottomCCW', 'rotateYMidCW')
-    }
-    return
+  if (yellowEdge.orientation.left === 'Y') {
+    await solver.do('XCCW')
+  } else if (yellowEdge.orientation.back === 'Y') {
+    await solver.do('XCCW', 'XCCW')
+  } else if (yellowEdge.orientation.right === 'Y') {
+    await solver.do('XCW')
   }
-  console.error('not sure how I got here')
+
+  if (yellowEdge.isInBottomLayer) {
+    while (
+      solver.cubeMap.get(positionMap[17])?.orientation.front !== yellowEdge.orientation.bottom
+    ) {
+      await solver.do('rotateBottomCW', 'XCCW')
+    }
+    await solver.do('rotateBottomCW', 'rotateYMidCCW', 'rotateBottomCCW', 'rotateYMidCW')
+  } else if (yellowEdge.isInLeftLayer) {
+    await solver.do('rotateLeftCCW', 'rotateBottomCCW', 'rotateLeftCW')
+    while (!cubesShareFace('front', solver.cubeMap.get(positionMap[17]), yellowEdge)) {
+      await solver.do('rotateBottomCW', 'XCCW')
+    }
+    await solver.do('rotateFrontCW', 'rotateFrontCW')
+  } else if (yellowEdge.isInRightLayer) {
+    await solver.do('rotateRightCCW', 'rotateBottomCW', 'rotateRightCW')
+    while (!cubesShareFace('front', solver.cubeMap.get(positionMap[17]), yellowEdge)) {
+      await solver.do('rotateBottomCW', 'XCCW')
+    }
+    await solver.do('rotateFrontCW', 'rotateFrontCW')
+  } else if (yellowEdge.isInTopLayer) {
+    await solver.do('rotateFrontCW', 'rotateFrontCW')
+    while (
+      solver.cubeMap.get(positionMap[17])?.orientation.front !== yellowEdge.orientation.bottom
+    ) {
+      await solver.do('rotateBottomCW', 'XCCW')
+    }
+    await solver.do('rotateBottomCW', 'rotateYMidCCW', 'rotateBottomCCW', 'rotateYMidCW')
+  }
   return
 }

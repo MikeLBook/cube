@@ -6,6 +6,7 @@ import {
   LayerMove,
   Orientation,
   ORIENTATION_KEYS,
+  OrientationKey,
   Position,
   Rotation,
   ROTATIONS
@@ -50,6 +51,15 @@ export function isCubeArray(value: unknown): value is Cube[] {
         isPosition(cube.position) &&
         isOrientation(cube.orientation)
     )
+  )
+}
+
+export function cubesShareFace(
+  orientation: OrientationKey,
+  ...cubes: (Cube | undefined)[]
+): boolean {
+  return cubes.every(
+    (cube, idx, arr) => cube?.orientation[orientation] === arr[0]?.orientation[orientation]
   )
 }
 
