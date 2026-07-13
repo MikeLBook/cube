@@ -48,7 +48,7 @@ export default class RubiksCubeSolver {
     return cubeMap
   }
 
-  // Apply a sequence of moves to the engine, one per settled() so the representation
+  // Apply a sequence of moves to the engine, one per settled() so the presentation
   // paces the solver. Rotations reorient the whole cube; everything else is a layer move.
   public async do(...moves: (LayerMove | Rotation)[]) {
     for (const move of moves) {
