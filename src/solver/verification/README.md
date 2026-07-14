@@ -11,6 +11,7 @@ scrambles with a mock, instant `IMovePacer`.
 npm run verify                       # tally outcomes over 5000 random scrambles
 node src/solver/verification/run.mjs count 20000      # ...over N scrambles
 node src/solver/verification/run.mjs realcount 20000  # solve rate driving the REAL solver.run()
+node src/solver/verification/run.mjs statecount 20000 # ...loading each scramble via setState (see below)
 node src/solver/verification/run.mjs solve '["rotateRightCCW","rotateTopCW"]'  # one scramble via solver.run()
 node src/solver/verification/run.mjs repro <outcome>  # find the SHORTEST scramble with that outcome
 node src/solver/verification/run.mjs trace '["rotateBackCCW"]'   # step through one scramble
@@ -26,6 +27,16 @@ into a state production never reaches. When the two disagree, that gap is itself
 (both paths) resets the engine **and** `solver.reset()` first: the solver instance is reused across
 runs and only self-resets on a normal `run()` exit, so without this a runaway's leaked
 `solutionPhase` would corrupt the next scramble.
+
+**`statecount` — the third lens, for the `setState` load path.** `count`/`realcount` build every
+scramble by replaying moves through `execute`, which refreshes the engine's cached `cubeMap` on each
+`onMove`. But the 2D/3D pages don't replay moves on startup — they persist `JSON.stringify(cubes)` to
+`localStorage` and rehydrate with `rubiks.setState(...)`. `statecount` mirrors that exactly: scramble,
+serialize, reset the engine to solved, then `setState` and drive `solver.run()`. The reset is the
+teeth — it leaves the cached `cubeMap` reflecting the *solved* cube, so the solve only succeeds if
+`setState` refreshes the map. This is the regression guard for a real staleness bug: `setState` used
+to skip the refresh, so `fetchPosition` read stale solved-state cubies and a load-then-solve would
+fail while `realcount` stayed green. If that refresh ever regresses, `statecount` goes red alone.
 
 The harness lives in `src/solver/verification/` (`Harness.ts` + `run.mjs`). `build/` is
 git-ignored and wiped by `npm run build`, so `run.mjs` bundles to a git-ignored `dist/`

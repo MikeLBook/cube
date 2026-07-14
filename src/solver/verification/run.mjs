@@ -3,6 +3,8 @@
 //
 //   node src/solver/verification/run.mjs count            # tally outcomes over 5000 scrambles
 //   node src/solver/verification/run.mjs count 20000      # ...over N scrambles
+//   node src/solver/verification/run.mjs realcount <N>    # solve rate driving the real solver.run()
+//   node src/solver/verification/run.mjs statecount <N>   # solve rate loading each scramble via setState
 //   node src/solver/verification/run.mjs repro <outcome>  # shortest scramble producing <outcome>
 //   node src/solver/verification/run.mjs trace '<json>'   # step through one scramble
 //

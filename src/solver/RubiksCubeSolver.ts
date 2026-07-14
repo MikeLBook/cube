@@ -43,7 +43,7 @@ export default class RubiksCubeSolver {
   }
 
   public fetchPosition(position: PositionKey): Cube | undefined {
-    return this.rubiks.cubes.find((cube) => JSON.stringify(cube.position) === positionMap[position])
+    return this.rubiks.cubeMap.get(positionMap[position])
   }
 
   // Apply a sequence of moves to the engine, one per settled() so the presentation

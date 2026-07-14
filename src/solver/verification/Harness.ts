@@ -10,6 +10,7 @@
 //
 //   node src/solver/verification/run.mjs count            # tally outcomes over N scrambles
 //   node src/solver/verification/run.mjs realcount <N>    # solve rate driving the real solver.run()
+//   node src/solver/verification/run.mjs statecount <N>   # solve rate loading each scramble via setState
 //   node src/solver/verification/run.mjs solve '<json>'   # run one scramble through solver.run()
 //   node src/solver/verification/run.mjs repro <outcome>  # find the SHORTEST scramble with that outcome
 //   node src/solver/verification/run.mjs trace '<json>'   # step through one scramble, logging every move
@@ -323,6 +324,31 @@ async function runReal(seq: string[]): Promise<string> {
   }
 }
 
+// Like runReal, but load the scramble the way the 2D/3D pages do on startup rather than by
+// replaying moves: serialize the scrambled cube (`JSON.stringify(rubiks.cubes)` — exactly what the
+// views persist to localStorage), wipe the engine back to solved, then rehydrate via `setState`
+// before driving `solver.run()`. The intervening reset is the whole point — it leaves the engine's
+// cached `cubeMap` reflecting the SOLVED cube, so the solve can only succeed if `setState` refreshes
+// that map. The execute-based scrambles never exercise this path (every move refreshes the map via
+// onMove), so this is the dedicated regression guard for the setState/cubeMap staleness class.
+async function runRealFromState(seq: string[]): Promise<string> {
+  rubiks.reset()
+  moveBudget = 1e9
+  for (const m of seq) rubiks.execute(m as LayerMove | Rotation)
+  const persisted = JSON.stringify(rubiks.cubes) // what the views write to localStorage
+  rubiks.reset() // simulate a fresh engine, as if the page had just loaded
+  solver.reset()
+  rubiks.setState(persisted) // ...then the views' load path rehydrates the scrambled state
+  moveBudget = 5000
+  try {
+    await solver.run()
+    return rubiks.isSolved ? 'ok' : 'unsolved'
+  } catch (e: any) {
+    if (e.message === 'BUDGET') return 'budget'
+    return 'threw:' + e.message
+  }
+}
+
 // ---- Modes ----
 async function count(n: number) {
   const tally: Record<string, number> = {}
@@ -353,6 +379,21 @@ async function realCount(n: number) {
   console.log(JSON.stringify(tally, null, 2))
   if ((tally['ok'] ?? 0) === n) console.log(`\n✅ solver.run() solved all ${n} scrambles`)
   else console.log(`\n❌ solver.run() left ${n - (tally['ok'] ?? 0)} / ${n} unsolved`)
+}
+
+// Authoritative solve rate over the setState load path (see runRealFromState). Regression guard:
+// if setState ever stops refreshing the engine's cubeMap, the solver reads stale cubies and this
+// tally goes red while `realcount` (execute path) stays green.
+async function stateCount(n: number) {
+  const tally: Record<string, number> = {}
+  for (let i = 0; i < n; i++) {
+    const r = await runRealFromState(randSeq(50))
+    tally[r] = (tally[r] || 0) + 1
+  }
+  console.log(JSON.stringify(tally, null, 2))
+  if ((tally['ok'] ?? 0) === n)
+    console.log(`\n✅ solver.run() solved all ${n} setState-loaded scrambles`)
+  else console.log(`\n❌ solver.run() left ${n - (tally['ok'] ?? 0)} / ${n} unsolved after setState load`)
 }
 
 // Drive the real `solver.run()` on ONE scramble — cross-check a repro against production behavior.
@@ -463,12 +504,13 @@ async function main() {
   const mode = process.argv[2] ?? 'count'
   if (mode === 'count') await count(Number(process.argv[3]) || 5000)
   else if (mode === 'realcount') await realCount(Number(process.argv[3]) || 5000)
+  else if (mode === 'statecount') await stateCount(Number(process.argv[3]) || 5000)
   else if (mode === 'solve') await solve(JSON.parse(process.argv[3]))
   else if (mode === 'repro') await repro(process.argv[3] ?? 'edges-stuck')
   else if (mode === 'trace') await trace(JSON.parse(process.argv[3]))
   else
     console.log(
-      "modes: count [N] | realcount [N] | solve '<json>' | repro <outcome> | trace '<json-move-array>'"
+      "modes: count [N] | realcount [N] | statecount [N] | solve '<json>' | repro <outcome> | trace '<json-move-array>'"
     )
 }
 main()

@@ -1,5 +1,5 @@
 import Cube from './Cube'
-import { isCubeArray, isRotation } from '../utils'
+import { isCubeArray } from '../utils'
 import { Face, LayerMove, ORIENTATION_KEYS, Rotation } from './types'
 import IRubiksCubeObserver from '../interfaces/IRubiksCubeObserver'
 
@@ -29,6 +29,7 @@ import IRubiksCubeObserver from '../interfaces/IRubiksCubeObserver'
 
 export default class RubiksCube {
   private _cubes: Cube[]
+  private _cubeMap: Map<string, Cube> = new Map()
   private _observers: IRubiksCubeObserver[]
 
   private static instance: RubiksCube
@@ -36,6 +37,7 @@ export default class RubiksCube {
   private constructor() {
     this._cubes = RubiksCube.initCubes()
     this._observers = []
+    this.updateCubeMap()
   }
 
   private static initCubes(): Cube[] {
@@ -73,6 +75,10 @@ export default class RubiksCube {
     ]
   }
 
+  private updateCubeMap() {
+    this.cubes.forEach((cube) => this._cubeMap.set(JSON.stringify(cube.position), cube))
+  }
+
   public static getInstance() {
     if (!RubiksCube.instance) {
       RubiksCube.instance = new RubiksCube()
@@ -82,6 +88,10 @@ export default class RubiksCube {
 
   get cubes(): Cube[] {
     return this._cubes
+  }
+
+  get cubeMap(): Map<string, Cube> {
+    return this._cubeMap
   }
 
   get isSolved(): boolean {
@@ -105,6 +115,7 @@ export default class RubiksCube {
     // Rehydrate into real Cube instances — JSON.parse yields plain objects with
     // no prototype, so the rotation methods/getters would be missing otherwise.
     this._cubes = parsed.map((c) => new Cube(c.position, c.orientation))
+    this.updateCubeMap()
   }
 
   public addObserver(observer: IRubiksCubeObserver) {
@@ -121,6 +132,7 @@ export default class RubiksCube {
   }
 
   private onMove(move?: LayerMove | Rotation) {
+    this.updateCubeMap()
     this._observers.forEach((observer) => observer.onMove(move))
   }
 

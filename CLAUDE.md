@@ -44,6 +44,7 @@ README):
 ```sh
 npm run verify                       # node src/solver/verification/run.mjs count — tally outcomes over random scrambles
 node src/solver/verification/run.mjs realcount <N>    # solve rate driving the real solver.run() (production path)
+node src/solver/verification/run.mjs statecount <N>   # solve rate loading each scramble via setState (cubeMap regression guard)
 node src/solver/verification/run.mjs solve '<json>'   # run one scramble through solver.run()
 node src/solver/verification/run.mjs repro <outcome>  # shortest scramble producing an outcome
 node src/solver/verification/run.mjs trace '<json>'   # step through one scramble
