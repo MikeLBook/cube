@@ -75,17 +75,6 @@ export default class RubiksCube {
     ]
   }
 
-  private updateCubeMap() {
-    this.cubes.forEach((cube) => this._cubeMap.set(JSON.stringify(cube.position), cube))
-  }
-
-  public static getInstance() {
-    if (!RubiksCube.instance) {
-      RubiksCube.instance = new RubiksCube()
-    }
-    return RubiksCube.instance
-  }
-
   get cubes(): Cube[] {
     return this._cubes
   }
@@ -101,6 +90,22 @@ export default class RubiksCube {
         .filter((face): face is Face => face !== undefined)
       return new Set(faces).size === 1
     })
+  }
+
+  private updateCubeMap() {
+    this.cubes.forEach((cube) => this._cubeMap.set(JSON.stringify(cube.position), cube))
+  }
+
+  private onMove(move?: LayerMove | Rotation) {
+    this.updateCubeMap()
+    this._observers.forEach((observer) => observer.onMove(move))
+  }
+
+  public static getInstance() {
+    if (!RubiksCube.instance) {
+      RubiksCube.instance = new RubiksCube()
+    }
+    return RubiksCube.instance
   }
 
   public setState(cubeState: string) {
@@ -131,17 +136,12 @@ export default class RubiksCube {
     this.onMove()
   }
 
-  private onMove(move?: LayerMove | Rotation) {
-    this.updateCubeMap()
-    this._observers.forEach((observer) => observer.onMove(move))
-  }
-
   public execute(move: LayerMove | Rotation) {
     this.cubes.forEach((cube) => this.Moves[move](cube))
     this.onMove(move)
   }
 
-  Moves: Record<Rotation | LayerMove, (cube: Cube) => void> = {
+  private Moves: Record<Rotation | LayerMove, (cube: Cube) => void> = {
     XCW: (cube) => cube.rotateXCW(),
     XCCW: (cube) => cube.rotateXCCW(),
     YCW: (cube) => cube.rotateYCW(),

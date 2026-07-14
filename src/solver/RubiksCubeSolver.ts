@@ -122,7 +122,11 @@ export default class RubiksCubeSolver {
     await this.resume()
   }
 
-  Phases: Record<SolutionPhase, () => Promise<void>> = {
+  private async resume() {
+    await this.Phases[this.solutionPhase]()
+  }
+
+  private Phases: Record<SolutionPhase, () => Promise<void>> = {
     YellowEdges: async () => {
       if (hasSolvedYellowEdges(this)) {
         await this.advancePhase('YellowCorners')
@@ -176,9 +180,5 @@ export default class RubiksCubeSolver {
         await solveFinalEdges(this)
       }
     }
-  }
-
-  private async resume() {
-    await this.Phases[this.solutionPhase]()
   }
 }
