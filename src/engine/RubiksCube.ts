@@ -136,125 +136,71 @@ export default class RubiksCube {
     this._observers.forEach((observer) => observer.onMove(move))
   }
 
-  Moves: Record<Rotation | LayerMove, () => void> = {
-    XCW: () => this._cubes.forEach((cube) => cube.rotateXCW()),
-    XCCW: () => this._cubes.forEach((cube) => cube.rotateXCCW()),
-    YCW: () => this._cubes.forEach((cube) => cube.rotateYCW()),
-    YCCW: () => this._cubes.forEach((cube) => cube.rotateYCCW()),
-    ZCW: () => this._cubes.forEach((cube) => cube.rotateZCW()),
-    ZCCW: () => this._cubes.forEach((cube) => cube.rotateZCCW()),
-    rotateTopCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInTopLayer) {
-          cube.rotateXCW()
-        }
-      }),
-    rotateXMidCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInXMidLayer) {
-          cube.rotateXCW()
-        }
-      }),
-    rotateBottomCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInBottomLayer) {
-          cube.rotateXCW()
-        }
-      }),
-    rotateTopCCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInTopLayer) {
-          cube.rotateXCCW()
-        }
-      }),
-    rotateXMidCCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInXMidLayer) {
-          cube.rotateXCCW()
-        }
-      }),
-    rotateBottomCCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInBottomLayer) {
-          cube.rotateXCCW()
-        }
-      }),
-    rotateLeftCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInLeftLayer) {
-          cube.rotateYCW()
-        }
-      }),
-    rotateYMidCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInYMidLayer) {
-          cube.rotateYCW()
-        }
-      }),
-    rotateRightCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInRightLayer) {
-          cube.rotateYCW()
-        }
-      }),
-    rotateLeftCCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInLeftLayer) {
-          cube.rotateYCCW()
-        }
-      }),
-    rotateYMidCCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInYMidLayer) {
-          cube.rotateYCCW()
-        }
-      }),
-    rotateRightCCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInRightLayer) {
-          cube.rotateYCCW()
-        }
-      }),
-    rotateFrontCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInFrontLayer) {
-          cube.rotateZCW()
-        }
-      }),
-    rotateZMidCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInZMidLayer) {
-          cube.rotateZCW()
-        }
-      }),
-    rotateBackCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInBackLayer) {
-          cube.rotateZCW()
-        }
-      }),
-    rotateFrontCCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInFrontLayer) {
-          cube.rotateZCCW()
-        }
-      }),
-    rotateZMidCCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInZMidLayer) {
-          cube.rotateZCCW()
-        }
-      }),
-    rotateBackCCW: () =>
-      this._cubes.forEach((cube) => {
-        if (cube.isInBackLayer) {
-          cube.rotateZCCW()
-        }
-      })
+  public execute(move: LayerMove | Rotation) {
+    this.cubes.forEach((cube) => this.Moves[move](cube))
+    this.onMove(move)
   }
 
-  public execute(move: LayerMove | Rotation) {
-    this.Moves[move]()
-    this.onMove(move)
+  Moves: Record<Rotation | LayerMove, (cube: Cube) => void> = {
+    XCW: (cube) => cube.rotateXCW(),
+    XCCW: (cube) => cube.rotateXCCW(),
+    YCW: (cube) => cube.rotateYCW(),
+    YCCW: (cube) => cube.rotateYCCW(),
+    ZCW: (cube) => cube.rotateZCW(),
+    ZCCW: (cube) => cube.rotateZCCW(),
+    rotateTopCW: (cube) => {
+      if (cube.isInTopLayer) cube.rotateXCW()
+    },
+    rotateXMidCW: (cube) => {
+      if (cube.isInXMidLayer) cube.rotateXCW()
+    },
+    rotateBottomCW: (cube) => {
+      if (cube.isInBottomLayer) cube.rotateXCW()
+    },
+    rotateTopCCW: (cube) => {
+      if (cube.isInTopLayer) cube.rotateXCCW()
+    },
+    rotateXMidCCW: (cube) => {
+      if (cube.isInXMidLayer) cube.rotateXCCW()
+    },
+    rotateBottomCCW: (cube) => {
+      if (cube.isInBottomLayer) cube.rotateXCCW()
+    },
+    rotateLeftCW: (cube) => {
+      if (cube.isInLeftLayer) cube.rotateYCW()
+    },
+    rotateYMidCW: (cube) => {
+      if (cube.isInYMidLayer) cube.rotateYCW()
+    },
+    rotateRightCW: (cube) => {
+      if (cube.isInRightLayer) cube.rotateYCW()
+    },
+    rotateLeftCCW: (cube) => {
+      if (cube.isInLeftLayer) cube.rotateYCCW()
+    },
+    rotateYMidCCW: (cube) => {
+      if (cube.isInYMidLayer) cube.rotateYCCW()
+    },
+    rotateRightCCW: (cube) => {
+      if (cube.isInRightLayer) cube.rotateYCCW()
+    },
+    rotateFrontCW: (cube) => {
+      if (cube.isInFrontLayer) cube.rotateZCW()
+    },
+    rotateZMidCW: (cube) => {
+      if (cube.isInZMidLayer) cube.rotateZCW()
+    },
+    rotateBackCW: (cube) => {
+      if (cube.isInBackLayer) cube.rotateZCW()
+    },
+    rotateFrontCCW: (cube) => {
+      if (cube.isInFrontLayer) cube.rotateZCCW()
+    },
+    rotateZMidCCW: (cube) => {
+      if (cube.isInZMidLayer) cube.rotateZCCW()
+    },
+    rotateBackCCW: (cube) => {
+      if (cube.isInBackLayer) cube.rotateZCCW()
+    }
   }
 }
