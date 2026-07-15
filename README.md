@@ -9,11 +9,16 @@ there's hardware.
 
 > **A note on AI.** This project is a coding puzzle/challenge — modeling the cube and writing the
 > solver by hand is the point, and using AI to model or solve the cube would be antithetical
-> to its spirit. AI involvement is therefore restricted to the **3D view**
-> (`src/presentations/3DWeb/`), the **verification harness** (`src/solver/verification/`), and
-> **miscellaneous tooling** (e.g. `package.json` scripts). Every TypeScript file except the 3D
+> to its spirit. AI involvement in the TypeScript project is therefore restricted to the **3D
+> view** (`src/presentations/3DWeb/`), the **verification harness** (`src/solver/verification/`),
+> and **miscellaneous tooling** (e.g. `package.json` scripts). Every TypeScript file except the 3D
 > view's modules (everything under `src/presentations/3DWeb/`) and the harness's `Harness.ts` —
 > the engine, the rest of the solver, the 2D view, and `utils.ts` — is human-authored.
+>
+> The **Android port (`android/`) is AI-owned in full**, engine and solver included. That doesn't
+> cheat the puzzle: the design was already solved by hand in TypeScript, and the Kotlin version is
+> a near-verbatim _translation_ of it — how cleanly it ports is the test of the architecture. The
+> TypeScript remains the canonical, human-authored artifact.
 
 ## Layers
 
@@ -205,3 +210,28 @@ node src/solver/verification/run.mjs trace '<json>'   # step through one scrambl
 - Drag a face to turn that layer; drag the background to orbit.
 - `w`/`a`/`s`/`d` roll & spin the whole cube; keys map to face turns (see `onKey`).
 - **Solve** runs the solver as a paced animation.
+
+## Android port
+
+`android/` is a native Kotlin/Jetpack Compose port of the same project — a second proving ground
+for the architecture, built as a near-verbatim translation of the TypeScript engine and solver.
+The same three roles carry over as MVVM: the **engine** becomes the Model / "SceneState", the
+**solver** is driven by the **ViewModel** (the "person"), and **Compose** is the View, observing
+`onMove` and animating turns. The `IMovePacer.settled()` contract becomes a `suspend` fn that
+resolves when the animation completes.
+
+Two Gradle modules mirror the "dependencies point inward" rule:
+
+```
+android/
+  core/    pure Kotlin/JVM — no Android deps (compiler-enforced): engine, solver, interfaces, utils
+  app/     Jetpack Compose application; depends on :core (the View + ViewModel)
+```
+
+```sh
+cd android
+./gradlew :core:test          # headless JVM verification harness (the Kotlin `npm run verify`)
+./gradlew :app:assembleDebug  # build the app
+```
+
+See `android/CLAUDE.md` for the full port guidance and roadmap.

@@ -26,6 +26,15 @@ checks), the shared interfaces (`src/interfaces/`), the 2D view (`src/presentati
 core code with AI, even if asked to "just fix" something there; flag it and let the human author
 it. (Editing this doc, `README.md`, and other Markdown is fine.)
 
+**The Android port (`android/`) is the one exception: AI owns all of it**, engine and solver
+included. This isn't a loophole in the puzzle — the puzzle (designing the model and the solver)
+was already solved by hand in TypeScript. The Kotlin engine/solver are a deliberate,
+_near-verbatim translation_ of that finished design, not a fresh solve, so AI performing the
+translation doesn't defeat the challenge; how cleanly it ports is itself the test of whether the
+original architecture held. The **TypeScript `src/` remains the canonical, human-authored
+artifact and the reference spec** — the human-only rules above are unchanged, and AI must never
+"port back" changes from `android/` into `src/`. See `android/CLAUDE.md` for the port's specifics.
+
 ## Commands
 
 ```sh
@@ -222,3 +231,21 @@ confirmed both by `count` (a hand-rolled phase loop with independent per-phase c
 When adding solve logic, drive every move through `solver.do(...)` (one move per `await settled()`)
 rather than calling engine methods directly — that's what keeps the solver paced against the
 presentation.
+
+## The Android port (`android/`)
+
+A native Android/Kotlin port of the same project, and a second proving ground for the
+architecture. It is AI-owned in full (see the scope note above) and lives entirely under
+`android/`; it has its own build (Gradle) and does not interact with the web build. Full guidance
+is in **`android/CLAUDE.md`** — the essentials:
+
+- **Same three roles, as MVVM.** Engine → the Model / "SceneState"; solver → driven by the
+  **ViewModel** (the "person"); Compose UI → the View / presentation, observing `onMove`. The
+  `IMovePacer.settled()` contract becomes a `suspend` fn that resolves on animation completion.
+- **Two Gradle modules mirror the inward-only dependency rule.** `:core` is pure Kotlin/JVM with
+  **no Android dependency** (compiler-enforced) and holds the engine/solver/interfaces/utils port;
+  `:app` is the Compose application and depends on `:core`. The verification harness runs as
+  headless `:core:test` JVM tests — the Kotlin analog of `npm run verify`.
+- **The port is a near-verbatim translation, and the TS `src/` is its spec.** Keep Kotlin names
+  and structure parallel so divergence is visible; `as const` unions → enums, `async`/`Promise` →
+  `suspend`/coroutines, `AbortSignal` → coroutine cancellation.
