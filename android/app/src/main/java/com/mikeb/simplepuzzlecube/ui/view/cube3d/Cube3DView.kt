@@ -44,7 +44,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.hypot
 
-private const val ORBIT_SPEED = 0.42f
+private const val ORBIT_SPEED = 0.21f
 private const val TURN_THRESHOLD_PX = 14f
 private val EASING = CubicBezierEasing(0.34f, 0.66f, 0.24f, 1f)
 // The web's recenter transition: transform .4s cubic-bezier(.2,.6,.2,1) (3DWeb.ts applyView).
