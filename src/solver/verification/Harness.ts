@@ -14,6 +14,7 @@
 //   node src/solver/verification/run.mjs solve '<json>'   # run one scramble through solver.run()
 //   node src/solver/verification/run.mjs repro <outcome>  # find the SHORTEST scramble with that outcome
 //   node src/solver/verification/run.mjs trace '<json>'   # step through one scramble, logging every move
+//   node src/solver/verification/run.mjs state '<json>'   # apply a move list, print the serialized state
 //
 // The independent `edgesSolved`/`cornersSolved` checkers below compare stickers to
 // the *centers* and are deliberately NOT the solver's own solutionStatusChecks —
@@ -500,6 +501,16 @@ async function trace(seq: string[]) {
   )
 }
 
+// Apply a move list to a fresh cube and print the serialized engine state
+// (`JSON.stringify(rubiks.cubes)`). This is the cross-implementation parity fixture
+// generator for the Android port: the Kotlin engine applies the same move list and must
+// land on a structurally identical state (see android's EngineParityTest).
+function state(seq: string[]) {
+  rubiks.reset()
+  for (const m of seq) rubiks.execute(m as LayerMove | Rotation)
+  console.log(JSON.stringify(rubiks.cubes))
+}
+
 async function main() {
   const mode = process.argv[2] ?? 'count'
   if (mode === 'count') await count(Number(process.argv[3]) || 5000)
@@ -508,9 +519,10 @@ async function main() {
   else if (mode === 'solve') await solve(JSON.parse(process.argv[3]))
   else if (mode === 'repro') await repro(process.argv[3] ?? 'edges-stuck')
   else if (mode === 'trace') await trace(JSON.parse(process.argv[3]))
+  else if (mode === 'state') state(JSON.parse(process.argv[3]))
   else
     console.log(
-      "modes: count [N] | realcount [N] | statecount [N] | solve '<json>' | repro <outcome> | trace '<json-move-array>'"
+      "modes: count [N] | realcount [N] | statecount [N] | solve '<json>' | repro <outcome> | trace '<json-move-array>' | state '<json-move-array>'"
     )
 }
 main()

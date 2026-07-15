@@ -57,6 +57,7 @@ node src/solver/verification/run.mjs statecount <N>   # solve rate loading each 
 node src/solver/verification/run.mjs solve '<json>'   # run one scramble through solver.run()
 node src/solver/verification/run.mjs repro <outcome>  # shortest scramble producing an outcome
 node src/solver/verification/run.mjs trace '<json>'   # step through one scramble
+node src/solver/verification/run.mjs state '<json>'   # apply a move list, print the serialized state
 ```
 
 It bundles the _real_ engine + solver with esbuild and drives them over thousands of scrambles

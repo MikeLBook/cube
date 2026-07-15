@@ -15,7 +15,15 @@ node src/solver/verification/run.mjs statecount 20000 # ...loading each scramble
 node src/solver/verification/run.mjs solve '["rotateRightCCW","rotateTopCW"]'  # one scramble via solver.run()
 node src/solver/verification/run.mjs repro <outcome>  # find the SHORTEST scramble with that outcome
 node src/solver/verification/run.mjs trace '["rotateBackCCW"]'   # step through one scramble
+node src/solver/verification/run.mjs state '["rotateTopCW","XCW"]'  # apply a move list, print the serialized state
 ```
+
+**`state` — the cross-implementation fixture generator.** Applies a move list to a fresh cube and
+prints `JSON.stringify(rubiks.cubes)`. The Android port's `EngineParityTest` embeds this output for
+a fixed scramble and asserts the Kotlin engine lands on a structurally identical state — pinning
+the two engines to each other sticker-for-sticker. Because both the Kotlin `TraceTool` and this
+harness accept the same JSON move arrays, a failing scramble from either side can be replayed
+against both implementations.
 
 **`count` vs `realcount` — two lenses, both required.** `count` drives the phases itself with
 *independent* per-phase ground-truth checks (compare stickers to centers), so it catches a
