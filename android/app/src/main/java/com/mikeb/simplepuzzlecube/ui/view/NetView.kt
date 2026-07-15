@@ -20,7 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.mikeb.simplepuzzlecube.engine.OrientationKey
 import com.mikeb.simplepuzzlecube.engine.Position
-import com.mikeb.simplepuzzlecube.ui.viewmodel.COLORS
+import com.mikeb.simplepuzzlecube.ui.view.theme.COLORS
+import com.mikeb.simplepuzzlecube.ui.view.theme.Plastic
 import com.mikeb.simplepuzzlecube.ui.viewmodel.CubieState
 
 // Which cubie shows at (row, col) of a face's 3×3 sticker grid in the standard net:
@@ -61,7 +62,7 @@ private fun FaceGrid(
                             .weight(1f)
                             .aspectRatio(1f)
                             .clip(RoundedCornerShape(3.dp))
-                            .background(faceColor ?: Color.DarkGray)
+                            .background(faceColor ?: Plastic)
                             .border(1.dp, Color(0x33000000), RoundedCornerShape(3.dp))
                     ) {}
                 }

@@ -4,13 +4,14 @@
 package com.mikeb.simplepuzzlecube.ui.view
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,9 +23,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mikeb.simplepuzzlecube.ui.view.cube3d.Cube3DView
+import com.mikeb.simplepuzzlecube.ui.view.theme.BgBottom
+import com.mikeb.simplepuzzlecube.ui.view.theme.BgGlow
+import com.mikeb.simplepuzzlecube.ui.view.theme.BgTop
+import com.mikeb.simplepuzzlecube.ui.view.theme.Muted
+import com.mikeb.simplepuzzlecube.ui.view.theme.Panel3
+import com.mikeb.simplepuzzlecube.ui.view.theme.TextPrimary
 import com.mikeb.simplepuzzlecube.ui.viewmodel.CubeViewModel
 import kotlinx.coroutines.delay
 
@@ -55,35 +66,65 @@ fun CubeScreen(modifier: Modifier = Modifier, viewModel: CubeViewModel = viewMod
         }
     }
 
+    // The web body background: a vertical dark gradient with a soft radial glow up top.
+    val background = Modifier.drawBehind {
+        drawRect(Brush.verticalGradient(0f to BgTop, 1f to BgBottom))
+        drawCircle(
+            Brush.radialGradient(
+                0f to BgGlow,
+                1f to Color.Transparent,
+                center = Offset(size.width * 0.3f, -size.height * 0.15f),
+                radius = size.width * 1.2f
+            ),
+            radius = size.width * 1.2f,
+            center = Offset(size.width * 0.3f, -size.height * 0.15f)
+        )
+    }
+    val chipColors = FilterChipDefaults.filterChipColors(
+        labelColor = Muted,
+        selectedContainerColor = Panel3,
+        selectedLabelColor = TextPrimary
+    )
+
     Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = modifier.fillMaxSize().then(background).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        StatusRow(state)
+        StatsRow(state)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            StatusPill(state, modifier = Modifier.weight(1f))
             FilterChip(
                 selected = mode == ViewMode.Cube3D,
                 onClick = { mode = ViewMode.Cube3D },
-                label = { Text("3D") }
+                label = { Text("3D") },
+                colors = chipColors
             )
             FilterChip(
                 selected = mode == ViewMode.Net,
                 onClick = { mode = ViewMode.Net },
-                label = { Text("Net") }
+                label = { Text("Net") },
+                colors = chipColors
             )
         }
-        when (mode) {
-            ViewMode.Cube3D -> Cube3DView(
-                state = state,
-                onUserMove = { face, isPrime -> viewModel.userMove(face, isPrime) },
-                onMoveSettled = viewModel::moveSettled,
-                modifier = Modifier.fillMaxWidth().aspectRatio(1.15f)
-            )
-            ViewMode.Net -> NetView(state.cubies, modifier = Modifier.fillMaxWidth())
+        // The renderer flexes into whatever height the panel leaves over (the web's
+        // stage/panel split, rotated for portrait).
+        Box(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            when (mode) {
+                ViewMode.Cube3D -> Cube3DView(
+                    state = state,
+                    onUserMove = { face, isPrime -> viewModel.userMove(face, isPrime) },
+                    onMoveSettled = viewModel::moveSettled,
+                    modifier = Modifier.fillMaxSize()
+                )
+                ViewMode.Net -> NetView(state.cubies, modifier = Modifier.fillMaxWidth())
+            }
         }
         DriverControls(
             state = state,

@@ -60,7 +60,10 @@ the net) and acknowledges via `moveSettled(id)`, which is what resumes a paced d
     theme), and `cube3d/` — the 3D renderer: `Cube3DView.kt` (Canvas + gestures + turn
     animation) with its composable-only math helpers `Projection.kt` and `DragTurn.kt`
     (`pickTurn` port). `ProjectionTest.kt` (JVM unit test, same package) pins the animation
-    sign mapping.
+    sign mapping. `theme/Color.kt` holds the design tokens ported from the web views' shared
+    palette (`3DWeb.css` `:root` + the `config.ts` sticker colors) — the app is dark-only,
+    like the web, with no dynamic color. The cubie look mirrors `cubieDom.ts`: a dark
+    rounded plastic face carrying an inset rounded, glossed sticker.
   - `ui/model/` — presentation-layer model vocabulary shared by both sides: `Scramble.kt`, the
     Singmaster notation tables (`MoveKey`/`MOVES`, `CubeMoveKey`) and scramble generation, used
     by the ViewModel to apply turns and by the views to label buttons and resolve drags.

@@ -28,31 +28,63 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import com.mikeb.simplepuzzlecube.engine.OrientationKey
 import com.mikeb.simplepuzzlecube.engine.Position
 import com.mikeb.simplepuzzlecube.ui.model.MoveKey
-import com.mikeb.simplepuzzlecube.ui.viewmodel.COLORS
+import com.mikeb.simplepuzzlecube.ui.view.theme.COLORS
+import com.mikeb.simplepuzzlecube.ui.view.theme.Plastic
 import com.mikeb.simplepuzzlecube.ui.viewmodel.UiState
 import kotlin.math.hypot
 
 private const val ORBIT_SPEED = 0.42f
 private const val TURN_THRESHOLD_PX = 14f
 private val EASING = CubicBezierEasing(0.34f, 0.66f, 0.24f, 1f)
-private val PLASTIC = Color(0xFF20242B)
-private val EDGE = Color(0xCC12151A)
 
-// One projected sticker quad from the last drawn frame — the hit-test surface for
-// drag-to-turn (the analog of the web's DOM faces + faceEntry WeakMap).
+// Cubie face styling, matching the web's cubieDom.ts: a dark rounded plastic face
+// (border-radius 9px on a 58px face) with an inset rounded sticker (inset 5px of the
+// 29px half-extent, radius 7px on its 48px side) that carries the color.
+private const val FACE_CORNER = 9f / 58f // corner cut as a fraction of the edge
+private const val STICKER_SCALE = 1f - 5f / 29f // sticker corner distance from face center
+private const val STICKER_CORNER = 7f / 48f
+// Approximation of the web sticker's inset gloss (box-shadow: light top, shade bottom).
+private val GLOSS_TOP = Color(0x24FFFFFF)
+private val GLOSS_BOTTOM = Color(0x4D000000)
+
+// One projected cubie face from the last drawn frame: the full plastic quad (also the
+// hit-test surface for drag-to-turn — the analog of the web's DOM faces + faceEntry
+// WeakMap) plus the inset sticker quad it carries.
 private data class DrawnQuad(
     val position: Position,
     val dir: OrientationKey,
     val points: List<Offset>,
+    val stickerPoints: List<Offset>,
     val depth: Double
 )
+
+private fun lerp(a: Offset, b: Offset, t: Float) =
+    Offset(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
+
+// A projected quad with its corners rounded off: walk the edges, entering each corner a
+// fraction early and leaving it a fraction late, bridging with a quadratic curve through
+// the corner point. Perspective-safe because it works on the projected polygon.
+private fun roundedQuadPath(points: List<Offset>, cornerFraction: Float): Path {
+    val path = Path()
+    for (i in points.indices) {
+        val corner = points[i]
+        val prev = points[(i + points.size - 1) % points.size]
+        val next = points[(i + 1) % points.size]
+        val entry = lerp(corner, prev, cornerFraction)
+        val exit = lerp(corner, next, cornerFraction)
+        if (i == 0) path.moveTo(entry.x, entry.y) else path.lineTo(entry.x, entry.y)
+        path.quadraticTo(corner.x, corner.y, exit.x, exit.y)
+    }
+    path.close()
+    return path
+}
 
 private fun pointInQuad(p: Offset, quad: List<Offset>): Boolean {
     var sign = 0
@@ -168,6 +200,12 @@ fun Cube3DView(
         val anim = state.pendingMove?.let { moveAnim(it.move) }
         val extraDeg = anim?.let { -it.finalDeg * (1 - progress.value) }
 
+        fun project(v: Vec3): Offset {
+            val view = projectView(v, pitch, yaw)
+            val persp = (PERSPECTIVE / (PERSPECTIVE - view.z)).toFloat()
+            return Offset(cx + view.x.toFloat() * persp * scale, cy + view.y.toFloat() * persp * scale)
+        }
+
         val drawn = mutableListOf<DrawnQuad>()
         for (cubie in state.cubies) {
             val affected = anim != null &&
@@ -185,21 +223,43 @@ fun Cube3DView(
                 // Backface cull: corners wind CCW seen from outside; the view's y-flip
                 // reverses that on screen, so visible faces have negative shoelace area.
                 if (shoelace(points) >= 0f) continue
-                drawn.add(DrawnQuad(cubie.position, dir, points, projected.sumOf { it.z }))
+                // The inset sticker, shrunk toward the face center in 3D so its
+                // perspective matches the plastic face it sits on.
+                val faceCenter = Vec3(
+                    corners.sumOf { it.x } / 4,
+                    corners.sumOf { it.y } / 4,
+                    corners.sumOf { it.z } / 4
+                )
+                val stickerPoints = corners.map { corner ->
+                    project(faceCenter + (corner - faceCenter) * STICKER_SCALE.toDouble())
+                }
+                drawn.add(DrawnQuad(cubie.position, dir, points, stickerPoints, projected.sumOf { it.z }))
             }
         }
         drawn.sortBy { it.depth }
 
         val byPosition = state.cubies.associateBy { it.position }
         for (quad in drawn) {
-            val face = byPosition.getValue(quad.position).orientation[quad.dir]
-            val path = Path().apply {
-                moveTo(quad.points[0].x, quad.points[0].y)
-                for (i in 1 until quad.points.size) lineTo(quad.points[i].x, quad.points[i].y)
-                close()
-            }
-            drawPath(path, face?.let { COLORS.getValue(it) } ?: PLASTIC)
-            drawPath(path, EDGE, style = Stroke(width = scale * 0.045f))
+            // Dark rounded plastic face, then the colored rounded sticker inset on it —
+            // the same two-layer construction as the web cubie (cubieDom.ts).
+            drawPath(roundedQuadPath(quad.points, FACE_CORNER), Plastic)
+            val face = byPosition.getValue(quad.position).orientation[quad.dir] ?: continue
+            val sticker = roundedQuadPath(quad.stickerPoints, STICKER_CORNER)
+            drawPath(sticker, COLORS.getValue(face))
+            // Subtle top-light/bottom-shade, approximating the web sticker's inset shadows.
+            val minY = quad.stickerPoints.minOf { it.y }
+            val maxY = quad.stickerPoints.maxOf { it.y }
+            drawPath(
+                sticker,
+                Brush.verticalGradient(
+                    0f to GLOSS_TOP,
+                    0.35f to Color.Transparent,
+                    0.75f to Color.Transparent,
+                    1f to GLOSS_BOTTOM,
+                    startY = minY,
+                    endY = maxY
+                )
+            )
         }
         quads.value = drawn
     }
