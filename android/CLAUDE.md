@@ -155,7 +155,8 @@ All phases landed and verified in order:
 - **F2.** Canvas 3D renderer (software projection + painter's algorithm — Compose `graphicsLayer`
   has no `preserve-3d`, so the CSS-3D approach doesn't port), `Animatable` layer turns that
   acknowledge the pacer on animation end, drag-to-turn (`pickTurn` ported verbatim), orbit drag,
-  double-tap recenter. ✅
+  recenter (the panel's "Recenter" button, inline with the driver buttons and shown in 3D mode
+  only, plus double-tap; both ease the camera home like the web's `resetView()`). ✅
 
 The engine and presentations needed **no changes** to accommodate each other — the same result as
 the web build-out, now confirmed in a second language and UI toolkit.

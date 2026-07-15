@@ -169,7 +169,11 @@ fun DriverControls(
     onSolve: () -> Unit,
     onAbort: () -> Unit,
     onReset: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Non-null only when the active renderer has a camera to recenter (the 3D view);
+    // the web's btn-recenter, rendered inline with the driver buttons to save vertical
+    // space, and locked with the rest of the panel while a driver runs.
+    onRecenter: (() -> Unit)? = null
 ) {
     // While the solver is active, every control is locked except Abort; Abort is live only
     // during a solve and shows "Aborting…" while the abort unwinds (which isn't instant).
@@ -200,6 +204,15 @@ fun DriverControls(
             kind = ButtonKind.Ghost,
             modifier = Modifier.weight(1f)
         )
+        if (onRecenter != null) {
+            PanelButton(
+                "Recenter",
+                onClick = onRecenter,
+                enabled = !locked,
+                kind = ButtonKind.Ghost,
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
 

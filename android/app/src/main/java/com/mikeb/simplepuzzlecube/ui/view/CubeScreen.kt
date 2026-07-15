@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mikeb.simplepuzzlecube.ui.view.cube3d.Cube3DView
+import com.mikeb.simplepuzzlecube.ui.view.cube3d.rememberCube3DViewState
 import com.mikeb.simplepuzzlecube.ui.view.theme.BgBottom
 import com.mikeb.simplepuzzlecube.ui.view.theme.BgGlow
 import com.mikeb.simplepuzzlecube.ui.view.theme.BgTop
@@ -52,6 +53,9 @@ fun CubeScreen(modifier: Modifier = Modifier, viewModel: CubeViewModel = viewMod
     val state by viewModel.uiState.collectAsState()
     var prime by remember { mutableStateOf(false) }
     var mode by rememberSaveable { mutableStateOf(ViewMode.Cube3D) }
+    // The 3D camera, hoisted here so the panel's Recenter button can drive it. Kept
+    // outside the `when (mode)` branch so the orbit survives a 3D → Net → 3D toggle.
+    val cube3dViewState = rememberCube3DViewState()
 
     // The net has no turn animation, so in Net mode the screen acknowledges each pending
     // move after a fixed presentation window. In 3D mode Cube3DView acknowledges on
@@ -121,7 +125,8 @@ fun CubeScreen(modifier: Modifier = Modifier, viewModel: CubeViewModel = viewMod
                     state = state,
                     onUserMove = { face, isPrime -> viewModel.userMove(face, isPrime) },
                     onMoveSettled = viewModel::moveSettled,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    viewState = cube3dViewState
                 )
                 ViewMode.Net -> NetView(state.cubies, modifier = Modifier.fillMaxWidth())
             }
@@ -131,7 +136,8 @@ fun CubeScreen(modifier: Modifier = Modifier, viewModel: CubeViewModel = viewMod
             onScramble = viewModel::scramble,
             onSolve = viewModel::startSolve,
             onAbort = viewModel::abortSolve,
-            onReset = viewModel::reset
+            onReset = viewModel::reset,
+            onRecenter = if (mode == ViewMode.Cube3D) cube3dViewState::recenter else null
         )
         ManualControls(
             state = state,

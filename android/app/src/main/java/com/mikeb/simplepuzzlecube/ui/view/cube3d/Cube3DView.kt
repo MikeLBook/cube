@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -38,11 +39,17 @@ import com.mikeb.simplepuzzlecube.ui.model.MoveKey
 import com.mikeb.simplepuzzlecube.ui.view.theme.COLORS
 import com.mikeb.simplepuzzlecube.ui.view.theme.Plastic
 import com.mikeb.simplepuzzlecube.ui.viewmodel.UiState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.math.hypot
 
 private const val ORBIT_SPEED = 0.42f
 private const val TURN_THRESHOLD_PX = 14f
 private val EASING = CubicBezierEasing(0.34f, 0.66f, 0.24f, 1f)
+// The web's recenter transition: transform .4s cubic-bezier(.2,.6,.2,1) (3DWeb.ts applyView).
+private val RECENTER_EASING = CubicBezierEasing(0.2f, 0.6f, 0.2f, 1f)
+private const val RECENTER_MS = 400
 
 // Cubie face styling, matching the web's cubieDom.ts: a dark rounded plastic face
 // (border-radius 9px on a 58px face) with an inset rounded sticker (inset 5px of the
@@ -108,15 +115,48 @@ private fun shoelace(points: List<Offset>): Float {
     return area / 2f
 }
 
+// The 3D view's camera, hoisted so the panel's "Recenter" button (the analog of the
+// web's btn-recenter) can reach it from outside the composable. recenter() animates
+// yaw/pitch home exactly like the web's resetView() — an eased transition, not a snap —
+// and any new orbit drag cancels an in-flight recenter so the two never fight.
+class Cube3DViewState internal constructor(private val scope: CoroutineScope) {
+    internal var yaw by mutableFloatStateOf(DEFAULT_YAW)
+    internal var pitch by mutableFloatStateOf(DEFAULT_PITCH)
+    private var recenterJob: Job? = null
+
+    fun recenter() {
+        recenterJob?.cancel()
+        recenterJob = scope.launch {
+            val yaw0 = yaw
+            val pitch0 = pitch
+            Animatable(0f).animateTo(1f, tween(RECENTER_MS, easing = RECENTER_EASING)) {
+                yaw = yaw0 + (DEFAULT_YAW - yaw0) * value
+                pitch = pitch0 + (DEFAULT_PITCH - pitch0) * value
+            }
+        }
+    }
+
+    internal fun stopRecenter() {
+        recenterJob?.cancel()
+    }
+}
+
+@Composable
+fun rememberCube3DViewState(): Cube3DViewState {
+    val scope = rememberCoroutineScope()
+    return remember { Cube3DViewState(scope) }
+}
+
 @Composable
 fun Cube3DView(
     state: UiState,
     onUserMove: (MoveKey, Boolean) -> Unit,
     onMoveSettled: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewState: Cube3DViewState = rememberCube3DViewState()
 ) {
-    var yaw by remember { mutableFloatStateOf(DEFAULT_YAW) }
-    var pitch by remember { mutableFloatStateOf(DEFAULT_PITCH) }
+    var yaw by viewState::yaw
+    var pitch by viewState::pitch
     val quads = remember { mutableStateOf<List<DrawnQuad>>(emptyList()) }
     val currentState = rememberUpdatedState(state)
     val currentOnUserMove = rememberUpdatedState(onUserMove)
@@ -148,10 +188,7 @@ fun Cube3DView(
     Canvas(
         modifier = modifier
             .pointerInput(Unit) {
-                detectTapGestures(onDoubleTap = {
-                    yaw = DEFAULT_YAW
-                    pitch = DEFAULT_PITCH
-                })
+                detectTapGestures(onDoubleTap = { viewState.recenter() })
             }
             .pointerInput(Unit) {
                 var dragQuad: DrawnQuad? = null
@@ -162,6 +199,9 @@ fun Cube3DView(
                 var pitch0 = 0f
                 detectDragGestures(
                     onDragStart = { down ->
+                        // A drag takes over the camera (or reads it for pickTurn), so an
+                        // in-flight recenter animation must stop moving it first.
+                        viewState.stopRecenter()
                         totalX = 0f
                         totalY = 0f
                         yaw0 = yaw
