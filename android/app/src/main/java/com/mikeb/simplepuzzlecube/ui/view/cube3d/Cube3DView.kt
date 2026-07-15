@@ -10,7 +10,7 @@
 // Interaction (ported from 3DWeb.ts pointer handling): drag on a sticker past a
 // threshold turns that layer (pickTurn); drag on empty space orbits (yaw/pitch, pitch
 // clamped ±86°); double-tap recenters the view.
-package com.mikeb.simplepuzzlecube.ui
+package com.mikeb.simplepuzzlecube.ui.view.cube3d
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
@@ -34,6 +34,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import com.mikeb.simplepuzzlecube.engine.OrientationKey
 import com.mikeb.simplepuzzlecube.engine.Position
+import com.mikeb.simplepuzzlecube.ui.model.MoveKey
+import com.mikeb.simplepuzzlecube.ui.viewmodel.COLORS
+import com.mikeb.simplepuzzlecube.ui.viewmodel.UiState
 import kotlin.math.hypot
 
 private const val ORBIT_SPEED = 0.42f

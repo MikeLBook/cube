@@ -1,4 +1,4 @@
-package com.mikeb.simplepuzzlecube.ui.theme
+package com.mikeb.simplepuzzlecube.ui.view.theme
 
 import androidx.compose.ui.graphics.Color
 

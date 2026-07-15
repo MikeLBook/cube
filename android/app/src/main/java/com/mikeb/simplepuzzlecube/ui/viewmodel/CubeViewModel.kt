@@ -12,7 +12,7 @@
 // to the main thread (viewModelScope / Dispatchers.Main.immediate), the faithful analog
 // of the TS single-threaded event loop. No locks; every move immediately suspends on
 // settled(), so per-move work is microseconds.
-package com.mikeb.simplepuzzlecube.ui
+package com.mikeb.simplepuzzlecube.ui.viewmodel
 
 import android.app.Application
 import android.content.Context
@@ -25,6 +25,11 @@ import com.mikeb.simplepuzzlecube.interfaces.IMovePacer
 import com.mikeb.simplepuzzlecube.interfaces.IRubiksCubeObserver
 import com.mikeb.simplepuzzlecube.isRotation
 import com.mikeb.simplepuzzlecube.solver.RubiksCubeSolver
+import com.mikeb.simplepuzzlecube.ui.model.CubeMoveKey
+import com.mikeb.simplepuzzlecube.ui.model.MOVES
+import com.mikeb.simplepuzzlecube.ui.model.MoveKey
+import com.mikeb.simplepuzzlecube.ui.model.ScrambleTurn
+import com.mikeb.simplepuzzlecube.ui.model.buildScramble
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext

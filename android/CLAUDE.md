@@ -49,11 +49,21 @@ the net) and acknowledges via `moveSettled(id)`, which is what resumes a paced d
     port of `../src/solver/verification/Harness.ts`), the JUnit gate (`VerificationTest.kt`),
     engine tests, the **TS-parity fixture test** (`EngineParityTest.kt`), and a `TraceTool.kt`
     `main()` mirroring the TS `run.mjs` debug modes.
-- **`:app`** — the Compose application; depends on `:core`. Everything lives in `ui/`:
-  `CubeViewModel.kt` (pacing/drivers/session — the `3DWeb.ts` CubeView port), `UiState.kt`,
-  `Scramble.kt` (notation tables + scramble generation), `CubeScreen.kt` (renderer toggle +
-  panel), `NetView.kt` (2D net), `Cube3DView.kt` + `Projection.kt` + `DragTurn.kt` (the 3D
-  renderer), `Panel.kt`. `ProjectionTest.kt` (JVM unit test) pins the animation sign mapping.
+- **`:app`** — the Compose application; depends on `:core`. The presentation layer lives under
+  `ui/`, organized as the MVVM triad so each file's architectural role is visible from its path:
+  - `ui/viewmodel/` — **the view controller.** `CubeViewModel.kt` (pacing/drivers/session — the
+    `3DWeb.ts` CubeView port; the only class that touches the engine/solver) and `UiState.kt`
+    (the immutable snapshot it publishes — the contract the views render from).
+  - `ui/view/` — **everything composable, or used only by composables.** `CubeScreen.kt` (the
+    composition point: renderer toggle, panel wiring, the net mode's presentation-delay
+    handshake), `NetView.kt` (2D net), `Panel.kt` (status row + controls), `theme/` (Material
+    theme), and `cube3d/` — the 3D renderer: `Cube3DView.kt` (Canvas + gestures + turn
+    animation) with its composable-only math helpers `Projection.kt` and `DragTurn.kt`
+    (`pickTurn` port). `ProjectionTest.kt` (JVM unit test, same package) pins the animation
+    sign mapping.
+  - `ui/model/` — presentation-layer model vocabulary shared by both sides: `Scramble.kt`, the
+    Singmaster notation tables (`MoveKey`/`MOVES`, `CubeMoveKey`) and scramble generation, used
+    by the ViewModel to apply turns and by the views to label buttons and resolve drags.
 
 Dependencies point inward only, exactly as in the web project: `:app` → `:core`; `:core` → nothing
 Android. If engine or solver code ever needs an Android type, the design has drifted — stop and

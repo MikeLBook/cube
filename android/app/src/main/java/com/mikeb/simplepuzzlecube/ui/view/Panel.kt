@@ -2,7 +2,7 @@
 // from 3DWeb.html: stats readout, status pill, drivers (Scramble/Solve/Abort/Reset),
 // manual face turns, and whole-cube re-orientations. Pure renders of UiState; every
 // intent is a ViewModel call.
-package com.mikeb.simplepuzzlecube.ui
+package com.mikeb.simplepuzzlecube.ui.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.mikeb.simplepuzzlecube.ui.model.CubeMoveKey
+import com.mikeb.simplepuzzlecube.ui.model.MoveKey
+import com.mikeb.simplepuzzlecube.ui.viewmodel.STATUS_META
+import com.mikeb.simplepuzzlecube.ui.viewmodel.UiState
+import com.mikeb.simplepuzzlecube.ui.viewmodel.timeText
 
 @Composable
 fun StatusRow(state: UiState, modifier: Modifier = Modifier) {

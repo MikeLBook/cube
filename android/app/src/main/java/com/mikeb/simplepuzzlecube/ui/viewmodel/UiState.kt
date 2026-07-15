@@ -1,7 +1,7 @@
 // The view's shared types — the analog of ../src/presentations/3DWeb/types.ts plus the
 // immutable render snapshot the ViewModel publishes (engine Cubes are mutable, so the UI
 // gets copies, never live references).
-package com.mikeb.simplepuzzlecube.ui
+package com.mikeb.simplepuzzlecube.ui.viewmodel
 
 import androidx.compose.ui.graphics.Color
 import com.mikeb.simplepuzzlecube.engine.Face

@@ -2,11 +2,13 @@
 // pointer drag on a sticker face to a layer turn. The web resolves the sticker via a DOM
 // WeakMap; here the 3D view hit-tests its own projected quads and passes the sticker's
 // cubie position + face directly.
-package com.mikeb.simplepuzzlecube.ui
+package com.mikeb.simplepuzzlecube.ui.view.cube3d
 
 import com.mikeb.simplepuzzlecube.engine.Axis
 import com.mikeb.simplepuzzlecube.engine.OrientationKey
 import com.mikeb.simplepuzzlecube.engine.Position
+import com.mikeb.simplepuzzlecube.ui.model.MOVES
+import com.mikeb.simplepuzzlecube.ui.model.MoveKey
 
 // Calibration sign (config.ts CW_SIGN): a positive right-hand turn about any +axis reads
 // as CCW from that axis's viewpoint, so CW = -1 everywhere.

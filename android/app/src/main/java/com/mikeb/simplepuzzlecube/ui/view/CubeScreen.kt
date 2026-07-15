@@ -1,7 +1,7 @@
 // The screen: renderer (3D cube or 2D net) + panel, plus the presentation half of the
 // pacing handshake. Both renderers hang off the same ViewModel — swapping them is the
 // point of the architecture (the engine/solver/pacer stack doesn't know which one runs).
-package com.mikeb.simplepuzzlecube.ui
+package com.mikeb.simplepuzzlecube.ui.view
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mikeb.simplepuzzlecube.ui.view.cube3d.Cube3DView
+import com.mikeb.simplepuzzlecube.ui.viewmodel.CubeViewModel
 import kotlinx.coroutines.delay
 
 // How long the net view "presents" one move before acknowledging it — its stand-in for
@@ -42,7 +44,7 @@ fun CubeScreen(modifier: Modifier = Modifier, viewModel: CubeViewModel = viewMod
 
     // The net has no turn animation, so in Net mode the screen acknowledges each pending
     // move after a fixed presentation window. In 3D mode Cube3DView acknowledges on
-    // animation end instead (moveSettled is id-guarded, so a stale acknowledge is inert).
+    // animation end instead (moveSettled is id-guarded, so a stale acknowledgment is inert).
     val pending = state.pendingMove
     if (mode == ViewMode.Net) {
         LaunchedEffect(pending?.id) {

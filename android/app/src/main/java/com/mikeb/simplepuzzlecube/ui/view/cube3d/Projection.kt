@@ -9,7 +9,7 @@
 // space — under which every engine CW move is a -90° turn (CW viewed from the +axis
 // looking toward the origin = negative right-hand rotation; the web's CW_SIGN = -1
 // encodes the same fact).
-package com.mikeb.simplepuzzlecube.ui
+package com.mikeb.simplepuzzlecube.ui.view.cube3d
 
 import com.mikeb.simplepuzzlecube.engine.Axis
 import com.mikeb.simplepuzzlecube.engine.LayerMove
@@ -17,6 +17,7 @@ import com.mikeb.simplepuzzlecube.engine.Move
 import com.mikeb.simplepuzzlecube.engine.OrientationKey
 import com.mikeb.simplepuzzlecube.engine.Position
 import com.mikeb.simplepuzzlecube.engine.Rotation
+import com.mikeb.simplepuzzlecube.ui.model.MOVES
 import kotlin.math.cos
 import kotlin.math.sin
 

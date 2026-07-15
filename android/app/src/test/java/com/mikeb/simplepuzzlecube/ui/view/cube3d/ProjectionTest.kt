@@ -1,4 +1,4 @@
-package com.mikeb.simplepuzzlecube.ui
+package com.mikeb.simplepuzzlecube.ui.view.cube3d
 
 import com.mikeb.simplepuzzlecube.engine.Position
 import com.mikeb.simplepuzzlecube.engine.RubiksCube

@@ -1,7 +1,7 @@
 // Port of ../src/presentations/3DWeb/scramble.ts plus the notation tables it draws on
 // from config.ts (MOVES, CUBE_MOVES) — needed by scramble, manual turns, and (later)
 // drag-to-turn.
-package com.mikeb.simplepuzzlecube.ui
+package com.mikeb.simplepuzzlecube.ui.model
 
 import com.mikeb.simplepuzzlecube.engine.Axis
 import com.mikeb.simplepuzzlecube.engine.LayerMove

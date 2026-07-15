@@ -2,7 +2,7 @@
 // immutable UiState snapshot. Analog of the web 2D view's sticker grid, but (unlike the
 // web 2D view) it participates in pacing: CubeScreen acknowledges each pending move after
 // a short presentation delay, which is what resumes a paced driver.
-package com.mikeb.simplepuzzlecube.ui
+package com.mikeb.simplepuzzlecube.ui.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.mikeb.simplepuzzlecube.engine.OrientationKey
 import com.mikeb.simplepuzzlecube.engine.Position
+import com.mikeb.simplepuzzlecube.ui.viewmodel.COLORS
+import com.mikeb.simplepuzzlecube.ui.viewmodel.CubieState
 
 // Which cubie shows at (row, col) of a face's 3×3 sticker grid in the standard net:
 //
