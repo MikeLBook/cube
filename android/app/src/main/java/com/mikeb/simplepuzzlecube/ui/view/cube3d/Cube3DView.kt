@@ -85,17 +85,24 @@ fun Cube3DView(
 ) {
     var yaw by remember { mutableFloatStateOf(DEFAULT_YAW) }
     var pitch by remember { mutableFloatStateOf(DEFAULT_PITCH) }
-    val progress = remember { Animatable(1f) }
     val quads = remember { mutableStateOf<List<DrawnQuad>>(emptyList()) }
     val currentState = rememberUpdatedState(state)
     val currentOnUserMove = rememberUpdatedState(onUserMove)
 
-    // Present the pending move: snap to the rotated-back pose, ease to rest, acknowledge.
+    // Present the pending move: start at the rotated-back pose, ease to rest, acknowledge.
+    //
+    // The Animatable is created per move id AT COMPOSITION TIME, already at 0. During a
+    // driven sequence the next move arrives in the same instant the previous one settles,
+    // and an effect-based snapTo(0) can land a frame late — that stale frame renders the
+    // new move's END state at rest before snapping back, a visible flicker at every move
+    // boundary. Initializing at composition closes that window: the first frame of a new
+    // pending move already shows the rotated-back pose, which is pixel-identical to the
+    // previous move's resting pose, so chained turns are seamless.
     val pending = state.pendingMove
+    val progress = remember(pending?.id) { Animatable(if (pending == null) 1f else 0f) }
     LaunchedEffect(pending?.id) {
         if (pending != null) {
             val anim = moveAnim(pending.move)
-            progress.snapTo(0f)
             val duration = when {
                 anim.layer == null -> 320
                 pending.fast -> 135
