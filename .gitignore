@@ -2,3 +2,4 @@ node_modules
 .claude
 build
 src/solver/verification/dist
+android/app/release/
