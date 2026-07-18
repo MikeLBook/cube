@@ -1,5 +1,6 @@
 import * as esbuild from 'esbuild'
 import { mkdir, copyFile, rm, watch as fsWatch } from 'node:fs/promises'
+import { dirname } from 'node:path'
 
 // Bundle each presentation into a flat build/ directory. Output names are chosen here, so the
 // 2D view ships as index.{html,css,js} (the site's entry point) and the 3D view as 3DView.*.
@@ -15,16 +16,23 @@ const CSS = {
   '3DWeb': 'src/presentations/3DWeb/3DWeb.css'
 }
 // esbuild has no HTML loader, so HTML is copied verbatim (and the 2D Web renamed to index.html).
+// The privacy policy ships as privacy/index.html so it's served at the clean URL /privacy.
 const HTML = [
   ['src/presentations/2DWeb/2DWeb.html', `${OUT}/index.html`],
-  ['src/presentations/3DWeb/3DWeb.html', `${OUT}/3D.html`]
+  ['src/presentations/3DWeb/3DWeb.html', `${OUT}/3D.html`],
+  ['web/privacy.html', `${OUT}/privacy/index.html`]
 ]
 
 const opts = (entryPoints) => ({ entryPoints, bundle: true, outdir: OUT })
 
 async function copyHtml() {
   await mkdir(OUT, { recursive: true })
-  await Promise.all(HTML.map(([from, to]) => copyFile(from, to)))
+  await Promise.all(
+    HTML.map(async ([from, to]) => {
+      await mkdir(dirname(to), { recursive: true })
+      await copyFile(from, to)
+    })
+  )
 }
 
 if (isWatch) {

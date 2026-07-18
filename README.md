@@ -203,6 +203,7 @@ node src/solver/verification/run.mjs realcount <N>    # solve rate driving the r
 node src/solver/verification/run.mjs solve '<json>'   # run one scramble through solver.run()
 node src/solver/verification/run.mjs repro <outcome>  # find the shortest scramble producing an outcome
 node src/solver/verification/run.mjs trace '<json>'   # step through one scramble
+node src/solver/verification/run.mjs state '<json>'   # apply a move list, print the serialized state
 ```
 
 ### 3D view controls
@@ -219,6 +220,13 @@ The same three roles carry over as MVVM: the **engine** becomes the Model / "Sce
 **solver** is driven by the **ViewModel** (the "person"), and **Compose** is the View, observing
 `onMove` and animating turns. The `IMovePacer.settled()` contract becomes a `suspend` fn that
 resolves when the animation completes.
+
+The port is **complete**: the Kotlin verification harness reports the same 100% solve rate as the
+TS one (20000/20000 across all three lenses), a parity test pins the two engines to each other
+sticker-for-sticker, and the app ships two renderers — a 2D net and a software-projected 3D cube
+with drag-to-turn — swapping under one ViewModel, with cube state persisted across launches in the
+same wire format the web pages share via `localStorage`. Porting required **no changes** to the
+engine's or solver's design — the decoupling held in a second language and UI toolkit.
 
 Two Gradle modules mirror the "dependencies point inward" rule:
 
